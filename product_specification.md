@@ -24,6 +24,10 @@
 
 5. **Inspect** — Clicking a node opens a floating tooltip showing all its properties. Clicking a second node moves the tooltip to that node instantly.
 
+6. **Color** — The right sidebar **Color** tab lets the user map a single node property to a color gradient across all active (non-grayed-out) nodes, revealing value distribution directly on the canvas.
+
+7. **Export** — The **Download Graph** button in the left sidebar exports the current graph as a JSON file enriched with each node's current x/y canvas position, so the layout can be reloaded exactly.
+
 ---
 
 ## UI Layout
@@ -48,7 +52,7 @@
 ┌──────────────────┬────────────────────────┬────────────────────────────────┐
 │  Left Sidebar    │                        │  Right Sidebar                 │
 │  (240px)         │   Sigma canvas         │  (300px)                       │
-│                  │   (fills space)        │  [ Filters | Stats ]  ← tabs   │
+│                  │   (fills space)        │  [ Filters | Stats | Color ] ← tabs
 │  [Load new file] │                        │                                │
 │  ─────────────── │   filename.json        │  ── Filters tab ──             │
 │  SIMULATION      │   (muted, top-left)    │  N nodes match                 │
@@ -74,7 +78,8 @@
 │  Nodes:   1,234  │                        │  nodes must match all          │
 │  Edges:   5,678  │                        │  enabled filters.              │
 │                  │                        │                                │
-│                  │        [+][-][⊡]       │                                │
+│  [↓ Download     │        [+][-][⊡]       │                                │
+│     Graph]       │                        │                                │
 └──────────────────┴────────────────────────┴────────────────────────────────┘
 ```
 
@@ -100,6 +105,25 @@
 │                                    │
 │  [▆▃█▅▂▇▄▃]  ← inline histogram   │
 │  (hover bar for range + count)     │
+└────────────────────────────────────┘
+```
+
+### Color tab (right sidebar)
+
+```
+┌────────────────────────────────────┐
+│  Right Sidebar                     │
+│  [ Filters | Stats | Color ]       │
+│                                    │
+│  ── Color tab ──                   │
+│  Property  [score             ▾]   │
+│  Palette   [Viridis           ▾]   │
+│                                    │
+│  [■■■■■■■■■■■■■■■■■■■■■■■■■]      │
+│   12.3                    99.1     │
+│   (min)                   (max)    │
+│                                    │
+│  (inactive/grayed nodes stay gray) │
 └────────────────────────────────────┘
 ```
 
@@ -177,6 +201,8 @@ Files must conform to the versioned graph JSON schema (`src/lib/graphSchema.json
 **Node fields:**
 - `id` (required, string) — unique identifier
 - `label` (optional, string) — display name shown on canvas
+- `x` (optional, number) — canvas x position; honoured on load if present (see Position-Aware Loading)
+- `y` (optional, number) — canvas y position; honoured on load if present (see Position-Aware Loading)
 - `properties` (optional, object) — key/value pairs for filtering. Supported value types: `number`, `string`, ISO 8601 date string, or `boolean`.
 
 **Edge fields:**
@@ -187,13 +213,27 @@ Files must conform to the versioned graph JSON schema (`src/lib/graphSchema.json
 
 All nodes should have the same property keys. Property keys are ordered **alphabetically** in the Filters tab and tooltip.
 
-**Example:**
+**Example (no positions — layout will be computed by FA2):**
 ```json
 {
   "version": "1",
   "nodes": [
     { "id": "1", "label": "Alice", "properties": { "age": 34, "score": 91.5, "joined": "2021-03-15", "active": true } },
     { "id": "2", "label": "Bob",   "properties": { "age": 28, "score": 74.0, "joined": "2023-11-02", "active": false } }
+  ],
+  "edges": [
+    { "source": "1", "target": "2" }
+  ]
+}
+```
+
+**Example (with positions — exported by the app and re-importable):**
+```json
+{
+  "version": "1",
+  "nodes": [
+    { "id": "1", "label": "Alice", "x": 142.5, "y": -88.3, "properties": { "age": 34, "score": 91.5, "joined": "2021-03-15", "active": true } },
+    { "id": "2", "label": "Bob",   "x": -67.1, "y": 210.0, "properties": { "age": 28, "score": 74.0, "joined": "2023-11-02", "active": false } }
   ],
   "edges": [
     { "source": "1", "target": "2" }
@@ -225,6 +265,22 @@ If **any** property values were replaced with defaults, a **blocking modal** is 
 - **Load anyway** — proceeds with defaults applied; the graph renders normally.
 
 If no null values exist in the file, the modal does not appear.
+
+---
+
+## Position-Aware Loading
+
+When a loaded file contains `x` and `y` fields on nodes, those positions are used directly to place nodes on the canvas — no random initialisation.
+
+| Scenario | Behaviour |
+|---|---|
+| All nodes have `x` and `y` | Positions are used as-is. Camera fits to graph. Simulation does not auto-start. |
+| Some nodes have `x` and `y`, some do not | Nodes with positions are placed at those coordinates. Nodes without positions are placed randomly in the neighbourhood of the graph centroid. |
+| No nodes have `x` or `y` | All nodes are placed randomly (standard behaviour). |
+
+- The simulation is **never** auto-started regardless of whether positions are present. The user always presses Run manually.
+- **Randomize Layout** discards any imported positions and randomises all nodes.
+- Positions are stored in graph coordinates (Sigma's internal space), not pixel coordinates.
 
 ---
 
@@ -293,6 +349,16 @@ When no filters are enabled, all nodes show the **default** color (`#94a3b8`), n
 - Filter and color changes **never restart the simulation or remount Sigma**. Use `graph.updateEachNodeAttributes()` + `sigma.refresh()` only.
 - Switching between the Filters and Stats tabs does not change node/edge highlight state.
 - **Zero-match empty state:** When all enabled filters produce 0 matching nodes, the canvas remains visible (all nodes grayed out) and a persistent banner is displayed: *"No nodes match the current filters."* with a "Clear all filters" button.
+
+### Interaction with Color Gradient mode
+
+When a property is selected in the **Color** tab, the color gradient **overrides** the default/highlighted colors for active (non-grayed-out) nodes only:
+
+- **Active nodes** (passing all enabled filters): colored by gradient — normal highlight color (`#93c5fd`) is replaced by the gradient color for that node's value.
+- **Grayed-out nodes** (failing any enabled filter): still rendered as `#e2e8f0` — the gradient does not apply.
+- **Selected node** (tooltip open): still receives its 2px ring in `#3b82f6` on top of its gradient color.
+- When the Color tab's property selector is cleared (set to none), nodes revert to normal filter-based colors.
+- Switching to the Filters or Stats tab does **not** disable the color gradient — it persists until the user clears the property selection.
 
 ### Filter panel collapse
 
@@ -377,6 +443,39 @@ A **histogram** is shown below the stats, computed over the filtered nodes' valu
 
 ---
 
+## Node Color Gradient
+
+The right sidebar has a third tab: **Color**. It lets the user map a single property to a color gradient applied across all active (non-grayed-out) nodes.
+
+### Controls
+
+- **Property selector** — dropdown listing all properties of any type. Selecting "None" (default) disables the gradient.
+- **Palette selector** — dropdown listing available color schemes. Default: Viridis.
+
+Available palettes: Viridis, Plasma, Blues, Reds, Rainbow, RdBu (diverging).
+
+### Coloring behavior by property type
+
+| Property type | Gradient behavior |
+|---|---|
+| **Number** | Continuous gradient mapped linearly across `[min, max]` of the property among active nodes. |
+| **Date** | Same as number — the ISO date string is converted to milliseconds since epoch (`new Date(s).getTime()`) **at display time only** to compute gradient position. Stored values remain ISO strings. |
+| **Boolean** | Binary: `false` nodes get the low-end palette color; `true` nodes get the high-end palette color. |
+| **String** | Each distinct string value is assigned a unique color from the palette. Nodes sharing the same value share the same color. If the number of distinct values exceeds the palette's capacity (typically 8–12 colors), colors are reused with a console warning. |
+
+### Gradient legend
+
+A horizontal gradient bar is displayed beneath the palette selector showing the color ramp, with the min and max values labelled at either end. For boolean and string types, a discrete legend (colored chips with value labels) is shown instead.
+
+### Behavior rules
+
+- The gradient is computed over **active nodes only** (nodes passing all enabled filters). Grayed-out nodes stay `#e2e8f0`.
+- The gradient updates live when filters change (active node set changes) or when a new property or palette is selected.
+- When no property is selected, the Color tab shows: *"Select a property to visualise node colors."*
+- If the selected property has no values among active nodes, the gradient is not rendered and the message "No data for selected property" is shown.
+
+---
+
 ## Node Tooltip
 
 - Opens when a node is clicked. The clicked node gains a **selected visual state** (blue-500, 2px ring) so its position on the canvas is clear.
@@ -404,6 +503,28 @@ A **histogram** is shown below the stats, computed over the filtered nodes' valu
 - Dates: original ISO string (e.g. `2021-03-15`)
 - Strings: identical to formatted
 - Booleans: identical to formatted
+
+---
+
+## Graph Export
+
+A **"↓ Download Graph"** button in the left sidebar (below GRAPH INFO) exports the current graph as a `.json` file.
+
+### Exported format
+
+The exported file is a valid graph JSON conforming to schema version `"1"`, with each node enriched with its current canvas position:
+
+- All original node fields (`id`, `label`, `properties`) are preserved exactly.
+- `x` and `y` (numbers) are added to each node with the node's current position in Sigma's graph coordinate space.
+- All original edge fields are preserved exactly.
+
+The exported file can be re-imported into the app. When re-imported, the saved positions are honoured (see Position-Aware Loading) so the layout is restored exactly.
+
+### Button state
+
+- The button is always visible once a graph is loaded.
+- It is available before the simulation has ever been run (positions will be the random initial coordinates).
+- The downloaded filename is the original loaded filename with `-positioned` appended before the extension (e.g. `my-graph.json` → `my-graph-positioned.json`).
 
 ---
 
@@ -454,6 +575,7 @@ Left sidebar sections, top to bottom:
 6. "↺ Randomize Layout" button.
 7. **Section header: GRAPH INFO**
 8. Nodes: N / Edges: N counts.
+9. **"↓ Download Graph"** — secondary/ghost button.
 
 ### Typography
 
@@ -581,7 +703,7 @@ The Stats tab still shows node/edge counts. The property analysis dropdown is hi
 11. Gravity and Speed sliders affect simulation in real time (stop → update → start)
 12. Randomize Layout re-randomizes positions, restarts the simulation, and fits camera to graph
 13. Graphs with more than 10,000 nodes prompt a confirmation dialog before simulation starts
-14. Right sidebar has **Filters** and **Stats** tabs
+14. Right sidebar has **Filters**, **Stats**, and **Color** tabs
 15. Each property in the Filters tab shows the correct filter control (slider / multi-select / date pickers / boolean toggle) with a type badge
 16. Each filter has an enable/disable checkbox; disabled filter controls are dimmed and inert
 17. A live "N nodes match" count appears at the top of the Filters tab and updates as filters change
@@ -605,11 +727,20 @@ The Stats tab still shows node/edge counts. The property analysis dropdown is hi
 35. The canvas accepts file drops after initial load; dragging a file over the window shows a "Drop to load new graph" overlay
 36. A "Load new file" button is visible in the top of the left sidebar once a graph is loaded
 37. The filename is displayed in muted text on the canvas after file load
-38. App does not crash or freeze on 50,000 nodes
-39. `npm run test` green
-40. `npm run test:e2e` green
-41. `npm run lint` exits with zero errors
-42. All exported symbols have JSDoc
+38. If a loaded file contains `x` and `y` on all nodes, those positions are used on render and no random layout is applied
+39. If a loaded file contains `x` and `y` on some nodes, positioned nodes use their coordinates and unpositioned nodes are placed randomly near the graph centroid
+40. The Color tab property selector lists all properties; selecting one applies a gradient to active nodes; grayed-out nodes remain `#e2e8f0`
+41. The Color tab palette selector changes the color scheme applied to active nodes
+42. The gradient legend updates to show the correct color ramp and min/max (or discrete chips for boolean/string) for the selected property
+43. The gradient updates live when filters change or a new property/palette is selected
+44. Switching tabs (Filters, Stats, Color) does not clear the gradient — it persists until the user clears the property selection
+45. The "↓ Download Graph" button exports a valid schema-version-"1" JSON file with `x` and `y` added to each node
+46. Re-importing an exported file restores the node positions exactly
+47. App does not crash or freeze on 50,000 nodes
+48. `npm run test` green
+49. `npm run test:e2e` green
+50. `npm run lint` exits with zero errors
+51. All exported symbols have JSDoc
 
 ---
 
@@ -626,7 +757,7 @@ The Stats tab still shows node/edge counts. The property analysis dropdown is hi
 | Edge weight visualization | Out of scope |
 | Directed edges / arrowheads | Out of scope; all edges are undirected |
 | Edge label rendering | Not rendered in v1; architecture must allow future extension |
-| Export (image, JSON, CSV) | Out of scope |
+| Image / CSV export | Out of scope; only JSON graph export (with positions) is supported |
 | Undo/redo | Out of scope |
 | Routing / multi-page | Out of scope; single-page app |
 | Backend / API calls | Out of scope; fully client-side |

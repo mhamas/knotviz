@@ -6,15 +6,30 @@
 
 **Problem statement:** A technical data engineer or analyst has a graph dataset exported from a database or pipeline. They want to explore its structure, identify clusters, and filter nodes by properties to surface patterns. This tool gives them a single-page environment to load a graph, position it with a force-directed simulation, and interactively filter nodes by their properties to narrow down the data to what matters.
 
+**Primary goal:** Users can visualise the graph in an easy-to-read manner and interactively analyse it.
+
 **Primary user:** Technical data engineer or analyst — someone who understands graph structures and can interpret visualizations. Domain knowledge can be assumed; no hand-holding is needed in the UI.
 
 **Target scope:** Clean, working prototype. Correctness and clarity take priority over polish.
 
 ---
 
+## Node State Terminology
+
+| Term | Meaning |
+|---|---|
+| **Active / Highlighted** | Passes all enabled filters |
+| **Grayed-out / Inactive** | Fails ≥1 enabled filter |
+| **Selected** | Tooltip is currently open on this node |
+| **Default** | No filters are enabled — all nodes show the neutral default color |
+
+These terms are used consistently throughout this document.
+
+---
+
 ## Interaction Flow
 
-1. **Load** — User drops a `.json` file onto the full-screen drop zone. The file is validated against the versioned schema; errors are shown inline. If a graph is already loaded, a "Load new file" button remains accessible in the top of the left sidebar; clicking it or dropping a new file onto the canvas triggers a confirmation dialog ("Loading a new file will clear the current graph. Continue?"). Confirming stops any running simulation and resets the entire app state. Cancelling keeps the current graph intact.
+1. **Load** — User drops a `.json` file onto the full-screen drop zone. The file is validated against the versioned schema; errors are shown inline. If a graph is already loaded, a "Load new file" button remains accessible in the top of the left sidebar; clicking it or dropping a new file onto the canvas triggers a confirmation dialog ("Loading a new file will clear the current graph. Continue?"). When the simulation is running and a new file is dropped, the simulation is stopped first, then the confirmation dialog is shown. Confirming resets the entire app state. Cancelling keeps the current graph intact.
 
 2. **Simulate** — User presses **Run** in the left sidebar. ForceAtlas2 positions the nodes. The user tunes Gravity/Speed sliders until the layout looks good, then presses **Stop**. Simulation never auto-starts on file load — always manual.
 
@@ -40,7 +55,7 @@
 │        Drop a graph JSON file here                      │
 │        or click to browse                               │
 │                                                         │
-│   [Spinner shown while parsing after drop]              │
+│   [Spinner shown from file drop until first render]     │
 │   [Inline error shown if validation fails]              │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
@@ -300,13 +315,16 @@ Property types are auto-detected from the values present across all nodes (after
 - **Pass condition:** A node passes if its value is one of the selected values.
 - **Default state — few unique values (≤ 50):** All values pre-selected (no filtering). Shows all values as tags with a "Clear all" link.
 - **Default state — many unique values (> 50):** No restriction (no tags). Placeholder text: "Search to filter by specific values." This is functionally equivalent to the filter being disabled.
+- **Empty tag selection (> 50 unique values):** When a string filter with >50 unique values has no tags selected, it is treated as "no restriction" — all nodes pass. An empty selection never causes zero matches.
 - **Empty string display:** A defaulted-from-null string value `""` is displayed in tags and the dropdown as `""` (double-quote notation).
 - **Debounce:** Dropdown search is debounced at **150ms** after the user stops typing.
+- **Tag overflow:** When the tag area contains more tags than can fit in two rows, a **'+N more'** chip is shown. Clicking it expands the tag area to show all tags.
 
 ### Date
 - **Detection:** **100% of non-null values** must be valid ISO 8601 date strings for the property to be classified as `date`. If any non-date value is present, the entire property falls back to `string` type.
 - **Filter UI:** Two date pickers — **after** (inclusive) and **before** (inclusive). Either or both bounds are optional. Placeholder text: "Any date."
 - **Pass condition:** A node passes if its date falls within the selected range. When both bounds are empty, the filter passes all nodes (functionally equivalent to disabled).
+- **Invalid range:** If the 'after' date is set to a value later than the 'before' date, an **inline validation error** is shown below the date fields: *'After date must be earlier than Before date.'* Zero nodes pass until the range is corrected.
 - **Debounce:** Date picker changes debounce at **150ms**.
 
 ### Boolean
@@ -322,7 +340,7 @@ Property types are auto-detected from the values present across all nodes (after
 - All enabled filters combine with **logical AND** — a node must satisfy every enabled filter to be highlighted.
 - A persistent note below the filter list reads: *"Filters combine with AND — nodes must match all enabled filters."*
 - A live **"N nodes match"** count appears at the top of the Filters tab and updates as filters change.
-- A **"Clear all filters"** button at the top of the Filters tab resets all filter controls to their defaults and unchecks all filter enable checkboxes.
+- A **"Clear all filters"** button at the top of the Filters tab unchecks all filter enable checkboxes (disabling all filters) and resets all filter control values to their initial defaults (same state as first page load). This is a full reset, not just a value reset.
 
 ### Node highlight states
 
@@ -348,7 +366,7 @@ When no filters are enabled, all nodes show the **default** color (`#94a3b8`), n
 - Any filter change updates node and edge colors immediately (subject to debounce on continuous controls; see Property Types section).
 - Filter and color changes **never restart the simulation or remount Sigma**. Use `graph.updateEachNodeAttributes()` + `sigma.refresh()` only.
 - Switching between the Filters and Stats tabs does not change node/edge highlight state.
-- **Zero-match empty state:** When all enabled filters produce 0 matching nodes, the canvas remains visible (all nodes grayed out) and a persistent banner is displayed: *"No nodes match the current filters."* with a "Clear all filters" button.
+- **Zero-match empty state:** When all enabled filters produce 0 matching nodes, the canvas remains visible (all nodes grayed out). The banner *"No nodes match the current filters."* with a **"Clear all filters"** button appears **inside the right sidebar, below the 'N nodes match' count** in the Filters tab.
 
 ### Interaction with Color Gradient mode
 
@@ -376,7 +394,7 @@ When a property is selected in the **Color** tab, the color gradient **overrides
 ### Buttons
 
 - **Run** and **Stop** are two separate buttons, always visible. The inactive button is grayed out (Run is grayed while simulating; Stop is grayed while stopped).
-- When the simulation is running, a subtle **"Simulating…"** label with a pulsing indicator appears near the buttons.
+- When the simulation is running, a subtle **"Simulating…"** label with a pulsing indicator appears near the buttons. The pulsing indicator is a small filled circle rendered with a CSS `animate-pulse` animation (opacity cycles between 100% and 40%). No spinner. No blink.
 
 ### Sliders
 
@@ -431,9 +449,11 @@ A dropdown lists all **number-type** properties. When one is selected, statistic
 | P25 | 25th percentile |
 | P75 | 75th percentile |
 
-A **histogram** is shown below the stats, computed over the filtered nodes' values using a **smart variable bucket algorithm** (Sturges' rule or Freedman-Diaconis estimator — not a fixed count). Each histogram bar shows a tooltip on hover with the bucket range and node count (e.g. "23.4 – 31.1: 48 nodes").
+A **histogram** is shown below the stats, computed over the filtered nodes' values using **Sturges' rule (`buckets = ceil(log2(n) + 1)`)**, with a minimum of 3 buckets and a maximum of 20 buckets. Each histogram bar shows a tooltip on hover with the bucket range and node count (e.g. "23.4 – 31.1: 48 nodes"). The histogram has no Y-axis labels. Hovering a bar shows the bucket range and node count. This keeps the histogram compact within the 300px sidebar.
 
 **Scope note:** Stats and histogram cover number properties only in v1. String and date distribution charts are post-MVP.
+
+**Scope when no filters are active:** When no filters are active, stats and the histogram are computed over all nodes (the "no filter" state is treated as "all nodes pass").
 
 ### Behavior
 
@@ -454,6 +474,10 @@ The right sidebar has a third tab: **Color**. It lets the user map a single prop
 
 Available palettes: Viridis, Plasma, Blues, Reds, Rainbow, RdBu (diverging).
 
+### Palette Configuration
+
+Users may add custom colors to any palette via a color picker in the palette selector dropdown. Custom colors are appended to the palette and persist for the session. This allows users to avoid color reuse for high-cardinality string properties.
+
 ### Coloring behavior by property type
 
 | Property type | Gradient behavior |
@@ -461,7 +485,7 @@ Available palettes: Viridis, Plasma, Blues, Reds, Rainbow, RdBu (diverging).
 | **Number** | Continuous gradient mapped linearly across `[min, max]` of the property among active nodes. |
 | **Date** | Same as number — the ISO date string is converted to milliseconds since epoch (`new Date(s).getTime()`) **at display time only** to compute gradient position. Stored values remain ISO strings. |
 | **Boolean** | Binary: `false` nodes get the low-end palette color; `true` nodes get the high-end palette color. |
-| **String** | Each distinct string value is assigned a unique color from the palette. Nodes sharing the same value share the same color. If the number of distinct values exceeds the palette's capacity (typically 8–12 colors), colors are reused with a console warning. |
+| **String** | Each distinct string value is assigned a unique color from the palette. Nodes sharing the same value share the same color. If the number of distinct values exceeds the palette's capacity, colors are assigned using round-robin cycling through the palette — no warning is shown. Users can configure custom palettes (add colors) to avoid color reuse for high-cardinality string properties (see Palette Configuration section above). |
 
 ### Gradient legend
 
@@ -482,12 +506,15 @@ A horizontal gradient bar is displayed beneath the palette selector showing the 
 - If a tooltip is already open, it **instantly repositions** to the newly clicked node (no slide or transition animation).
 - Closes when the user clicks the **× close button**, clicks outside the tooltip, or presses **Escape**. When the tooltip closes, the selected node returns to its normal highlight state.
 - When the tooltip closes via Escape or outside click, focus returns to the canvas.
-- Positioned absolutely over the canvas, clamped to stay within canvas bounds.
+- Positioned to maximise visibility — the tooltip flips horizontally and/or vertically based on available space around the node, always staying within canvas bounds.
+- If the selected node becomes grayed-out while the tooltip is open (due to a filter change), the tooltip closes automatically.
+- Grayed-out nodes cannot be clicked — they do not open a tooltip.
 
 ### Content
 
 - Node's `label` as a heading (or node `id` if no label).
 - Table of all property key/value pairs, alphabetically sorted.
+- Property names that are too long are truncated with an ellipsis (`…`) at the available width. Full name is shown in a browser tooltip (`title` attribute) on hover.
 - Each row shows:
   - **Line 1:** Formatted value (primary text)
   - **Line 2:** Raw value (smaller, muted secondary text)
@@ -524,7 +551,8 @@ The exported file can be re-imported into the app. When re-imported, the saved p
 
 - The button is always visible once a graph is loaded.
 - It is available before the simulation has ever been run (positions will be the random initial coordinates).
-- The downloaded filename is the original loaded filename with `-positioned` appended before the extension (e.g. `my-graph.json` → `my-graph-positioned.json`).
+- When the user clicks **Download Graph**, a filename prompt is shown (pre-filled with the original filename). The user may edit the name before confirming. The file is downloaded with the user-entered name.
+- After a successful download, a brief toast notification is shown: **'Graph downloaded.'**
 
 ---
 
@@ -558,7 +586,7 @@ The exported file can be re-imported into the app. When re-imported, the saved p
 ### Node rendering
 
 - Default node radius: 5px.
-- Node labels appear when the node's rendered radius exceeds **8px** on screen (i.e. when sufficiently zoomed in). No labels are rendered below this threshold.
+- Node labels appear when the node's rendered radius exceeds **8px** on screen — they **fade in smoothly** (CSS opacity transition, ~150ms). No hard-cut pop-in.
 - When filters are active, **highlighted nodes** are rendered at **1.15× the default radius** to reinforce the color difference (accessibility for color vision deficiencies).
 
 ### Sidebar layout
@@ -597,6 +625,26 @@ Each filter panel header shows the property type as a small pill badge (e.g. `nu
 
 After a file is loaded, the filename is shown in small muted text (`#94a3b8`, 12px) in the top-left corner of the canvas. Example: `my-graph.json`.
 
+### Spacing
+
+**Spacing:** All component spacing uses a **4px base unit** (multiples of 4px: 4, 8, 12, 16, 24, 32…). Tailwind CSS's default spacing scale satisfies this.
+
+### Sidebar background
+
+**Sidebar background:** Both sidebars use **`#ffffff`** (white), providing clear separation from the canvas background (`#f8fafc`).
+
+### Z-index layering
+
+**Z-index layering** (top to bottom):
+1. Confirmation modals + blocking modals
+2. Drag-and-drop overlay
+3. Node tooltip
+4. Canvas controls (+/−/fit buttons, filename label)
+
+### Long property names
+
+Long property names are truncated with an ellipsis (`…`) at the available width in filter panel headers. Full name is shown in a browser tooltip (`title` attribute) on hover.
+
 ---
 
 ## Accessibility
@@ -605,9 +653,10 @@ After a file is loaded, the filename is shown in small muted text (`#94a3b8`, 12
 
 - **Escape** closes the open tooltip.
 - **Tab** moves focus through sidebar controls in logical order.
-- Range slider handles respond to **arrow keys** (Left/Right to move by one step; Shift + arrow for larger increments).
+- Range slider handles respond to **arrow keys** (Left/Right to move by 1 unit; Shift + arrow for larger increments).
 - String filter dropdown supports **Up/Down arrow** keys to navigate options, **Enter** to select, **Escape** to close.
 - Boolean toggle responds to **arrow keys** to cycle states.
+- **Keyboard-based node selection** (tabbing to or selecting nodes on the canvas) is explicitly out of scope for v1. The Sigma canvas is a `<canvas>` element with no inherent keyboard node affordance.
 
 ### Screen reader
 
@@ -617,6 +666,10 @@ After a file is loaded, the filename is shown in small muted text (`#94a3b8`, 12
 
 - When a tooltip opens, focus moves into the tooltip.
 - When the tooltip closes, focus returns to the canvas.
+
+### Confirmation dialogs
+
+All confirmation dialogs are **centred modals** with a semi-transparent backdrop (`rgba(0,0,0,0.4)`). They are not popovers or inline messages. Button order: **Cancel** on the left (secondary/ghost style), **confirm action** on the right (primary style).
 
 ### Color accessibility
 
@@ -666,7 +719,7 @@ Performance is a first-class requirement. The app must feel instantaneous at eve
 | Property value not number, string, or boolean | Treat as null (replaced with default), `console.warn` |
 | Date string fails `new Date()` parse | Treat as null (replaced with default), `console.warn` |
 | Sigma mount fails | Catch in `useEffect`, render fallback error |
-| Tooltip positioned off-canvas | Clamp position within canvas bounds |
+| Tooltip positioned off-canvas | Positioned to maximise visibility (flip horizontally/vertically based on available space) |
 
 ### Error state transitions
 
@@ -691,15 +744,15 @@ The Stats tab still shows node/edge counts. The property analysis dropdown is hi
 ## Definition of Done
 
 1. `npm run dev` starts on `http://localhost:5173` with hot reload
-2. Dropping a valid JSON file renders the graph; the drop zone shows a spinner while parsing
+2. Dropping a valid JSON file renders the graph; a spinner is shown from the moment a file is dropped until the first render frame is complete (covers JSON parsing, schema validation, graph build, and initial render)
 3. If any null property values were replaced with defaults, a blocking modal appears with the total replacement count; user may cancel (keeping current graph) or confirm (graph loads with defaults)
 4. If no null values exist, the null-default modal does not appear
 5. Dropping a file while a previous graph is loaded shows a confirmation dialog; cancelling keeps the current graph intact
-6. Dropping a file while the simulation is running stops the simulation before resetting state
-7. Node labels appear when zoomed in past the 8px radius threshold
+6. When the simulation is running and a new file is dropped, the simulation is stopped first, then the confirmation dialog is shown; on confirm, app state is reset
+7. Node labels appear when zoomed in past the 8px radius threshold, fading in smoothly (~150ms CSS opacity transition)
 8. Canvas supports zoom (scroll/double-click), pan (drag), and on-screen +/−/fit buttons
 9. On file load and after Randomize Layout, the camera fits to graph
-10. Run and Stop are two separate buttons; the inactive one is grayed out; a "Simulating…" indicator appears when simulation is running
+10. Run and Stop are two separate buttons; the inactive one is grayed out; a "Simulating…" indicator with a CSS `animate-pulse` filled dot appears when simulation is running
 11. Gravity and Speed sliders affect simulation in real time (stop → update → start)
 12. Randomize Layout re-randomizes positions, restarts the simulation, and fits camera to graph
 13. Graphs with more than 10,000 nodes prompt a confirmation dialog before simulation starts
@@ -707,40 +760,43 @@ The Stats tab still shows node/edge counts. The property analysis dropdown is hi
 15. Each property in the Filters tab shows the correct filter control (slider / multi-select / date pickers / boolean toggle) with a type badge
 16. Each filter has an enable/disable checkbox; disabled filter controls are dimmed and inert
 17. A live "N nodes match" count appears at the top of the Filters tab and updates as filters change
-18. A "Clear all filters" button at the top of the Filters tab resets all filter controls and unchecks all checkboxes
+18. A "Clear all filters" button at the top of the Filters tab unchecks all filter enable checkboxes and resets all filter controls to their initial defaults (full reset to first-page-load state)
 19. Each filter panel is collapsible via a chevron icon; the collapsed header shows the property name, type badge, and checkbox (all interactive)
 20. When no filters are active, nodes show the neutral default color (`#94a3b8`); when filters are active, nodes passing all filters are highlighted (`#93c5fd`) and others are grayed out (`#e2e8f0`)
-21. When 0 nodes pass the active filters, a "No nodes match the current filters" banner appears with a "Clear all filters" button
+21. When 0 nodes pass the active filters, a "No nodes match the current filters" banner with a "Clear all filters" button appears inside the right sidebar below the "N nodes match" count in the Filters tab; the canvas remains visible with all nodes grayed out
 22. Edges connecting to a grayed-out node are also grayed out
 23. Highlighted nodes are rendered at 1.15× the default radius
 24. Switching between Filters and Stats tabs does not change node/edge highlight state
 25. Stats tab always shows total node count and filtered node count
-26. Selecting a number property in the Stats tab shows min, max, average, median, P25, P75 and a histogram — computed over filtered nodes only
-27. Stats and histogram update live as filters change; hovering a histogram bar shows a tooltip with the bucket range and count
-28. Clicking a node opens a tooltip; the node gains a selected visual state (blue ring)
-29. The tooltip shows formatted property values with raw values as smaller secondary lines beneath each row
-30. The tooltip has a close button (×); clicking it closes the tooltip and clears the selected node state
-31. Clicking a second node instantly repositions the tooltip to that node
-32. Clicking outside the tooltip or pressing Escape closes the tooltip
-33. Invalid files show a readable inline error; the previously loaded graph remains visible; the drop zone re-enables immediately
-34. If the loaded graph has no properties, the Filters tab shows "No properties."
-35. The canvas accepts file drops after initial load; dragging a file over the window shows a "Drop to load new graph" overlay
-36. A "Load new file" button is visible in the top of the left sidebar once a graph is loaded
-37. The filename is displayed in muted text on the canvas after file load
-38. If a loaded file contains `x` and `y` on all nodes, those positions are used on render and no random layout is applied
-39. If a loaded file contains `x` and `y` on some nodes, positioned nodes use their coordinates and unpositioned nodes are placed randomly near the graph centroid
-40. The Color tab property selector lists all properties; selecting one applies a gradient to active nodes; grayed-out nodes remain `#e2e8f0`
-41. The Color tab palette selector changes the color scheme applied to active nodes
-42. The gradient legend updates to show the correct color ramp and min/max (or discrete chips for boolean/string) for the selected property
-43. The gradient updates live when filters change or a new property/palette is selected
-44. Switching tabs (Filters, Stats, Color) does not clear the gradient — it persists until the user clears the property selection
-45. The "↓ Download Graph" button exports a valid schema-version-"1" JSON file with `x` and `y` added to each node
-46. Re-importing an exported file restores the node positions exactly
-47. App does not crash or freeze on 50,000 nodes
-48. `npm run test` green
-49. `npm run test:e2e` green
-50. `npm run lint` exits with zero errors
-51. All exported symbols have JSDoc
+26. Selecting a number property in the Stats tab shows min, max, average, median, P25, P75 and a histogram — computed over filtered nodes only (or all nodes when no filters are active)
+27. Histogram uses Sturges' rule (min 3, max 20 buckets); hovering a histogram bar shows a tooltip with the bucket range and count; no Y-axis labels are shown
+28. Stats and histogram update live as filters change
+29. Clicking a node opens a tooltip; the node gains a selected visual state (blue ring)
+30. If the selected node becomes grayed-out due to a filter change, the tooltip closes automatically; grayed-out nodes cannot be clicked to open a tooltip
+31. The tooltip shows formatted property values with raw values as smaller secondary lines beneath each row; long property names are truncated with ellipsis and show full name on hover
+32. The tooltip has a close button (×); clicking it closes the tooltip and clears the selected node state
+33. Clicking a second node instantly repositions the tooltip to that node
+34. Clicking outside the tooltip or pressing Escape closes the tooltip
+35. Invalid files show a readable inline error; the previously loaded graph remains visible; the drop zone re-enables immediately
+36. If the loaded graph has no properties, the Filters tab shows "No properties."
+37. The canvas accepts file drops after initial load; dragging a file over the window shows a "Drop to load new graph" overlay
+38. A "Load new file" button is visible in the top of the left sidebar once a graph is loaded
+39. The filename is displayed in muted text on the canvas after file load
+40. If a loaded file contains `x` and `y` on all nodes, those positions are used on render and no random layout is applied
+41. If a loaded file contains `x` and `y` on some nodes, positioned nodes use their coordinates and unpositioned nodes are placed randomly near the graph centroid
+42. The Color tab property selector lists all properties; selecting one applies a gradient to active nodes; grayed-out nodes remain `#e2e8f0`
+43. The Color tab palette selector changes the color scheme applied to active nodes; users can add custom colors via a color picker in the palette selector dropdown
+44. String color overflow uses round-robin cycling through the palette (no warning shown)
+45. The gradient legend updates to show the correct color ramp and min/max (or discrete chips for boolean/string) for the selected property
+46. The gradient updates live when filters change or a new property/palette is selected
+47. Switching tabs (Filters, Stats, Color) does not clear the gradient — it persists until the user clears the property selection
+48. Clicking **Download Graph** shows a filename prompt pre-filled with the original filename; the file is downloaded with the user-entered name; a toast notification **'Graph downloaded.'** is shown on success
+49. Re-importing an exported file restores the node positions exactly
+50. App does not crash or freeze on 50,000 nodes
+51. `npm run test` green
+52. `npm run test:e2e` green
+53. `npm run lint` exits with zero errors
+54. All exported symbols have JSDoc
 
 ---
 

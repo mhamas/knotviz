@@ -149,17 +149,14 @@ These terms are used consistently throughout this document.
 │ Alice                           │
 │ ─────────────────────────────   │
 │ age      34                     │
-│          34             ← raw   │
 │ score    91.50                  │
-│          91.5           ← raw   │
 │ joined   2021-03-15 · 1,423d ago│
 │          2021-03-15     ← raw   │
 │ active   true                   │
-│          true           ← raw   │
 └─────────────────────────────────┘
 ```
 
-Raw values appear as a smaller secondary line beneath each formatted value.
+Only **date** properties show a raw second line (the original ISO string, smaller and muted). Numbers, strings, and booleans show a single formatted line. The dual-line pattern for non-date types is post-MVP.
 
 ---
 
@@ -189,6 +186,10 @@ Small button group overlaid on the canvas, bottom-right corner:
 On file load, the camera **fits to graph** — all nodes are shown in view. The user zooms in from there.
 
 When **Randomize Layout** is triggered, the camera fits to graph again after randomizing positions.
+
+### Canvas resize
+
+Sigma's `resize()` method is called on `window` resize events, debounced at **100ms**. If a sidebar layout change affects the canvas container dimensions, `resize()` is also called after the layout change completes. This ensures the WebGL viewport stays correctly aligned with the container.
 
 ### Rotation
 
@@ -258,6 +259,21 @@ All nodes should have the same property keys. Property keys are ordered **alphab
 
 ---
 
+## Data Loading Pipeline
+
+When a file is dropped or loaded, the following pipeline runs in order. Each step has a single responsibility:
+
+| Step | Function | Responsibility |
+|---|---|---|
+| 1 | `parseJSON` | Parse raw file text into a JavaScript object. Throws on invalid JSON. |
+| 2 | `validateGraph` | Validate the parsed object against the versioned JSON schema. Throws on schema errors. Version-dispatch-aware: routes to the correct validator for the schema version field. |
+| 3 | `applyNullDefaults` | Detect missing property values across all nodes, replace with type defaults, return the count of replacements. |
+| 4 | `buildGraph` | Convert the validated, normalized input object into a Graphology graph instance. Assigns node positions (position-aware loading logic lives here). |
+
+Steps 1–4 all run before any UI modal is shown and before the graph is rendered. If the user cancels the null-default modal (step 3 triggered replacements), the in-memory graph from step 4 is discarded.
+
+---
+
 ## Null-Default Handling
 
 When a file is loaded, **missing property values are replaced with type defaults**:
@@ -276,8 +292,10 @@ If **any** property values were replaced with defaults, a **blocking modal** is 
 >
 > [Cancel] [Load anyway]
 
-- **Cancel** — closes the modal; the previously loaded graph (if any) remains visible and intact. Nothing is reset.
+- **Cancel** — closes the modal; the new graph object (already constructed in memory) is discarded. The previously loaded graph remains visible and intact. Nothing is reset.
 - **Load anyway** — proceeds with defaults applied; the graph renders normally.
+
+**Implementation note:** The full data pipeline (`parseJSON → validateGraph → applyNullDefaults → buildGraph`) runs before the modal is shown. The modal is a confirmation gate, not a deferred execution trigger. On Cancel, the in-memory graph object is released; on Load anyway, it is passed to the renderer.
 
 If no null values exist in the file, the modal does not appear.
 
@@ -290,7 +308,7 @@ When a loaded file contains `x` and `y` fields on nodes, those positions are use
 | Scenario | Behaviour |
 |---|---|
 | All nodes have `x` and `y` | Positions are used as-is. Camera fits to graph. Simulation does not auto-start. |
-| Some nodes have `x` and `y`, some do not | Nodes with positions are placed at those coordinates. Nodes without positions are placed randomly in the neighbourhood of the graph centroid. |
+| Some nodes have `x` and `y`, some do not | Positions are **ignored entirely** — all nodes are placed randomly (same as no-position case). A non-blocking warning is shown inline: *"Some nodes have positions and some do not — positions ignored. Run the simulation to generate a layout."* |
 | No nodes have `x` or `y` | All nodes are placed randomly (standard behaviour). |
 
 - The simulation is **never** auto-started regardless of whether positions are present. The user always presses Run manually.
@@ -312,10 +330,10 @@ Property types are auto-detected from the values present across all nodes (after
 ### String
 - **Detection:** Values are strings that do not qualify as date type (see below).
 - **Filter UI:** A text search input with prefix matching. As the user types, a dropdown shows up to 10 matching distinct values with already-selected values marked with a checkmark (✓). The user selects values to include; selected values appear as removable tags above the input.
-- **Pass condition:** A node passes if its value is one of the selected values.
+- **Pass condition:** A node passes if its value is one of the selected values. When no tags are selected, the filter passes all nodes (no restriction) — see empty tag rule below.
 - **Default state — few unique values (≤ 50):** All values pre-selected (no filtering). Shows all values as tags with a "Clear all" link.
 - **Default state — many unique values (> 50):** No restriction (no tags). Placeholder text: "Search to filter by specific values." This is functionally equivalent to the filter being disabled.
-- **Empty tag selection (> 50 unique values):** When a string filter with >50 unique values has no tags selected, it is treated as "no restriction" — all nodes pass. An empty selection never causes zero matches.
+- **Empty tag selection (any cardinality):** When a string filter has no tags selected, it is treated as "no restriction" — all nodes pass. This applies regardless of whether the property has ≤50 or >50 unique values. An empty selection never causes zero matches. The filter panel shows hint text: *"All values included."* The enable/disable checkbox is the correct mechanism for intentionally deactivating a filter.
 - **Empty string display:** A defaulted-from-null string value `""` is displayed in tags and the dropdown as `""` (double-quote notation).
 - **Debounce:** Dropdown search is debounced at **150ms** after the user stops typing.
 - **Tag overflow:** When the tag area contains more tags than can fit in two rows, a **'+N more'** chip is shown. Clicking it expands the tag area to show all tags.
@@ -338,8 +356,8 @@ Property types are auto-detected from the values present across all nodes (after
 
 - Each filter panel has an **enable/disable checkbox**. When unchecked, the filter is ignored entirely and its controls are dimmed (50% opacity, pointer-events disabled).
 - All enabled filters combine with **logical AND** — a node must satisfy every enabled filter to be highlighted.
-- A persistent note below the filter list reads: *"Filters combine with AND — nodes must match all enabled filters."*
 - A live **"N nodes match"** count appears at the top of the Filters tab and updates as filters change.
+- Immediately below the "N nodes match" count, a persistent note reads: *"Filters combine with AND — nodes must match all enabled filters."* This note is pinned above the scrollable filter list so it remains visible regardless of how many filter panels are present.
 - A **"Clear all filters"** button at the top of the Filters tab unchecks all filter enable checkboxes (disabling all filters) and resets all filter control values to their initial defaults (same state as first page load). This is a full reset, not just a value reset.
 
 ### Node highlight states
@@ -403,12 +421,21 @@ When a property is selected in the **Color** tab, the color gradient **overrides
 | Gravity | FA2 `gravity` | 1.0 | 0.1 – 10.0 | Log |
 | Speed | FA2 `scalingRatio` | 1.0 | 0.1 – 10.0 | Log |
 
-Slider changes take effect immediately on the running simulation: `stop()` → update settings → `start()`.
+Slider changes take effect on the running simulation with a **150ms debounce** — the stop/restart cycle fires 150ms after the user stops moving the handle. This prevents rapid slider drags from issuing multiple stop/start calls before the worker has finished stopping. The cycle is: debounce expires → `stop()` → wait for worker confirmation → update settings → `start()`.
 
 ### Randomize Layout button
 
 - Label: **"↺ Randomize Layout"** (not "Reset" — "Randomize Layout" accurately describes the action).
-- Action: `stop()` → randomize all node positions → `start()` → fit camera to graph.
+- Action: `stop()` → randomize all node positions → fit camera to graph → restart simulation only if it was running before the click.
+- **Preserves prior simulation state:** if the simulation was stopped when Randomize was clicked, it remains stopped after randomization. If it was running, it restarts.
+
+### Worker error handling
+
+If the FA2 Web Worker throws an error mid-simulation:
+- The simulation stops.
+- An inline error message appears near the Run/Stop buttons: *"Simulation failed — reload file to continue."*
+- The error is logged via `console.error` with the full error details.
+- The Run button remains available so the user can attempt to restart.
 
 ### Large-graph warning
 
@@ -497,6 +524,7 @@ A horizontal gradient bar is displayed beneath the palette selector showing the 
 - The gradient updates live when filters change (active node set changes) or when a new property or palette is selected.
 - When no property is selected, the Color tab shows: *"Select a property to visualise node colors."*
 - If the selected property has no values among active nodes, the gradient is not rendered and the message "No data for selected property" is shown.
+- **Identical values (min === max):** When all active nodes share the same value for the selected numeric or date property, gradient normalization cannot be applied. All active nodes receive the palette's midpoint color (t = 0.5). The Color tab shows an informational note: *"All nodes have the same value — uniform color applied."*
 
 ---
 
@@ -515,21 +543,15 @@ A horizontal gradient bar is displayed beneath the palette selector showing the 
 - Node's `label` as a heading (or node `id` if no label).
 - Table of all property key/value pairs, alphabetically sorted.
 - Property names that are too long are truncated with an ellipsis (`…`) at the available width. Full name is shown in a browser tooltip (`title` attribute) on hover.
-- Each row shows:
-  - **Line 1:** Formatted value (primary text)
-  - **Line 2:** Raw value (smaller, muted secondary text)
+- Each row shows a single formatted value, except for dates which show two lines (see below).
 
 **Formatted values:**
 - Numbers: rounded to 2 decimal places (e.g. `91.50`)
-- Dates: `"2021-03-15 · 1,423 days ago"`
+- Dates: two lines — **Line 1:** `"2021-03-15 · 1,423 days ago"` · **Line 2:** original ISO string (`2021-03-15`, smaller, muted)
 - Strings: shown as-is
 - Booleans: `true` / `false`
 
-**Raw values** (second line):
-- Numbers: full-precision original (e.g. `91.5`)
-- Dates: original ISO string (e.g. `2021-03-15`)
-- Strings: identical to formatted
-- Booleans: identical to formatted
+**Note:** The dual-line formatted/raw pattern for numbers, strings, and booleans is **post-MVP**. In v1, only date properties show a second raw line.
 
 ---
 
@@ -682,6 +704,10 @@ All confirmation dialogs are **centred modals** with a semi-transparent backdrop
 
 Performance is a first-class requirement. The app must feel instantaneous at every interaction — sluggishness is a bug.
 
+### Reference hardware
+
+All performance targets are specified for: **Apple Silicon MacBook Pro (M-series, 14" or 16"), Chrome, 16GB RAM**.
+
 ### Targets
 
 | Scenario | Target |
@@ -718,8 +744,15 @@ Performance is a first-class requirement. The app must feel instantaneous at eve
 | Empty graph (0 nodes) | "Graph has no nodes to display" |
 | Property value not number, string, or boolean | Treat as null (replaced with default), `console.warn` |
 | Date string fails `new Date()` parse | Treat as null (replaced with default), `console.warn` |
-| Sigma mount fails | Catch in `useEffect`, render fallback error |
+| Sigma mount fails (async) | Catch in `useEffect`, render fallback error |
+| Sigma mount fails (sync, e.g. WebGL unavailable) | Caught by React Error Boundary wrapping `GraphView`; renders fallback UI |
 | Tooltip positioned off-canvas | Positioned to maximise visibility (flip horizontally/vertically based on available space) |
+
+### React Error Boundary
+
+A React Error Boundary component wraps `GraphView`. It catches synchronous render and mount errors (e.g. WebGL context unavailability) that would otherwise propagate uncaught and produce a blank screen. The fallback UI displays: *"Graph failed to render. Check browser console for details."*
+
+`useEffect`-based async error handling remains in place for async Sigma initialization failures. The two mechanisms are complementary.
 
 ### Error state transitions
 
@@ -797,6 +830,7 @@ The Stats tab still shows node/edge counts. The property analysis dropdown is hi
 52. `npm run test:e2e` green
 53. `npm run lint` exits with zero errors
 54. All exported symbols have JSDoc
+55. A dedicated E2E test covers the full export → re-import round-trip: export a graph, reload it, and verify that node positions and all properties are restored exactly (schema-valid, no data loss)
 
 ---
 

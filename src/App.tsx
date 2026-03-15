@@ -2,6 +2,8 @@ import { useState } from 'react'
 import type Graph from 'graphology'
 import type { GraphData, PositionMode } from './types'
 import { DropZone } from './components/DropZone'
+import { GraphView } from './components/GraphView'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
 interface LoadedData {
   data: GraphData
@@ -29,14 +31,16 @@ function App(): React.JSX.Element {
     )
   }
 
-  // GraphView will be added in Task 07
   return (
-    <div className="flex h-screen items-center justify-center">
-      <p className="text-slate-600">
-        Graph loaded: {loadedData.filename} ({loadedData.graph.order} nodes,{' '}
-        {loadedData.graph.size} edges)
-      </p>
-    </div>
+    <ErrorBoundary>
+      <GraphView
+        graphData={loadedData.data}
+        graph={loadedData.graph}
+        positionMode={loadedData.positionMode}
+        filename={loadedData.filename}
+        onLoadNewFile={(): void => setLoadedData(null)}
+      />
+    </ErrorBoundary>
   )
 }
 

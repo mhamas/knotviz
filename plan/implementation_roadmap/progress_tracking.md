@@ -16,8 +16,9 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 - [x] 08 — Canvas Controls
 - [x] 08b — Canvas Rotation
 - [x] 09 — Left Sidebar Shell
-- [ ] 10 — FA2 + Debounce Hooks
-- [ ] 11 — Simulation UI
+- [x] 10 — FA2 + Debounce Hooks
+- [x] 11 — Simulation UI
+- [ ] 11b — Display Controls
 - [ ] 12 — Position-Aware Loading
 - [ ] 13 — File Management
 - [ ] 14 — Node Tooltip
@@ -53,4 +54,4 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 
 ## Next task
 
-**10 — FA2 + Debounce Hooks** (prereq: 05 ✓)
+**12 — Position-Aware Loading** (prereq: 05 ✓)

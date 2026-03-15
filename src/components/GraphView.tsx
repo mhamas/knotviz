@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Sigma from 'sigma'
 import type Graph from 'graphology'
 import type { GraphData, PositionMode, TooltipState } from '../types'
+import type { SimulationSettings } from '../hooks/useFA2Simulation'
+import { useFA2Simulation } from '../hooks/useFA2Simulation'
 import { FilenameLabel } from './FilenameLabel'
 import { CanvasControls } from './CanvasControls'
 import { LeftSidebar } from './LeftSidebar'
@@ -31,6 +33,12 @@ export function GraphView({
   const tooltipStateRef = useRef<TooltipState | null>(null)
 
   const [tooltipState, setTooltipState] = useState<TooltipState | null>(null)
+  const [simulationSettings, setSimulationSettings] = useState<SimulationSettings>({
+    gravity: 1,
+    speed: 1,
+  })
+
+  const simulation = useFA2Simulation(graph, simulationSettings)
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -140,8 +148,17 @@ export function GraphView({
   return (
     <div className="flex h-screen w-screen">
       <LeftSidebar
+        isRunning={simulation.isRunning}
+        simulationError={simulation.errorMessage}
+        gravity={simulationSettings.gravity}
+        speed={simulationSettings.speed}
         nodeCount={graph.order}
         edgeCount={graph.size}
+        onRun={simulation.start}
+        onStop={simulation.stop}
+        onGravityChange={(v): void => setSimulationSettings((s) => ({ ...s, gravity: v }))}
+        onSpeedChange={(v): void => setSimulationSettings((s) => ({ ...s, speed: v }))}
+        onRandomizeLayout={simulation.randomizeLayout}
         onLoadNewFile={onLoadNewFile}
       />
       <div className="relative flex-1">

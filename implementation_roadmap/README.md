@@ -70,6 +70,16 @@
 
 ---
 
+## Deployment
+
+| Task | Title | Size | Key deliverable |
+|---|---|---|---|
+| [29](./29-netlify-deployment.md) | Netlify Deployment | S | Auto-deploy on push to `main`; PR preview URLs |
+
+Can be set up after Task 01 (scaffold) to get continuous staging from the start.
+
+---
+
 ## Task dependency graph
 
 ```

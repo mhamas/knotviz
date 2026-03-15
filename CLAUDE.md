@@ -62,6 +62,34 @@ grapphy/
 
 ---
 
+## Verification (MANDATORY)
+
+After every implementation change, you MUST run `npm run verify` before considering the work done. This runs typecheck + lint + unit tests in sequence. All three must pass with zero errors.
+
+```bash
+npm run verify    # tsc --noEmit && eslint src && vitest run
+```
+
+Individual commands if needed:
+- `npm run typecheck` — TypeScript type checking (strict mode)
+- `npm run lint` — ESLint (warnings from `src/components/ui/` are excluded)
+- `npm run test` — Vitest unit tests
+- `npm run build` — Full production build (typecheck + Vite bundle)
+
+### Visual verification with Playwright MCP
+
+When implementing UI components or making visual changes, use the Playwright MCP tools to verify the rendered output in a real browser. This closes the feedback loop without manual checking.
+
+Workflow:
+1. Start the dev server (`npm run dev`) if not already running
+2. Use `browser_navigate` to open `http://localhost:5173`
+3. Use `browser_snapshot` to inspect the DOM and verify component rendering
+4. After code changes, navigate again to refresh and re-check
+
+Use this for: layout issues, component visibility, drag-and-drop flows, tooltip positioning, filter UI state, canvas rendering. Do NOT rely solely on unit tests for UI correctness.
+
+---
+
 ## Key Patterns
 
 - **FA2 simulation** runs in a Web Worker (`graphology-layout-forceatlas2/worker`) to keep the UI thread free. Slider changes: `stop()` → update settings → `start()`. Reset: `stop()` → randomize positions → `start()`.

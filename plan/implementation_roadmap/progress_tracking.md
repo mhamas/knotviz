@@ -14,6 +14,7 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 - [x] 06 — Drop Zone
 - [x] 07 — Sigma Canvas
 - [ ] 08 — Canvas Controls
+- [ ] 08b — Canvas Rotation
 - [ ] 09 — Left Sidebar Shell
 - [ ] 10 — FA2 + Debounce Hooks
 - [ ] 11 — Simulation UI

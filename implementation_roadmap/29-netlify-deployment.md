@@ -1,6 +1,6 @@
 # Task 29: Netlify Deployment
 
-**Release:** Post-R4 (or after R1 for continuous staging)
+**Release:** Post-R4
 **Size:** S
 **Prerequisites:** Task 01
 

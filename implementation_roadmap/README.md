@@ -76,7 +76,7 @@
 |---|---|---|---|
 | [29](./29-netlify-deployment.md) | Netlify Deployment | S | Auto-deploy on push to `main`; PR preview URLs |
 
-Can be set up after Task 01 (scaffold) to get continuous staging from the start.
+Done last, after Task 28 (ColorTab). Implement locally throughout development.
 
 ---
 

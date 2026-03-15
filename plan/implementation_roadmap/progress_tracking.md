@@ -8,7 +8,7 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 
 - [x] 01 — Project Scaffold
 - [x] 02 — Type Definitions
-- [ ] 03 — Parse + Validate
+- [x] 03 — Parse + Validate
 - [ ] 04 — Null Defaults
 - [ ] 05 — Build Graph
 - [ ] 06 — Drop Zone
@@ -52,4 +52,4 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 
 ## Next task
 
-**03 — Parse + Validate** (prereq: 02 ✓)
+**04 — Null Defaults** (prereq: 03 ✓)

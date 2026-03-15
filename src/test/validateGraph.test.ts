@@ -1,0 +1,119 @@
+import { describe, it, expect, vi } from 'vitest'
+import { parseJSON } from '../lib/parseJSON'
+import { validateGraph } from '../lib/validateGraph'
+
+describe('parseJSON', () => {
+  it('parses valid JSON string', () => {
+    const result = parseJSON('{"version":"1","nodes":[],"edges":[]}')
+    expect(result).toEqual({ version: '1', nodes: [], edges: [] })
+  })
+
+  it('throws "Invalid JSON file" on invalid JSON', () => {
+    expect(() => parseJSON('not json')).toThrow('Invalid JSON file')
+  })
+})
+
+describe('validateGraph', () => {
+  const validInput = {
+    version: '1',
+    nodes: [
+      { id: '1', label: 'Alice', properties: { age: 34, active: true, name: 'Alice' } },
+      { id: '2', label: 'Bob' },
+    ],
+    edges: [{ source: '1', target: '2' }],
+  }
+
+  it('returns typed GraphData for valid input', () => {
+    const result = validateGraph(validInput)
+    expect(result.version).toBe('1')
+    expect(result.nodes).toHaveLength(2)
+    expect(result.edges).toHaveLength(1)
+    expect(result.nodes[0].properties).toEqual({ age: 34, active: true, name: 'Alice' })
+  })
+
+  it('throws "Unsupported schema version" when version is missing', () => {
+    expect(() => validateGraph({ nodes: [], edges: [] })).toThrow('Unsupported schema version')
+  })
+
+  it('throws "Unsupported schema version" for version "2"', () => {
+    expect(() => validateGraph({ version: '2', nodes: [], edges: [] })).toThrow(
+      'Unsupported schema version'
+    )
+  })
+
+  it('throws "File must contain nodes and edges arrays" when nodes is missing', () => {
+    expect(() => validateGraph({ version: '1', edges: [] })).toThrow(
+      'File must contain nodes and edges arrays'
+    )
+  })
+
+  it('throws "File must contain nodes and edges arrays" when edges is missing', () => {
+    expect(() => validateGraph({ version: '1', nodes: [] })).toThrow(
+      'File must contain nodes and edges arrays'
+    )
+  })
+
+  it('throws "File must contain nodes and edges arrays" when nodes is not an array', () => {
+    expect(() => validateGraph({ version: '1', nodes: 'not array', edges: [] })).toThrow(
+      'File must contain nodes and edges arrays'
+    )
+  })
+
+  it('throws "Graph has no nodes to display" when all nodes are invalid', () => {
+    expect(() =>
+      validateGraph({ version: '1', nodes: [{ noId: true }], edges: [] })
+    ).toThrow('Graph has no nodes to display')
+  })
+
+  it('throws "Graph has no nodes to display" for empty nodes array', () => {
+    expect(() => validateGraph({ version: '1', nodes: [], edges: [] })).toThrow(
+      'Graph has no nodes to display'
+    )
+  })
+
+  it('skips node without id and warns', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const result = validateGraph({
+      version: '1',
+      nodes: [{ id: '1' }, { noId: true }],
+      edges: [],
+    })
+    expect(result.nodes).toHaveLength(1)
+    expect(result.nodes[0].id).toBe('1')
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
+  it('skips edge referencing unknown node and warns', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const result = validateGraph({
+      version: '1',
+      nodes: [{ id: '1' }],
+      edges: [{ source: '1', target: '999' }],
+    })
+    expect(result.edges).toHaveLength(0)
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
+  it('accepts nodes with number, string, and boolean properties', () => {
+    const result = validateGraph({
+      version: '1',
+      nodes: [{ id: '1', properties: { age: 34, active: true, name: 'Alice' } }],
+      edges: [],
+    })
+    expect(result.nodes[0].properties).toEqual({ age: 34, active: true, name: 'Alice' })
+  })
+
+  it('skips property values of unsupported type with console.warn', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const result = validateGraph({
+      version: '1',
+      nodes: [{ id: '1', properties: { nested: { a: 1 }, valid: 42 } }],
+      edges: [],
+    })
+    expect(result.nodes[0].properties).toEqual({ valid: 42 })
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+  })
+})

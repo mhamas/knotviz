@@ -90,6 +90,20 @@ Use this for: layout issues, component visibility, drag-and-drop flows, tooltip 
 
 ---
 
+## Task Workflow
+
+Progress is tracked in `plan/implementation_roadmap/progress_tracking.md`. Before starting work, read that file to find the next task. After completing a task:
+
+1. Run `npm run verify` — must pass with zero errors.
+2. If the task adds UI, use Playwright MCP to visually verify the rendered output.
+3. If the task warrants user testing (UI changes, new interactions), tell the user what to test and how (e.g. "run `npm run dev` and try dragging a JSON file onto the drop zone").
+4. Mark the task `[x]` in `progress_tracking.md` and update the "Next task" line.
+5. Commit and push.
+
+Status markers: `[x]` done, `[ ]` not started, `[>]` in progress.
+
+---
+
 ## Key Patterns
 
 - **FA2 simulation** runs in a Web Worker (`graphology-layout-forceatlas2/worker`) to keep the UI thread free. Slider changes: `stop()` → update settings → `start()`. Reset: `stop()` → randomize positions → `start()`.

@@ -11,7 +11,7 @@ A working Vite + React + TypeScript project with Tailwind CSS, shadcn/ui, Vitest
 ## Deliverables
 
 ### Files to create
-- `graph-viz/` — full project scaffold
+- project root (`grapphy/`) — full project scaffold
 - `vite.config.ts` — with Vitest config (`globals: true`, `environment: jsdom`, `setupFiles`)
 - `tailwind.config.js` — content paths: `./index.html`, `./src/**/*.{ts,tsx}`
 - `playwright.config.ts` — baseURL `http://localhost:5173`, Chromium + Firefox, `webServer` block
@@ -26,8 +26,7 @@ A working Vite + React + TypeScript project with Tailwind CSS, shadcn/ui, Vitest
 
 ### npm install commands (exact)
 ```bash
-npm create vite@latest graph-viz -- --template react-ts
-cd graph-viz
+npm create vite@latest . -- --template react-ts
 npm install sigma graphology graphology-layout-forceatlas2 graphology-layout-random graphology-types
 npm install -D tailwindcss postcss autoprefixer
 npx tailwindcss init -p

@@ -34,8 +34,7 @@ Build order follows the roadmap: **R1 Core Viewer → R2 Filter System → R3 St
 ### 1. Scaffold
 
 ```bash
-npm create vite@latest graph-viz -- --template react-ts
-cd graph-viz
+npm create vite@latest . -- --template react-ts
 npm install sigma graphology graphology-layout-forceatlas2 graphology-layout-random graphology-types
 npm install -D tailwindcss postcss autoprefixer
 npx tailwindcss init -p
@@ -143,7 +142,7 @@ module.exports = {
 ## File Structure
 
 ```
-graph-viz/
+grapphy/
 ├── e2e/
 │   ├── fixtures/
 │   │   ├── sample-graph.json

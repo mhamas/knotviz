@@ -65,6 +65,30 @@ export function GraphView({
     }
   }, [graph])
 
+  // Shift+wheel rotation handler
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const handleWheel = (e: WheelEvent): void => {
+      if (!e.shiftKey || !sigmaRef.current) return
+      // On Mac, Shift+scroll swaps deltaY into deltaX
+      const rawDelta = e.deltaY || e.deltaX
+      if (!rawDelta) return
+      e.preventDefault()
+      e.stopPropagation()
+      const camera = sigmaRef.current.getCamera()
+      // Apply angle directly for smooth continuous rotation
+      const sensitivity = 0.003
+      camera.setState({ angle: camera.angle + rawDelta * sensitivity })
+    }
+
+    container.addEventListener('wheel', handleWheel, { passive: false, capture: true })
+    return (): void => {
+      container.removeEventListener('wheel', handleWheel, { capture: true })
+    }
+  }, [])
+
   // Canvas resize handler
   useEffect(() => {
     const sigma = sigmaRef.current
@@ -94,7 +118,21 @@ export function GraphView({
   }, [])
 
   const handleFit = useCallback((): void => {
-    sigmaRef.current?.getCamera().animatedReset({ duration: 200 })
+    const camera = sigmaRef.current?.getCamera()
+    if (!camera) return
+    camera.animate({ x: 0.5, y: 0.5, ratio: 1, angle: 0 }, { duration: 200 })
+  }, [])
+
+  const handleRotateCW = useCallback((): void => {
+    const camera = sigmaRef.current?.getCamera()
+    if (!camera) return
+    camera.animate({ angle: camera.angle + Math.PI / 12 }, { duration: 200 })
+  }, [])
+
+  const handleRotateCCW = useCallback((): void => {
+    const camera = sigmaRef.current?.getCamera()
+    if (!camera) return
+    camera.animate({ angle: camera.angle - Math.PI / 12 }, { duration: 200 })
   }, [])
 
   return (
@@ -111,6 +149,8 @@ export function GraphView({
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
           onFit={handleFit}
+          onRotateCW={handleRotateCW}
+          onRotateCCW={handleRotateCCW}
         />
       </div>
     </div>

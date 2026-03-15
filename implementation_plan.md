@@ -2,394 +2,51 @@
 
 ---
 
-## UI Design System
+## Overview
 
-Use **shadcn/ui** as the component library throughout the app.
+Single-page React + TypeScript app. Drag-and-drop a JSON graph file → visualise it with Sigma.js + Graphology → run ForceAtlas2 simulation → filter, inspect, colour, export.
 
-- Built on **Radix UI** primitives (accessible, unstyled, battle-tested)
-- Styled with **Tailwind CSS** — consistent with the existing stack
-- Excellent documentation: https://ui.shadcn.com
-- Not a dependency in the traditional sense — components are copied into `src/components/ui/` and owned by the project, so there's no black-box library to fight
-- Widely adopted, stable, no experimental risk
+This document is the **how to build it** companion to `product_specification.md` (the **what to build** source of truth). When the two disagree, the spec wins.
 
-### Installation
+Build order follows the roadmap: **R1 Core Viewer → R2 Filter System → R3 Stats + Export → R4 Color**.
 
-```bash
-npx shadcn@latest init
-npx shadcn@latest add button slider checkbox tabs select popover
-```
+---
 
-### Which shadcn/ui components to use
+## Tech Stack
 
-| UI element | shadcn/ui component |
+| Concern | Library |
 |---|---|
-| Run/Stop, Reset, zoom buttons | `Button` |
-| Gravity, Speed sliders | `Slider` |
-| Filter enable/disable | `Checkbox` |
-| Number range slider | `Slider` (dual-handle) |
-| Boolean toggle | `RadioGroup` |
-| Date pickers | `Popover` + native `<input type="date">` |
-| String multi-select search | `Popover` + `Command` (built-in search + list) |
-| Filters / Data tab switcher | `Tabs` |
-| Property analysis dropdown | `Select` |
-| Node tooltip | `Popover` (manually positioned) |
-| Expanded histogram modal | `Dialog` (non-MVP) |
-
----
-
-## Type Definitions
-
-```ts
-export interface NodeDatum {
-  id: string
-  label?: string
-  properties?: Record<string, number | string>
-}
-
-export interface EdgeDatum {
-  source: string
-  target: string
-  label?: string
-}
-
-export interface GraphData {
-  version: string
-  nodes: NodeDatum[]
-  edges: EdgeDatum[]
-}
-
-export type PropertyType = 'number' | 'date'
-
-export interface PropertyMeta {
-  key: string
-  type: PropertyType
-}
-
-export interface PropertyStats {
-  min: number
-  max: number
-  mean: number
-  p25: number
-  p50: number
-  p75: number
-  p90: number
-  nullCount: number
-}
-
-export interface HistogramBucket {
-  from: number   // inclusive
-  to: number     // exclusive, except last
-  count: number
-}
-
-export interface TooltipState {
-  nodeId: string
-  x: number  // canvas pixel position
-  y: number
-}
-```
-
----
-
-## Component Specs
-
-### `App.tsx`
-
-Top-level state: `graphData: GraphData | null`. Renders `<DropZone>` when null, `<GraphView>` once loaded.
-
-### `DropZone.tsx`
-
-Full-screen drop target. Accepts `.json` files via drag-and-drop or click-to-browse. On drop: reads file → `validateGraph()` → calls `onGraphLoaded(data)`. Shows inline error on failure and a format hint at all times.
-
-### `GraphView.tsx`
-
-Receives `GraphData`. Owns the Sigma instance, FA2 simulation state, and filter state (`filterRanges: Map<string, [number, number]>`). Renders the three-column layout: `<LeftSidebar>` | Sigma canvas `div` | `<RightSidebar>`. Listens for Sigma `clickNode` events and sets `tooltipState` to show `<NodeTooltip>`. Calls `sigma.kill()` on unmount.
-
-**Node color updates** — when `nodeColors` from `usePropertyAnalysis` changes, apply without remounting:
-```ts
-graph.updateEachNodeAttributes((node, attrs) => ({
-  ...attrs,
-  color: nodeColors.get(node) ?? '#93c5fd',
-}))
-sigma.refresh()
-```
-
-### `LeftSidebar.tsx`
-
-Purely presentational. Props: `isRunning`, `gravity`, `speed`, `nodeCount`, `edgeCount`, `onToggleSimulation`, `onGravityChange`, `onSpeedChange`, `onReset`. Renders Run/Stop toggle, Gravity slider, Speed slider, Reset button, node/edge counts.
-
-### `RightSidebar.tsx`
-
-Purely presentational container. Renders a scrollable list of `<PropertyFilterPanel>` — one per detected property. All filter state lives in `GraphView` and is passed as props.
-
-### `PropertyFilterPanel.tsx`
-
-One panel per property. Shows the property key and a type badge (`number` or `date`), followed by a `<FilterSlider>` for the property's value range. Props: `meta: PropertyMeta`, `filterRange: [number, number]`, `stats: PropertyStats`, `onFilterChange: (range: [number, number]) => void`.
-
-### `FilterSlider.tsx`
-
-Dual-handle range slider. Both handles independently draggable. Displays current min and max values below the track — raw number with 2dp for number properties, `"N days"` for date properties. Initialised to the full `[stats.min, stats.max]` range.
-
-Implementation: two overlapping `<input type="range">` elements. Ensure the min handle cannot exceed the max handle and vice versa.
-
-### `NodeTooltip.tsx`
-
-Floating popover anchored to a clicked node's canvas position. Positioned absolutely relative to the Sigma canvas container. Shows the node's `label` as title, then a table of all property key/value pairs. Date properties show the original date string and elapsed duration (e.g. `"2021-03-15 · 1,423 days ago"`). Closes on outside click or Escape. Clamps position to stay within canvas bounds.
-
----
-
-## Library Functions
-
-### `lib/validateGraph.ts`
-
-```ts
-/**
- * Validates a raw JSON object against the graph schema and returns typed GraphData.
- *
- * @throws {Error} With a human-readable message describing the first schema violation.
- *
- * @example
- * const data = validateGraph(JSON.parse(fileText))
- */
-export function validateGraph(raw: unknown): GraphData
-```
-
-Schema stored in `src/lib/graphSchema.json`. Checks: `version` present and known, `nodes`/`edges` are arrays, each node has a string `id`, each edge has string `source`/`target`, `properties` values are numbers or strings only.
-
-### `lib/buildGraph.ts`
-
-```ts
-/**
- * Constructs a Graphology graph from validated GraphData, assigning random
- * initial positions to all nodes.
- *
- * @example
- * const graph = buildGraph(data)
- */
-export function buildGraph(data: GraphData): Graph
-```
-
-### `lib/detectPropertyType.ts`
-
-```ts
-/**
- * Infers the type of a property by sampling its values across all nodes.
- * A property is 'date' if the majority of non-null values are valid ISO 8601
- * date strings. Otherwise 'number'.
- *
- * @example
- * detectPropertyType(['2021-03-15', '2023-11-02']) // → 'date'
- */
-export function detectPropertyType(values: Array<number | string | null | undefined>): PropertyType
-```
-
-### `lib/computeStats.ts`
-
-```ts
-/**
- * Computes descriptive statistics for an array of numeric values.
- * Null/undefined values are excluded from calculations but counted separately.
- *
- * @example
- * computeStats([1, 2, 3, null]) // → { min: 1, max: 3, mean: 2, ..., nullCount: 1 }
- */
-export function computeStats(values: Array<number | null>): PropertyStats
-```
-
-### `lib/computeHistogram.ts`
-
-```ts
-/**
- * Divides a set of values into evenly-spaced buckets.
- * Bucket count chosen via Sturges' formula, capped at 20 (min: 2).
- *
- * @example
- * computeHistogram([1, 2, 3, 4, 5])
- */
-export function computeHistogram(values: number[], bucketCount?: number): HistogramBucket[]
-```
-
----
-
-## Hooks
-
-### `hooks/useFA2Simulation.ts`
-
-```ts
-/**
- * Manages a ForceAtlas2 Web Worker simulation for a Graphology graph.
- * Kills the worker automatically on unmount.
- *
- * @returns { isRunning, start, stop, reset }
- *   - reset() re-randomizes all node positions then restarts.
- */
-export function useFA2Simulation(graph: Graph, settings: SimulationSettings)
-```
-
-FA2 worker import: `import FA2Layout from 'graphology-layout-forceatlas2/worker'`
-
-Slider changes while running: `stop()` → update settings → `start()`.
-Reset: `stop()` → randomize all node positions → `start()`.
-
-### `hooks/usePropertyAnalysis.ts`
-
-```ts
-/**
- * Derives per-property stats, per-node numeric values, and per-node highlight
- * colors based on active filter ranges. Handles date→elapsed-ms conversion.
- *
- * @returns {
- *   properties: PropertyMeta[]
- *   numericValues: Map<string, Map<string, number | null>>  // propertyKey → nodeId → value
- *   stats: Map<string, PropertyStats>                       // propertyKey → stats
- *   nodeColors: Map<string, string>                         // nodeId → hex color
- * }
- *
- * Color rules:
- * - Node satisfies all active filter ranges → '#93c5fd' (light blue)
- * - Node falls outside any active filter range → '#e2e8f0' (gray)
- * - Node has null for any filtered property → '#e2e8f0' (gray)
- * - No filters active (all at full range) → all nodes '#93c5fd'
- */
-export function usePropertyAnalysis(
-  graphData: GraphData,
-  filterRanges: Map<string, [number, number]>
-)
-```
-
----
-
-## Testing
-
-### Unit Tests — Vitest (`src/test/`)
-
-Only test pure functions in `lib/`. No React, no Sigma, no canvas.
-
-**`validateGraph.test.ts`**:
-- Valid input with correct `version` returns typed `GraphData`
-- Missing or unknown `version` throws descriptively
-- Missing `nodes` or `edges` throws descriptively
-- Non-array `nodes` throws
-- Node missing `id` throws
-- `properties` with valid number and date string values passes
-- Empty arrays are valid
-
-**`buildGraph.test.ts`**:
-- Returns correct node/edge counts
-- Every node has `x` and `y` set
-- Edge to unknown node is skipped with `console.warn`
-- `label` and `properties` passed through as node attributes
-
-**`detectPropertyType.test.ts`**:
-- Array of ISO date strings → `'date'`
-- Array of numbers → `'number'`
-- Mixed array majority-wins
-- Array of nulls → `'number'` (safe default)
-
-**`computeStats.test.ts`**:
-- Correct min, max, mean on known data
-- Correct p50 on odd and even-length arrays
-- Null values excluded from stats, counted in `nullCount`
-- Single-element array returns equal min/max/mean/percentiles
-
-**`computeHistogram.test.ts`**:
-- Returns correct number of buckets
-- All values fall into exactly one bucket
-- Buckets span the full [min, max] range
-- Empty input returns empty array
-
-### E2E Tests — Playwright (`e2e/`)
-
-**`drop-zone.spec.ts`**: Upload valid/invalid files, check error messages.
-
-**`simulation.spec.ts`**: Run/stop/sliders/reset interactions.
-
-**`property-analysis.spec.ts`**:
-- Right sidebar shows all property keys with type badges after loading
-- Each property has a filter slider
-- Moving the min handle of a slider updates the displayed min value
-- Nodes outside the filter range are visually grayed out
-- Clicking a node opens the tooltip with label and all property keys
-- Clicking outside the tooltip closes it
-- Pressing Escape closes the tooltip
-
----
-
-## Sample Fixture
-
-Save as `e2e/fixtures/sample-graph.json`:
-
-```json
-{
-  "version": "1",
-  "nodes": [
-    { "id": "1", "label": "Alice", "properties": { "age": 34, "score": 91.5, "joined": "2021-03-15" } },
-    { "id": "2", "label": "Bob",   "properties": { "age": 28, "score": 74.0, "joined": "2023-11-02" } },
-    { "id": "3", "label": "Carol", "properties": { "age": 45, "score": 55.2, "joined": "2019-07-20" } },
-    { "id": "4", "label": "Dave",  "properties": { "age": 31, "score": 88.8, "joined": "2022-01-10" } },
-    { "id": "5", "label": "Eve",   "properties": { "age": 27, "score": 62.1, "joined": "2024-05-30" } }
-  ],
-  "edges": [
-    { "source": "1", "target": "2" },
-    { "source": "2", "target": "3" },
-    { "source": "3", "target": "4" },
-    { "source": "4", "target": "5" },
-    { "source": "5", "target": "1" },
-    { "source": "1", "target": "3" }
-  ]
-}
-```
+| Framework | React 18 + TypeScript (strict) |
+| Graph rendering | `sigma` v3 |
+| Graph data model | `graphology` |
+| Spring layout | `graphology-layout-forceatlas2` (Web Worker) |
+| UI components | shadcn/ui (Radix UI primitives + Tailwind CSS) |
+| Styling | Tailwind CSS v3 (4px base spacing unit) |
+| Build tool | Vite |
+| Unit testing | Vitest |
+| E2E testing | Playwright |
+| Linting/formatting | ESLint + Prettier |
 
 ---
 
 ## Project Setup
 
-### 1. Create the project
+### 1. Scaffold
 
 ```bash
 npm create vite@latest graph-viz -- --template react-ts
 cd graph-viz
-```
-
-### 2. Install app dependencies
-
-```bash
-npm install sigma graphology graphology-layout-forceatlas2 graphology-types
-```
-
-### 3. Install Tailwind CSS
-
-```bash
+npm install sigma graphology graphology-layout-forceatlas2 graphology-layout-random graphology-types
 npm install -D tailwindcss postcss autoprefixer
 npx tailwindcss init -p
-```
-
-`tailwind.config.js`:
-```js
-export default {
-  content: ['./index.html', './src/**/*.{ts,tsx}'],
-  theme: { extend: {} },
-  plugins: [],
-}
-```
-
-`src/index.css`:
-```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-```
-
-### 4. Install dev tooling
-
-```bash
-npm install -D eslint prettier eslint-config-prettier eslint-plugin-react-hooks @typescript-eslint/eslint-plugin @typescript-eslint/parser
-npm install -D vitest @vitest/coverage-v8 jsdom @testing-library/react @testing-library/jest-dom
+npx shadcn@latest init
+npx shadcn@latest add button slider checkbox tabs select popover command radio-group
+npm install -D vitest @vitest/coverage-v8 jsdom @testing-library/jest-dom
 npm install -D @playwright/test
 npx playwright install
 ```
 
-### 5. vite.config.ts
+### 2. `vite.config.ts`
 
 ```ts
 import { defineConfig } from 'vite'
@@ -406,12 +63,17 @@ export default defineConfig({
 })
 ```
 
-`src/test/setup.ts`:
-```ts
-import '@testing-library/jest-dom'
+### 3. `tailwind.config.js`
+
+```js
+export default {
+  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  theme: { extend: {} },
+  plugins: [],
+}
 ```
 
-### 6. playwright.config.ts
+### 4. `playwright.config.ts`
 
 ```ts
 import { defineConfig, devices } from '@playwright/test'
@@ -433,13 +95,35 @@ export default defineConfig({
 })
 ```
 
-### 7. .eslintrc.cjs
+### 5. `package.json` scripts
+
+```json
+{
+  "dev":           "vite",
+  "build":         "tsc && vite build",
+  "preview":       "vite preview",
+  "test":          "vitest run",
+  "test:watch":    "vitest",
+  "test:coverage": "vitest run --coverage",
+  "test:e2e":      "playwright test",
+  "test:e2e:ui":   "playwright test --ui",
+  "lint":          "eslint src --ext .ts,.tsx",
+  "format":        "prettier --write src"
+}
+```
+
+### 6. `.eslintrc.cjs`
 
 ```js
 module.exports = {
   root: true,
   env: { browser: true, es2020: true },
-  extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', 'plugin:react-hooks/recommended', 'prettier'],
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:react-hooks/recommended',
+    'prettier',
+  ],
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint'],
   rules: {
@@ -454,31 +138,1436 @@ module.exports = {
 { "semi": false, "singleQuote": true, "trailingComma": "es5", "printWidth": 100 }
 ```
 
-### 8. npm scripts
+---
 
-```json
-"scripts": {
-  "dev":           "vite",
-  "build":         "tsc && vite build",
-  "preview":       "vite preview",
-  "test":          "vitest run",
-  "test:watch":    "vitest",
-  "test:coverage": "vitest run --coverage",
-  "test:e2e":      "playwright test",
-  "test:e2e:ui":   "playwright test --ui",
-  "lint":          "eslint src --ext .ts,.tsx",
-  "format":        "prettier --write src"
+## File Structure
+
+```
+graph-viz/
+├── e2e/
+│   ├── fixtures/
+│   │   ├── sample-graph.json
+│   │   └── partial-positions-graph.json   ← some nodes have x/y, some don't (DoD 41)
+│   ├── drop-zone.spec.ts
+│   ├── simulation.spec.ts
+│   ├── filters.spec.ts
+│   ├── stats.spec.ts
+│   ├── color.spec.ts
+│   └── export-roundtrip.spec.ts
+├── src/
+│   ├── components/
+│   │   ├── DropZone.tsx
+│   │   ├── ErrorBoundary.tsx              ← React Error Boundary wrapping GraphView
+│   │   ├── GraphView.tsx
+│   │   ├── LeftSidebar.tsx
+│   │   ├── RightSidebar.tsx
+│   │   ├── FiltersTab.tsx
+│   │   ├── StatsTab.tsx
+│   │   ├── ColorTab.tsx
+│   │   ├── PropertyFilterPanel.tsx
+│   │   ├── filters/
+│   │   │   ├── NumberFilter.tsx
+│   │   │   ├── StringFilter.tsx
+│   │   │   ├── DateFilter.tsx
+│   │   │   └── BooleanFilter.tsx
+│   │   ├── NodeTooltip.tsx
+│   │   ├── Histogram.tsx
+│   │   └── ui/                  ← shadcn/ui copies live here
+│   ├── hooks/
+│   │   ├── useFA2Simulation.ts
+│   │   ├── useFilterState.ts
+│   │   ├── useNodeColors.ts
+│   │   └── useColorGradient.ts
+│   │   NOTE: CLAUDE.md lists usePropertyAnalysis.ts — that is an outdated name.
+│   │   The three hooks above supersede it. Do not create usePropertyAnalysis.ts.
+│   ├── lib/
+│   │   ├── graphSchema.json
+│   │   ├── parseJSON.ts
+│   │   ├── validateGraph.ts
+│   │   ├── applyNullDefaults.ts
+│   │   ├── buildGraph.ts
+│   │   ├── detectPropertyTypes.ts
+│   │   ├── computeStats.ts
+│   │   ├── computeHistogram.ts
+│   │   └── colorScales.ts
+│   ├── test/
+│   │   ├── setup.ts
+│   │   ├── validateGraph.test.ts
+│   │   ├── applyNullDefaults.test.ts
+│   │   ├── buildGraph.test.ts
+│   │   ├── detectPropertyTypes.test.ts
+│   │   ├── computeStats.test.ts
+│   │   └── computeHistogram.test.ts
+│   ├── types.ts
+│   ├── App.tsx
+│   ├── main.tsx
+│   └── index.css
+├── playwright.config.ts
+├── vite.config.ts
+├── tailwind.config.js
+├── tsconfig.json
+├── .eslintrc.cjs
+└── .prettierrc
+```
+
+---
+
+## Type Definitions (`src/types.ts`)
+
+```ts
+// ─── Input schema types (as stored in JSON) ───────────────────────────────
+
+/** Raw property value as it appears in JSON. Booleans are native JS booleans;
+ *  dates are ISO 8601 strings; numbers and strings are their native types. */
+export type PropertyValue = number | string | boolean
+
+export interface NodeInput {
+  id: string
+  label?: string
+  x?: number
+  y?: number
+  properties?: Record<string, PropertyValue>
+}
+
+export interface EdgeInput {
+  source: string
+  target: string
+  label?: string
+}
+
+export interface GraphData {
+  version: string
+  nodes: NodeInput[]
+  edges: EdgeInput[]
+}
+
+// ─── Property system ───────────────────────────────────────────────────────
+
+export type PropertyType = 'number' | 'string' | 'date' | 'boolean'
+
+export interface PropertyMeta {
+  key: string
+  type: PropertyType
+}
+
+// ─── Filter state ──────────────────────────────────────────────────────────
+
+export interface NumberFilterState {
+  type: 'number'
+  isEnabled: boolean
+  min: number           // current handle positions
+  max: number
+  domainMin: number     // full data range, never changes
+  domainMax: number
+}
+
+export interface StringFilterState {
+  type: 'string'
+  isEnabled: boolean
+  selectedValues: Set<string>
+  allValues: string[]   // sorted distinct values from data
+}
+
+export interface DateFilterState {
+  type: 'date'
+  isEnabled: boolean
+  after: string | null   // ISO 8601 or null (no lower bound)
+  before: string | null  // ISO 8601 or null (no upper bound)
+}
+
+export interface BooleanFilterState {
+  type: 'boolean'
+  isEnabled: boolean
+  selected: 'true' | 'false' | 'either'
+}
+
+export type FilterState =
+  | NumberFilterState
+  | StringFilterState
+  | DateFilterState
+  | BooleanFilterState
+
+/** Full filter map: propertyKey → FilterState */
+export type FilterMap = Map<string, FilterState>
+
+// ─── Stats ─────────────────────────────────────────────────────────────────
+
+export interface PropertyStats {
+  min: number
+  max: number
+  mean: number
+  median: number
+  p25: number
+  p75: number
+}
+
+export interface HistogramBucket {
+  from: number   // inclusive
+  to: number     // exclusive (last bucket is inclusive on right)
+  count: number
+}
+
+// ─── Color gradient ────────────────────────────────────────────────────────
+
+export type PaletteName = 'Viridis' | 'Plasma' | 'Blues' | 'Reds' | 'Rainbow' | 'RdBu'
+
+export interface ColorGradientState {
+  propertyKey: string | null
+  palette: PaletteName
+  customColors: string[]   // extra hex colors appended to palette for this session
+}
+
+// ─── Tooltip ───────────────────────────────────────────────────────────────
+
+export interface TooltipState {
+  nodeId: string
+  /** Pixel position relative to the Sigma canvas container. */
+  x: number
+  y: number
+}
+
+// ─── Loading pipeline ──────────────────────────────────────────────────────
+
+export interface NullDefaultResult {
+  data: GraphData
+  replacementCount: number
+  /** Maps nodeId → list of property keys that were replaced with type defaults.
+   *  Passed to buildGraph so it can set `_defaultedProperties` on each node attribute.
+   *  Empty map when replacementCount === 0. */
+  defaultedByNode: Map<string, string[]>
+}
+
+export type PositionMode = 'all' | 'none' | 'partial'
+```
+
+---
+
+## Data Loading Pipeline
+
+Four pure functions called in sequence. All run before any UI update.
+
+```
+parseJSON → validateGraph → applyNullDefaults → buildGraph(nullDefaultResult)
+```
+
+`buildGraph` receives the full `NullDefaultResult` (not just `GraphData`) so it can populate
+`_defaultedProperties` on each node's Graphology attributes without a second pass.
+
+### `lib/parseJSON.ts`
+
+```ts
+/**
+ * Parses raw file text into a JavaScript object.
+ *
+ * @throws {Error} "Invalid JSON file" on parse failure.
+ * @example
+ * const raw = parseJSON('{"version":"1","nodes":[],"edges":[]}')
+ */
+export function parseJSON(text: string): unknown
+```
+
+### `lib/validateGraph.ts`
+
+```ts
+/**
+ * Validates a raw JS object against the versioned graph schema.
+ * Schema file: src/lib/graphSchema.json
+ *
+ * Validation rules:
+ * - `version` must be present and equal to `"1"`
+ * - `nodes` and `edges` must be arrays
+ * - Each node must have a string `id`
+ * - Each edge must have string `source` and `target`
+ * - `properties` values must be number | string | boolean (date strings are strings)
+ *
+ * Non-fatal skips (logged via console.warn, not thrown):
+ * - Node missing `id` → skip node
+ * - Edge referencing unknown node id → skip edge
+ * - Property value of wrong type → treat as null (handled by applyNullDefaults)
+ *
+ * Exact thrown error messages (use these strings verbatim — tests assert on them):
+ * - Missing or wrong `version`:  "Unsupported schema version"
+ * - Missing `nodes` or `edges`:  "File must contain nodes and edges arrays"
+ * - `nodes` is not an array:     "File must contain nodes and edges arrays"
+ * - Zero nodes after filtering:  "Graph has no nodes to display"
+ *
+ * @throws {Error} Human-readable message on fatal schema violation.
+ * @example
+ * const data = validateGraph(parseJSON(fileText))
+ */
+export function validateGraph(raw: unknown): GraphData
+```
+
+### `lib/applyNullDefaults.ts`
+
+```ts
+/**
+ * Detects missing property values across all nodes and replaces them with
+ * type defaults. Type detection happens here first (via detectPropertyTypes).
+ *
+ * Defaults: number → 0 | string → "" | boolean → false | date → "1970-01-01"
+ *
+ * Returns the mutated data and total replacement count.
+ * If count is 0, no replacements occurred (no modal needed).
+ *
+ * @example
+ * const { data, replacementCount } = applyNullDefaults(validatedGraph)
+ */
+export function applyNullDefaults(data: GraphData): NullDefaultResult
+```
+
+### `lib/buildGraph.ts`
+
+```ts
+/**
+ * Converts validated, normalised GraphData into a Graphology MultiGraph.
+ * Applies position-aware loading logic (all/partial/none positions).
+ *
+ * Position logic:
+ * - All nodes have x+y → use as-is (PositionMode: 'all')
+ * - Some nodes have x+y → ignore all, randomise (PositionMode: 'partial')
+ * - No nodes have x+y → randomise all (PositionMode: 'none')
+ *
+ * Random positions are drawn from a unit square [-0.5, 0.5] × [-0.5, 0.5]
+ * so FA2 starts from a compact cluster.
+ *
+ * Node attributes set on each node (in addition to x, y):
+ *   { color, size, label, _defaultedProperties: string[] }
+ * `_defaultedProperties` is the list of property keys replaced with type defaults.
+ * Read from `nullDefaultResult.defaultedByNode.get(node.id) ?? []`.
+ * Used by NodeTooltip to suppress "N days ago" for defaulted date values.
+ *
+ * @param nullDefaultResult - the full result from applyNullDefaults (includes defaultedByNode)
+ * @returns { graph, positionMode }
+ * @example
+ * const nullResult = applyNullDefaults(validatedData)
+ * const { graph, positionMode } = buildGraph(nullResult)
+ */
+export function buildGraph(nullDefaultResult: NullDefaultResult): { graph: Graph; positionMode: PositionMode }
+```
+
+---
+
+## Library Functions
+
+### `lib/detectPropertyTypes.ts`
+
+```ts
+/**
+ * Infers the type of every property key by sampling all node values.
+ *
+ * Rules (applied in order):
+ * 1. All non-null values are JS booleans → 'boolean'
+ * 2. All non-null values are JS numbers → 'number'
+ * 3. 100% of non-null values are valid ISO 8601 date strings → 'date'
+ * 4. Otherwise → 'string'
+ *
+ * Called once per graph load, result is stable for the session.
+ *
+ * @returns Map<propertyKey, PropertyType>
+ * @example
+ * detectPropertyTypes(graphData.nodes)
+ * // → Map { 'age' → 'number', 'joined' → 'date', 'active' → 'boolean', 'status' → 'string' }
+ */
+export function detectPropertyTypes(nodes: NodeInput[]): Map<string, PropertyType>
+```
+
+### `lib/computeStats.ts`
+
+```ts
+/**
+ * Computes descriptive statistics for an array of numeric values.
+ * Null/undefined are excluded from all calculations.
+ * Requires at least one non-null value; returns null if array is empty.
+ *
+ * @example
+ * computeStats([1, 2, 3, 4, 5])
+ * // → { min: 1, max: 5, mean: 3, median: 3, p25: 2, p75: 4 }
+ */
+export function computeStats(values: Array<number | null | undefined>): PropertyStats | null
+```
+
+### `lib/computeHistogram.ts`
+
+```ts
+/**
+ * Divides values into evenly-spaced buckets using Sturges' rule:
+ *   buckets = ceil(log2(n) + 1), clamped to [3, 20]
+ *
+ * Returns an empty array for empty input.
+ * The last bucket's `to` boundary is inclusive.
+ *
+ * @example
+ * computeHistogram([1, 2, 3, 4, 5])
+ * // → [{ from: 1, to: 2.33, count: 2 }, { from: 2.33, to: 3.67, count: 1 }, ...]
+ */
+export function computeHistogram(values: number[]): HistogramBucket[]
+```
+
+### `lib/colorScales.ts`
+
+```ts
+/**
+ * Returns an interpolated hex color for a normalised position t ∈ [0, 1]
+ * in the given palette.
+ *
+ * @example
+ * interpolatePalette('Viridis', 0)   // → '#440154' (dark purple)
+ * interpolatePalette('Viridis', 0.5) // → '#21908c' (teal)
+ * interpolatePalette('Viridis', 1)   // → '#fde725' (yellow)
+ */
+export function interpolatePalette(palette: PaletteName, t: number): string
+
+/**
+ * Returns the list of discrete hex stop colors for a palette.
+ * Custom colors are appended after the built-in stops.
+ */
+export function getPaletteColors(palette: PaletteName, customColors: string[]): string[]
+```
+
+---
+
+## Hooks
+
+### `hooks/useFA2Simulation.ts`
+
+```ts
+export interface SimulationSettings {
+  gravity: number    // FA2 `gravity`, default 1.0, range [0.1, 10.0], log scale
+  speed: number      // FA2 `scalingRatio`, default 1.0, range [0.1, 10.0], log scale
+}
+
+export interface FA2SimulationHandle {
+  isRunning: boolean
+  errorMessage: string | null
+  start: () => void
+  stop: () => void
+  randomizeLayout: () => void  // stop → randomise positions → restart if was running
+}
+
+/**
+ * Manages a ForceAtlas2 Web Worker simulation for a Graphology graph.
+ *
+ * Slider change cycle: debounce 150ms → stop() → wait for worker confirmation
+ * → update settings → start(). Prevents rapid slider drags from issuing
+ * multiple stop/start calls before the worker finishes.
+ *
+ * IMPORTANT — stop is asynchronous. The FA2 worker emits a 'stop' event when
+ * it has fully halted. Never call start() immediately after stop() in the same
+ * tick — it will race. Always wait for the event:
+ *
+ * ```ts
+ * layout.once('stop', () => {
+ *   layout.updateSettings(newSettings)
+ *   layout.start()
+ * })
+ * layout.stop()
+ * ```
+ *
+ * randomizeLayout() cycle:
+ *   1. Record isRunning state.
+ *   2. stop() (if running) and wait for 'stop' event.
+ *   3. Randomize all node x/y positions:
+ *      import { random } from 'graphology-layout-random'
+ *      random.assign(graph, { scale: 1, center: 0 })
+ *   4. sigma.fit() to reset camera.
+ *   5. Restart only if was running in step 1.
+ *
+ * Worker crashes: caught via `layout.on('killed', handler)` or worker onerror
+ *   → sets errorMessage, marks isRunning = false.
+ * Cleanup: layout.kill() on unmount.
+ *
+ * @example
+ * const { isRunning, start, stop, randomizeLayout } = useFA2Simulation(graph, settings)
+ */
+export function useFA2Simulation(
+  graph: Graph | null,
+  settings: SimulationSettings
+): FA2SimulationHandle
+```
+
+FA2 worker import:
+```ts
+import FA2Layout from 'graphology-layout-forceatlas2/worker'
+```
+
+### `hooks/useFilterState.ts`
+
+```ts
+export interface FilterStateHandle {
+  filters: FilterMap
+  setNumberFilter: (key: string, min: number, max: number) => void
+  setStringFilter: (key: string, values: Set<string>) => void
+  setDateFilter: (key: string, after: string | null, before: string | null) => void
+  setBooleanFilter: (key: string, selected: BooleanFilterState['selected']) => void
+  setFilterEnabled: (key: string, isEnabled: boolean) => void
+  clearAllFilters: () => void
+  /** IDs of nodes that pass all enabled filters. Updated on every filter change. */
+  matchingNodeIds: Set<string>
+}
+
+/**
+ * Manages filter state for all properties. Initialises a FilterState per
+ * property from PropertyMeta[]. Recomputes matchingNodeIds synchronously
+ * on every filter change (no async work).
+ *
+ * INTERNAL VALUE INDEX — built once on graph load, never rebuilt:
+ * ```ts
+ * const nodeValueIndex = new Map<string, Map<string, PropertyValue>>()
+ * // propertyKey → Map<nodeId, value>
+ * // Built by iterating graph.forEachNode once per property key.
+ * // All filter evaluations read from this index, not from graph attributes directly.
+ * // This keeps each filter change at O(nodes × enabledFilters) with cheap lookups.
+ * ```
+ *
+ * STRING FILTER INITIALISATION — runs once per string property on load:
+ * - Collect all distinct values for the property from nodeValueIndex.
+ * - Sort alphabetically.
+ * - If `allValues.length <= 50`: set `selectedValues = new Set(allValues)` (all pre-selected).
+ * - If `allValues.length > 50`: set `selectedValues = new Set()` (no restriction).
+ * - Store `allValues` in the StringFilterState for use by StringFilter dropdown.
+ *
+ * The `propertyMetas` argument provides types so the hook knows which filter
+ * variant to initialise without re-running type detection.
+ *
+ * @example
+ * const { filters, matchingNodeIds, clearAllFilters } = useFilterState(graph, propertyMetas)
+ */
+export function useFilterState(
+  graph: Graph | null,
+  propertyMetas: PropertyMeta[]
+): FilterStateHandle
+```
+
+### `hooks/useNodeColors.ts`
+
+```ts
+/**
+ * Derives a hex color for every node based on:
+ * 1. Whether any filters are active (enabled and non-default)
+ * 2. Whether the node is in matchingNodeIds
+ * 3. Whether a color gradient is active (overrides highlighted color for active nodes)
+ * 4. Whether the node is selected (adds ring; handled by Sigma node reducer, not this hook)
+ *
+ * Color rules:
+ * - No filters active → '#94a3b8' (default/neutral)
+ * - Passes all filters → '#93c5fd' (highlighted) OR gradient color if gradient active
+ * - Fails any filter  → '#e2e8f0' (grayed-out) — gradient never applies
+ *
+ * Returns a stable Map reference when nothing changed (for React memo stability).
+ *
+ * @example
+ * const nodeColors = useNodeColors(graph, matchingNodeIds, hasActiveFilters, gradientColors)
+ */
+export function useNodeColors(
+  graph: Graph | null,
+  matchingNodeIds: Set<string>,
+  hasActiveFilters: boolean,
+  gradientColors: Map<string, string> | null
+): Map<string, string>
+```
+
+### `hooks/useColorGradient.ts`
+
+```ts
+/**
+ * Computes a per-node hex color from a selected property + palette,
+ * applied only to active (non-grayed-out) nodes.
+ *
+ * Number: continuous gradient — `t = (value - min) / (max - min)`, call `interpolatePalette(palette, t)`.
+ * Date: same as number — convert ISO string to ms via `new Date(s).getTime()` INSIDE this
+ *   hook for normalisation math only. Never write numeric timestamps back to graph attributes.
+ *   Stored values remain ISO strings everywhere outside this hook.
+ * Boolean: binary — call `getPaletteColors(palette, customColors)`, assign index 0 to false,
+ *   last index to true.
+ * String: discrete — call `getPaletteColors(palette, customColors)`, assign each distinct value
+ *   a color by index, round-robin on overflow.
+ * min === max guard (number/date): when all active nodes share the same value,
+ *   use `interpolatePalette(palette, 0.5)` for all. Never divide by zero.
+ *
+ * Returns null when no property is selected.
+ * Returns an empty Map (not null) when a property is selected but no active nodes have values.
+ *
+ * @example
+ * const gradientColors = useColorGradient(graph, matchingNodeIds, gradientState)
+ */
+export function useColorGradient(
+  graph: Graph | null,
+  matchingNodeIds: Set<string>,
+  state: ColorGradientState
+): Map<string, string> | null
+```
+
+---
+
+## Component Architecture
+
+```
+App
+├── DropZone                     (before file load)
+└── GraphView                    (after file load — owns all state)
+    ├── LeftSidebar
+    │   └── (buttons, sliders, counts, download button)
+    ├── <div ref={sigmaContainer}> (Sigma canvas, fills remaining space)
+    │   ├── <canvas>             (Sigma WebGL)
+    │   ├── FilenameLabel        (absolute, top-left of canvas)
+    │   ├── CanvasControls       (absolute, bottom-right of canvas — +/−/fit)
+    │   ├── NodeTooltip          (absolute, anchored to selected node)
+    │   └── DragOverlay          (full-canvas dim overlay while file dragged over)
+    └── RightSidebar
+        └── Tabs (Filters | Stats | Color)
+            ├── FiltersTab
+            │   └── PropertyFilterPanel × N
+            │       └── NumberFilter | StringFilter | DateFilter | BooleanFilter
+            ├── StatsTab
+            │   └── Histogram
+            └── ColorTab
+```
+
+**State ownership in `GraphView`:**
+- `graphData: GraphData` — raw loaded data
+- `graph: Graph` — Graphology instance
+- `propertyMetas: PropertyMeta[]` — stable, computed once on load
+- `positionMode: PositionMode` — from buildGraph
+- `simulationSettings: SimulationSettings`
+- `filterHandle: FilterStateHandle` — from useFilterState
+- `gradientState: ColorGradientState`
+- `tooltipState: TooltipState | null`
+- `selectedPropertyForStats: string | null`
+
+---
+
+## Component Specs
+
+### `App.tsx`
+
+```ts
+/**
+ * Root component. Manages top-level graph load state.
+ * Renders DropZone before graph is loaded, GraphView after.
+ * Wraps GraphView in a React Error Boundary.
+ */
+```
+
+State:
+- `loadedData: { data: GraphData; graph: Graph; positionMode: PositionMode; filename: string } | null`
+
+Flow:
+1. Render `<DropZone onLoad={handleLoad} />` while `loadedData === null`.
+2. `handleLoad(data, graph, positionMode, filename)` sets state → renders `<GraphView>`.
+3. `<GraphView onLoadNewFile={() => setLoadedData(null)} />` resets to DropZone when user loads a new file.
+
+**`buildGraph` is called exactly once per load, inside `DropZone`.**
+`GraphView` receives the already-built `Graph` instance as a prop — it never calls `buildGraph` itself.
+This avoids building the graph twice at 50k nodes.
+
+### `DropZone.tsx`
+
+```ts
+/**
+ * Full-screen file drop target for initial graph load.
+ * Accepts .json via drag-and-drop or click-to-browse.
+ * Runs the full data pipeline on drop — including buildGraph.
+ * GraphView never calls buildGraph; it receives the built graph as a prop.
+ */
+interface Props {
+  onLoad: (data: GraphData, graph: Graph, positionMode: PositionMode, filename: string) => void
 }
 ```
 
-### Sigma initialization
+Behavior:
+- Drag enter/over: highlight border.
+- Drop: run `parseJSON → validateGraph → applyNullDefaults → buildGraph` pipeline in full.
+- If `replacementCount > 0`: show `<NullDefaultModal>` before calling `onLoad`.
+  - On modal Cancel: discard the in-memory graph and data; do nothing.
+  - On modal "Load anyway": call `onLoad(data, graph, positionMode, filename)`.
+- If `replacementCount === 0`: call `onLoad` directly without modal.
+- On any pipeline error: display inline error message; drop zone stays active immediately.
+- Shows spinner from file drop until `onLoad` is called (covers full pipeline).
+
+### `GraphView.tsx`
 
 ```ts
-const sigma = new Sigma(graph, containerRef.current, {
+/**
+ * Main view after graph is loaded. Owns the Sigma instance, simulation,
+ * filter state, color gradient, and tooltip state.
+ * Receives the pre-built Graphology graph from App (built once in DropZone).
+ * Calls sigma.kill() on unmount.
+ */
+interface Props {
+  graphData: GraphData
+  graph: Graph               // pre-built by DropZone, never rebuilt here
+  positionMode: PositionMode
+  filename: string
+  onLoadNewFile: () => void
+}
+```
+
+**Sigma initialisation** (inside `useEffect`, runs once on mount):
+```ts
+const sigma = new Sigma(graph, containerRef.current!, {
   renderEdgeLabels: false,
-  defaultNodeColor: '#93c5fd',
-  defaultEdgeColor: '#cbd5e1',
-  labelRenderedSizeThreshold: 6,
-  labelFont: 'Inter, sans-serif',
+  defaultNodeColor: '#94a3b8',
+  defaultEdgeColor: '#94a3b8',
+  labelRenderedSizeThreshold: 8,    // labels fade in above 8px visual radius
+  labelFont: 'system-ui, sans-serif',
+  labelSize: 12,
+  // Selected-node ring: override color + highlight for the node whose tooltip is open.
+  // `highlighted: true` tells Sigma to draw the node with a border/ring.
+  nodeReducer: (node, attrs) => {
+    if (node === tooltipStateRef.current?.nodeId) {
+      return { ...attrs, color: '#3b82f6', highlighted: true }
+    }
+    return attrs
+  },
 })
 ```
+
+`tooltipStateRef` is a `useRef<TooltipState | null>` kept in sync with the `tooltipState`
+React state. The `nodeReducer` runs every render frame — reading from a ref avoids
+stale closure issues without re-creating Sigma on tooltip changes.
+
+**Partial-position warning** — rendered below the canvas when `positionMode === 'partial'`:
+```tsx
+{positionMode === 'partial' && (
+  <div className="...inline-warning...">
+    Some nodes have positions and some do not — positions ignored.
+    Run the simulation to generate a layout.
+  </div>
+)}
+```
+This is a non-blocking inline message, not a modal. It persists until the user loads a new file.
+
+**Node color + size sync** — called whenever `nodeColors` map changes:
+```ts
+graph.updateEachNodeAttributes((node, attrs) => ({
+  ...attrs,
+  color: nodeColors.get(node) ?? '#94a3b8',
+  size: matchingNodeIds.has(node) && hasActiveFilters ? 5 * 1.15 : 5,
+}))
+```
+
+**Edge color + size sync** — called in the same effect, immediately after node sync:
+```ts
+graph.updateEachEdgeAttributes((edge, attrs, source, target) => {
+  const isGrayed =
+    hasActiveFilters &&
+    (!matchingNodeIds.has(source) || !matchingNodeIds.has(target))
+  return {
+    ...attrs,
+    color: isGrayed ? '#e2e8f0' : '#94a3b8',
+    size:  isGrayed ? 0.5 : 1,
+  }
+})
+sigma.refresh()
+```
+Never remount Sigma on filter or color changes.
+
+**Node click handler**:
+```ts
+sigma.on('clickNode', ({ node }) => {
+  if (hasActiveFilters && !matchingNodeIds.has(node)) return  // grayed-out: ignore
+  const { x, y } = sigma.graphToViewport(graph.getNodeAttributes(node))
+  setTooltipState({ nodeId: node, x, y })
+})
+```
+
+**Canvas resize**: `window.addEventListener('resize', debounce(() => sigma.resize(), 100))`
+
+**File drag-over on window**: show `<DragOverlay>`, on drop trigger confirmation dialog flow. When simulation is running, stop it first, then show dialog.
+
+**Confirmation dialog** before loading new file:
+- "Loading a new file will clear the current graph. Continue?"
+- Cancel: keep current state.
+- Confirm: call `onLoadNewFile()` → App resets to DropZone → user drops new file.
+
+### `LeftSidebar.tsx`
+
+Purely presentational (no local state). Width: 240px, background `#ffffff`.
+
+Sections (top to bottom, 16px gaps between sections):
+1. **"Load new file"** — ghost button, triggers parent confirmation dialog.
+2. **SIMULATION** (section header — 11px, semibold, uppercase, muted).
+3. Run + Stop buttons side by side. Inactive button: `opacity-50 pointer-events-none`.
+4. "Simulating…" indicator with `animate-pulse` filled dot — visible only while running.
+5. `simulationError` message — rendered below Run/Stop row, 12px, red/muted text, only when non-null.
+   Text: *"Simulation failed — reload file to continue."* Run button remains enabled.
+6. Gravity slider (log scale; display current value below).
+7. Speed slider (log scale; display current value below).
+8. "↺ Randomize Layout" button.
+9. **GRAPH INFO** (section header).
+10. Nodes: N / Edges: N (tabular numerals).
+11. **"↓ Download Graph"** — ghost button.
+
+**Debounce ownership:** All debouncing happens at the leaf component level (the slider component
+itself calls `onChange` only after 150ms of inactivity). `LeftSidebar` and `GraphView` receive
+already-debounced values. This applies to all sliders throughout the app — gravity, speed, number
+filter range, date pickers, and string search inputs all debounce internally.
+
+```ts
+interface Props {
+  isRunning: boolean
+  simulationError: string | null   // null when no error; shown below Run/Stop buttons
+  gravity: number
+  speed: number
+  nodeCount: number
+  edgeCount: number
+  onRun: () => void
+  onStop: () => void
+  onGravityChange: (v: number) => void
+  onSpeedChange: (v: number) => void
+  onRandomizeLayout: () => void
+  onLoadNewFile: () => void
+  onDownloadGraph: () => void
+}
+```
+
+### `RightSidebar.tsx`
+
+Container for the three tabs. Width: 300px, background `#ffffff`. Uses shadcn/ui `Tabs`.
+
+```ts
+interface Props {
+  propertyMetas: PropertyMeta[]
+  filterHandle: FilterStateHandle
+  graph: Graph | null
+  gradientState: ColorGradientState
+  isGradientActive: boolean        // true when gradientState.propertyKey is non-null
+  onGradientChange: (s: ColorGradientState) => void
+  selectedStatsProperty: string | null
+  onStatsPropertyChange: (key: string | null) => void
+}
+```
+
+When `isGradientActive === true`, the **"Color"** tab label shows a small indicator dot
+(a filled circle, `#3b82f6`, ~6px) to signal that a gradient is currently applied.
+Implemented by wrapping the tab trigger label:
+```tsx
+<TabsTrigger value="color">
+  Color {isGradientActive && <span className="ml-1 inline-block w-1.5 h-1.5 rounded-full bg-blue-500" />}
+</TabsTrigger>
+```
+
+### `FiltersTab.tsx`
+
+```ts
+/**
+ * Filters tab content. Shows filter panels for all properties.
+ * At 10+ properties, the tab scrolls independently (overflow-y: auto).
+ */
+```
+
+Layout (top, pinned — not scrolled):
+1. `"N nodes match"` with `aria-live="polite"`.
+2. `"Filters combine with AND — nodes must match all enabled filters."` (muted note, immediately below count).
+3. "Clear all filters" button.
+4. Zero-match banner: `"No nodes match the current filters."` + "Clear all filters" button — shown inline below the Clear button when matchCount === 0 and hasActiveFilters.
+
+This order matches the spec's textual description: the AND note is pinned immediately below the
+count so it remains visible without scrolling. The Clear button sits between the AND note and the
+filter list. The zero-match banner appears after all pinned controls.
+
+Then scrollable list of `<PropertyFilterPanel>` sorted alphabetically by key.
+
+If no properties: `"No properties."` (italic, muted).
+
+### `PropertyFilterPanel.tsx`
+
+```ts
+/**
+ * One collapsible panel per property in the Filters tab.
+ * Header: chevron ▾/▶ | enable checkbox | property name (truncated) | type badge
+ * Body: the appropriate filter control for the property type
+ */
+interface Props {
+  meta: PropertyMeta
+  filterState: FilterState
+  onFilterChange: (state: FilterState) => void
+}
+```
+
+Behavior:
+- Chevron toggles collapse. Click target: chevron only (not the full header row).
+- Checkbox remains interactive in collapsed state.
+- Disabled state: filter controls at 50% opacity, `pointer-events: none`.
+- Type badge: 11px, rounded, slate-100 background, lowercase text.
+- Long property names: `truncate` class + `title` attribute for browser tooltip.
+- Initial state: expanded.
+
+### `filters/NumberFilter.tsx`
+
+Dual-handle range slider using shadcn/ui `Slider` with `min`, `max`, and `value=[low, high]`. Displays current low and high below the track.
+
+```ts
+interface Props {
+  state: NumberFilterState
+  onChange: (min: number, max: number) => void
+}
+```
+
+- Debounce: 150ms (handled in this component via `useDebounce`).
+- Display: round to 2dp for display; raw number for filter comparison.
+
+### `filters/StringFilter.tsx`
+
+```ts
+interface Props {
+  state: StringFilterState
+  onChange: (values: Set<string>) => void
+}
+```
+
+UI:
+- Selected values render as removable tags above the search input.
+- Search input: prefix matching against `state.allValues`, debounced 150ms.
+- Dropdown: up to 10 matching values, selected ones show ✓.
+- Tag overflow: when tags exceed 2 rows, show `+N more` chip; clicking expands.
+- Empty tags: show hint `"All values included."` Passes all nodes.
+- Default (≤50 unique values): all values pre-selected. Shows "Clear all" link.
+- Default (>50 unique values): no restriction. Placeholder: `"Search to filter by specific values."`
+- Empty string display: show as `""` (literal double-quote notation).
+
+### `filters/DateFilter.tsx`
+
+```ts
+interface Props {
+  state: DateFilterState
+  onChange: (after: string | null, before: string | null) => void
+}
+```
+
+UI:
+- Two `<input type="date">` wrapped in shadcn `Popover` for consistent cross-browser styling.
+- Labels: "After" (inclusive) / "Before" (inclusive). Placeholder: "Any date."
+- Inline validation error below fields when `after > before`: `"After date must be earlier than Before date."`
+  - Zero nodes pass until corrected.
+- Debounce: 150ms.
+
+### `filters/BooleanFilter.tsx`
+
+```ts
+interface Props {
+  state: BooleanFilterState
+  onChange: (selected: BooleanFilterState['selected']) => void
+}
+```
+
+UI: shadcn `RadioGroup` with three options: **true** | **false** | **either**.
+Arrow keys cycle states.
+
+### `NodeTooltip.tsx`
+
+```ts
+/**
+ * Floating tooltip anchored to the selected node's viewport position.
+ * Positioned absolutely relative to the Sigma canvas container.
+ * Flips horizontally and/or vertically to stay within canvas bounds.
+ */
+interface Props {
+  nodeId: string
+  screenPosition: { x: number; y: number }
+  graphData: GraphData
+  propertyMetas: PropertyMeta[]
+  canvasBounds: DOMRect
+  onClose: () => void
+}
+```
+
+Behavior:
+- Opens focused (`autoFocus` on the tooltip `div` or close button).
+- Close on: × button, Escape key, click outside tooltip.
+- On close: `focus()` canvas container.
+- Content: `label` as heading (fallback to `id`). Properties in alphabetical order.
+- Number: `toFixed(2)` display (single line).
+- String: shown as-is (single line).
+- Boolean: `true` / `false` (single line).
+- Date: **two lines** — Line 1: `"2021-03-15 · 1,423 days ago"`, Line 2: raw ISO string (11px, muted).
+  Days computed as `Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)`.
+  **Exception:** if the property key is in the node's `_defaultedProperties` attribute, suppress
+  the "· N days ago" annotation and show only the raw ISO string (single line, no elapsed time).
+  This prevents defaulted `"1970-01-01"` values from displaying a misleading "~20,278 days ago".
+- Property name truncation + `title` attribute.
+
+> **⚠ DoD item 31 note:** DoD item 31 says *"raw values as smaller secondary lines beneath each row"*
+> for all property types. This is misleading wording. The spec body is unambiguous: **only date
+> properties show a raw second line in v1.** Numbers, strings, and booleans use a single formatted
+> line. Dual-line display for other types is explicitly post-MVP. Do not implement dual-line for
+> non-date properties.
+
+### `StatsTab.tsx`
+
+```ts
+/**
+ * Stats tab content: total/filtered node counts + number property analysis.
+ */
+interface Props {
+  totalNodes: number
+  filteredNodes: number
+  numberProperties: string[]       // keys of number-type properties
+  selectedProperty: string | null
+  graph: Graph | null
+  matchingNodeIds: Set<string>
+  hasActiveFilters: boolean
+  onPropertyChange: (key: string | null) => void
+}
+```
+
+- Node counts use `aria-live="polite"`.
+- Property dropdown hidden if `numberProperties.length === 0`; shows message instead.
+- Stats computed from `computeStats()` over values of `selectedProperty` for `matchingNodeIds` (or all nodes when no filters active).
+- `<Histogram>` rendered below stats.
+
+### `Histogram.tsx`
+
+```ts
+/**
+ * Inline horizontal bar chart for a single numeric property's distribution.
+ * No Y-axis labels. Each bar shows hover tooltip with range + count.
+ */
+interface Props {
+  buckets: HistogramBucket[]
+}
+```
+
+Implementation: SVG or simple `div` bars with relative heights. Hover state shows tooltip per bar.
+
+### `ColorTab.tsx`
+
+```ts
+/**
+ * Color tab: property selector + palette selector + gradient legend.
+ */
+interface Props {
+  propertyMetas: PropertyMeta[]
+  state: ColorGradientState
+  graph: Graph | null
+  matchingNodeIds: Set<string>
+  onChange: (s: ColorGradientState) => void
+}
+```
+
+Layout:
+1. Property selector (`Select` — all properties + "None" default).
+2. Palette selector (`Select` — Viridis, Plasma, Blues, Reds, Rainbow, RdBu) with color picker inside dropdown for adding custom colors.
+3. Gradient legend:
+   - Number/date: horizontal gradient bar, min/max labels.
+   - Boolean/string: discrete colored chips with value labels.
+4. Empty states:
+   - No property selected: `"Select a property to visualise node colors."`
+   - Property selected, no active node values: `"No data for selected property."`
+   - All same value (min === max for number/date): `"All nodes have the same value — uniform color applied."`
+
+### `ErrorBoundary.tsx`
+
+```ts
+/**
+ * React class Error Boundary wrapping GraphView.
+ * Catches synchronous render/mount errors (e.g. WebGL context unavailable).
+ * Falls back to a plain error message so the page does not go blank.
+ */
+```
+
+- Must be a class component (React Error Boundaries require `componentDidCatch`).
+- Fallback UI: `"Graph failed to render. Check browser console for details."`
+- Does not catch async errors inside `useEffect` — those are handled by `GraphView` directly.
+
+### `DragOverlay.tsx`
+
+```ts
+/**
+ * Full-canvas semi-transparent overlay shown when a file is dragged over the
+ * window while a graph is already loaded.
+ */
+interface Props {
+  isVisible: boolean
+}
+```
+
+- `position: absolute`, covers the entire Sigma canvas container.
+- Background: `rgba(0, 0, 0, 0.4)` — z-index layer 2 (above canvas, below tooltip and modals).
+- Centered text: `"Drop to load new graph."` (white, 16px, semibold).
+- Rendered always; shown/hidden via `isVisible` prop (`opacity-0 pointer-events-none` when hidden).
+
+### `FilenameLabel.tsx`
+
+```ts
+/**
+ * Displays the loaded filename in muted text, positioned top-left of the canvas.
+ */
+interface Props {
+  filename: string
+}
+```
+
+- `position: absolute`, top: 8px, left: 12px.
+- Color: `#94a3b8`, font-size: 12px.
+- z-index layer 4 (canvas controls group — see Z-index table in spec).
+
+### `CanvasControls.tsx`
+
+```ts
+/**
+ * On-screen zoom and fit buttons overlaid on the canvas, bottom-right corner.
+ */
+interface Props {
+  onZoomIn: () => void
+  onZoomOut: () => void
+  onFit: () => void
+}
+```
+
+- `position: absolute`, bottom: 12px, right: 12px.
+- Three `Button` (shadcn, variant `outline`, small) stacked vertically: `+` / `−` / `⊡`.
+- Handlers in `GraphView`:
+  ```ts
+  onZoomIn:  () => sigma.getCamera().animatedZoom({ duration: 200 })
+  onZoomOut: () => sigma.getCamera().animatedUnzoom({ duration: 200 })
+  onFit:     () => sigma.fit()
+  ```
+
+---
+
+## Sigma Initialization Reference
+
+```ts
+const sigma = new Sigma(graph, container, {
+  renderEdgeLabels: false,
+  defaultNodeColor: '#94a3b8',
+  defaultEdgeColor: '#94a3b8',
+  labelRenderedSizeThreshold: 8,
+  labelFont: 'system-ui, sans-serif',
+  labelSize: 12,
+  nodeReducer: (node, attrs) => {
+    // Selected node: override with blue-500 + ring.
+    // tooltipStateRef.current is a useRef kept in sync with tooltipState.
+    if (node === tooltipStateRef.current?.nodeId) {
+      return { ...attrs, color: '#3b82f6', highlighted: true }
+    }
+    return attrs
+  },
+})
+```
+
+The `nodeReducer` is called per-node per-render frame by Sigma — it must be fast (no Map lookups
+that iterate). Reading from a `ref` is O(1) and safe inside a render callback.
+
+Edge attributes to set per edge on graph load:
+```ts
+{ color: '#94a3b8', size: 1 }
+```
+
+Node attributes to set per node on graph load:
+```ts
+{
+  color: '#94a3b8',
+  size: 5,
+  label: node.label ?? node.id,
+  _defaultedProperties: [],   // populated by buildGraph from applyNullDefaults result
+}
+```
+
+---
+
+## Performance Architecture
+
+These constraints are **non-negotiable** for 50k-node graphs.
+
+| Rule | Implementation |
+|---|---|
+| FA2 on Web Worker | `new FA2Layout(graph, settings)` — never run on UI thread |
+| Node recolor without remount | `graph.updateEachNodeAttributes()` + `sigma.refresh()` — no new Sigma instance |
+| Label threshold | `labelRenderedSizeThreshold: 8` in Sigma config — labels skipped until zoomed in |
+| Filter evaluation is synchronous | Pre-compute numeric values per property on load; iterate nodes once per filter change |
+| String filter search | Prefix match against in-memory array — O(distinct values) per keypress, never async |
+| Stats recompute | `computeStats()` and `computeHistogram()` over the matched node set — both O(n) |
+| Debounce all continuous controls | 150ms debounce on sliders, string search, date pickers |
+| Sigma resize | Debounced 100ms via `lodash/debounce` or inline `setTimeout` |
+| Gradient color map | Computed once per property/palette/filter change; stored as `Map<nodeId, hex>` |
+| No full re-renders | Color/filter changes must not trigger React re-render of Sigma canvas |
+
+---
+
+## UI Design Tokens
+
+```ts
+// Node colors
+const NODE_DEFAULT     = '#94a3b8'  // slate-400 — no filters active
+const NODE_HIGHLIGHTED = '#93c5fd'  // blue-300  — passes all filters
+const NODE_GRAYED      = '#e2e8f0'  // slate-200 — fails any filter
+const NODE_SELECTED    = '#3b82f6'  // blue-500  — tooltip open, 2px ring
+
+// Edge colors
+const EDGE_DEFAULT     = '#94a3b8'
+const EDGE_GRAYED      = '#e2e8f0'
+
+// Node sizes
+const NODE_SIZE_DEFAULT     = 5
+const NODE_SIZE_HIGHLIGHTED = 5 * 1.15  // ≈ 5.75
+
+// Edge sizes
+const EDGE_SIZE_DEFAULT = 1
+const EDGE_SIZE_GRAYED  = 0.5
+
+// Canvas background
+const CANVAS_BG = '#f8fafc'  // slate-50
+
+// Sidebar backgrounds
+const SIDEBAR_BG = '#ffffff'
+```
+
+---
+
+## shadcn/ui Component Map
+
+| UI element | shadcn/ui component |
+|---|---|
+| Run/Stop/Randomize/Download buttons | `Button` |
+| Gravity + Speed sliders | `Slider` |
+| Number range slider | `Slider` (dual handle via two values) |
+| Filter enable/disable | `Checkbox` |
+| Boolean toggle | `RadioGroup` |
+| Date pickers | `Popover` + native `<input type="date">` |
+| String filter multi-select | `Popover` + `Command` |
+| Filters / Stats / Color tab switcher | `Tabs` |
+| Stats property dropdown | `Select` |
+| Color property + palette dropdowns | `Select` |
+| Null-default modal, confirmation dialogs | `Dialog` |
+| Large-graph warning | `AlertDialog` |
+| Download toast | shadcn `Sonner` or custom `<div>` toast |
+
+---
+
+## Testing Strategy
+
+### Unit Tests — Vitest (`src/test/`)
+
+Pure functions in `lib/` only. No React, no Sigma, no canvas.
+
+**`parseJSON.test.ts`**:
+- Valid JSON string → returns parsed object
+- Invalid JSON → throws "Invalid JSON file"
+
+**`validateGraph.test.ts`**:
+- Valid full input → returns typed `GraphData`
+- Missing `version` → throws with exact message `"Unsupported schema version"`
+- Unknown `version` (e.g. `"2"`) → throws with exact message `"Unsupported schema version"`
+- Missing `nodes` array → throws with exact message `"File must contain nodes and edges arrays"`
+- Missing `edges` array → throws with exact message `"File must contain nodes and edges arrays"`
+- Non-array `nodes` → throws with exact message `"File must contain nodes and edges arrays"`
+- 0 nodes after filtering invalid ones → throws `"Graph has no nodes to display"`
+- Node missing `id` → node skipped, `console.warn` called, remaining nodes returned
+- Edge referencing unknown node → edge skipped, `console.warn` called
+- Empty `nodes` + `edges` arrays → valid (0 nodes will throw "Graph has no nodes to display")
+- Properties with number/string/boolean values → passes
+
+**`applyNullDefaults.test.ts`**:
+- No missing values → `replacementCount === 0`
+- Missing number property → replaced with `0`, count incremented
+- Missing string property → replaced with `""`
+- Missing boolean property → replaced with `false`
+- Missing date property → replaced with `"1970-01-01"`
+- Mixed missing across multiple nodes → correct total count
+
+**`buildGraph.test.ts`**:
+- All nodes have x+y → positionMode === 'all', positions preserved
+- Some nodes have x+y → positionMode === 'partial', all positions randomised
+- No nodes have x+y → positionMode === 'none', all positions randomised
+- Returns correct node/edge counts
+- Edge to unknown node skipped with `console.warn`
+- Node `label` and `properties` stored as Graphology attributes
+- Node with defaulted properties → `_defaultedProperties` attribute contains correct keys
+- Node with no defaulted properties → `_defaultedProperties` is an empty array
+
+**`detectPropertyTypes.test.ts`**:
+- All boolean values → `'boolean'`
+- All number values → `'number'`
+- 100% valid ISO 8601 strings → `'date'`
+- Any non-ISO string present → `'string'`
+- Mixed numbers and strings → `'string'`
+- All null/undefined → `'number'` (safe default)
+
+**`computeStats.test.ts`**:
+- Correct min/max/mean on known data
+- Correct median on odd and even-length arrays
+- Correct P25/P75 on known data
+- Null/undefined excluded from calculation
+- Single-element array → all stats equal
+- Empty/all-null array → returns `null`
+
+**`computeHistogram.test.ts`**:
+- Returns correct number of buckets (Sturges, clamped [3, 20])
+- All values fall into exactly one bucket
+- Buckets span [min, max] range
+- Empty input → empty array
+- Single value → minimum bucket count (3), value falls in first bucket
+- All identical values (e.g. `[5, 5, 5, 5]`) → 3 buckets (minimum), all values in first bucket,
+  no division-by-zero error (bucket width handles min === max gracefully)
+
+### E2E Tests — Playwright (`e2e/`)
+
+**`drop-zone.spec.ts`**:
+- Upload valid file → graph renders, filename shown on canvas
+- Upload invalid JSON → inline error displayed, drop zone re-enabled
+- Upload file missing `nodes` → error message contains "File must contain nodes and edges arrays"
+- Upload empty graph (0 nodes) → error message contains "Graph has no nodes to display"
+- Spinner visible from drop until first render frame
+- Upload `partial-positions-graph.json` → loads successfully and inline warning
+  *"Some nodes have positions and some do not — positions ignored."* is visible on canvas (DoD 41)
+
+**`simulation.spec.ts`**:
+- Run button starts simulation (Simulating… indicator appears)
+- Stop button stops simulation
+- Gravity slider change stops/restarts simulation
+- Randomize Layout re-randomizes and fits camera
+- Large graph (>10k nodes) → confirmation dialog shown before run
+- File drop while simulating → simulation stops, then confirmation dialog
+
+**`filters.spec.ts`**:
+- Right sidebar shows all property keys with type badges after loading
+- Number filter slider: moving min handle updates displayed value; nodes outside range go gray
+- Boolean filter: selecting "true" grays out "false" nodes
+- String filter: selecting value tags filters nodes
+- Date filter: setting after/before filters nodes
+- Enable/disable checkbox dims controls and disables filtering
+- Clear all filters resets all to defaults
+- Zero-match banner appears when no nodes match; "Clear all" button in banner works
+- Switching between Filters/Stats/Color tabs does not change highlight state
+- Grayed-out node: click does not open tooltip
+- Tooltip auto-closes when its node becomes grayed-out (filter change)
+
+**`stats.spec.ts`**:
+- Stats tab shows total and filtered node counts
+- Selecting number property shows min/max/mean/median/P25/P75
+- Histogram appears with correct bar count
+- Hovering histogram bar shows bucket range and count tooltip
+- Stats update when filter changes
+
+**`color.spec.ts`**:
+- Color tab property selector applies gradient to active nodes
+- Grayed-out nodes remain `#e2e8f0` regardless of gradient
+- Switching tabs does not clear gradient
+- Palette change updates node colors
+- Legend shows correct type (continuous bar vs discrete chips)
+
+**`export-roundtrip.spec.ts`** (required by DoD #55):
+- Load sample graph, run simulation briefly, stop
+- Click Download Graph → filename prompt appears pre-filled
+- Confirm download → toast "Graph downloaded." appears
+- Drop exported file → loads without validation error
+- All node positions restored exactly: `Math.abs(exported.x - reloaded.x) < 0.0001` for every node
+- All node properties preserved exactly (deep equality check on `properties` objects)
+
+---
+
+## Confirmation Dialog Spec
+
+All dialogs are centred modals with `rgba(0,0,0,0.4)` backdrop.
+Button order: **Cancel** (ghost/secondary, left) | **Confirm action** (primary, right).
+
+| Dialog | Trigger | Confirm action |
+|---|---|---|
+| New file (graph already loaded) | Drop file / "Load new file" button | Full app state reset |
+| New file (simulation running) | Drop file while simulating | Stop sim → reset state |
+| Null-default modal | `replacementCount > 0` on load | Proceed with defaults applied |
+| Large-graph warning | Run pressed, node count > 10,000 | Start simulation |
+
+---
+
+## Export Implementation Notes
+
+**Download flow:**
+1. User clicks "↓ Download Graph".
+2. Show filename `<input>` prompt (shadcn `Dialog`), pre-filled with original filename.
+3. On confirm: serialize graph via Sigma coordinates → JSON string → Blob → `URL.createObjectURL` → `<a download>` click → `URL.revokeObjectURL`.
+4. Show toast: `"Graph downloaded."` (auto-dismiss after ~2s).
+
+**Serialization:**
+```ts
+const exported: GraphData = {
+  version: '1',
+  nodes: graphData.nodes.map(n => ({
+    ...n,
+    x: graph.getNodeAttribute(n.id, 'x'),
+    y: graph.getNodeAttribute(n.id, 'y'),
+  })),
+  edges: graphData.edges,
+}
+```
+
+---
+
+## JSDoc Rules
+
+Every exported function, hook, and component must have:
+- One-sentence description
+- `@param` for each parameter
+- `@returns` describing return value
+- `@throws` if applicable
+- `@example` for all `lib/` pure functions
+
+Internal helpers and obvious one-liners: no JSDoc required.
+
+---
+
+## Sample Fixture (`e2e/fixtures/sample-graph.json`)
+
+```json
+{
+  "version": "1",
+  "nodes": [
+    { "id": "1", "label": "Alice", "properties": { "age": 34, "score": 91.5, "joined": "2021-03-15", "active": true,  "status": "active"   } },
+    { "id": "2", "label": "Bob",   "properties": { "age": 28, "score": 74.0, "joined": "2023-11-02", "active": false, "status": "pending"  } },
+    { "id": "3", "label": "Carol", "properties": { "age": 45, "score": 55.2, "joined": "2019-07-20", "active": true,  "status": "active"   } },
+    { "id": "4", "label": "Dave",  "properties": { "age": 31, "score": 88.8, "joined": "2022-01-10", "active": false, "status": "inactive" } },
+    { "id": "5", "label": "Eve",   "properties": { "age": 27, "score": 62.1, "joined": "2024-05-30", "active": true,  "status": "pending"  } }
+  ],
+  "edges": [
+    { "source": "1", "target": "2" },
+    { "source": "2", "target": "3" },
+    { "source": "3", "target": "4" },
+    { "source": "4", "target": "5" },
+    { "source": "5", "target": "1" },
+    { "source": "1", "target": "3" }
+  ]
+}
+```
+
+This fixture covers all four property types: number (`age`, `score`), date (`joined`), boolean (`active`), string (`status`).
+
+## Partial-Position Fixture (`e2e/fixtures/partial-positions-graph.json`)
+
+Used by the partial-position E2E test (DoD 41). Nodes 1 and 2 have `x`/`y`; nodes 3–5 do not.
+Expected behaviour: positions ignored entirely, inline warning shown.
+
+```json
+{
+  "version": "1",
+  "nodes": [
+    { "id": "1", "label": "Alice", "x": 100.0, "y": -50.0,  "properties": { "age": 34 } },
+    { "id": "2", "label": "Bob",   "x": -80.0, "y": 120.0,  "properties": { "age": 28 } },
+    { "id": "3", "label": "Carol",                           "properties": { "age": 45 } },
+    { "id": "4", "label": "Dave",                            "properties": { "age": 31 } },
+    { "id": "5", "label": "Eve",                             "properties": { "age": 27 } }
+  ],
+  "edges": [
+    { "source": "1", "target": "2" },
+    { "source": "2", "target": "3" }
+  ]
+}
+```
+
+---
+
+## Definition of Done
+
+Refer to `product_specification.md` §Definition of Done for the full 55-point checklist.
+
+Key gates before each release ships:
+
+| Gate | Command |
+|---|---|
+| All unit tests pass | `npm run test` |
+| All E2E tests pass | `npm run test:e2e` |
+| Zero lint errors | `npm run lint` |
+| All exports have JSDoc | manual review |
+| 50k-node smoke test | manual — load large fixture, verify <2s render |

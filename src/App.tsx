@@ -3,7 +3,7 @@
  *
  * @returns Placeholder graph visualizer root element
  */
-function App(): JSX.Element {
+function App(): React.JSX.Element {
   return <div>Graph Visualizer</div>
 }
 

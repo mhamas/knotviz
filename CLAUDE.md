@@ -10,15 +10,16 @@ The goal is a clean, working prototype — not a production app. Prioritize corr
 
 | Concern | Library |
 |---|---|
-| Framework | React 18 + TypeScript |
+| Framework | React 19 + TypeScript (strict) |
 | Graph rendering | `sigma` (v3) |
 | Graph data model | `graphology` |
 | Spring layout | `graphology-layout-forceatlas2` |
-| Styling | Tailwind CSS v3 |
-| Build tool | Vite |
+| UI components | shadcn/ui v4 (Base UI primitives) |
+| Styling | Tailwind CSS v4 (PostCSS plugin) |
+| Build tool | Vite 8 |
 | Unit testing | Vitest |
 | E2E testing | Playwright |
-| Linting | ESLint + Prettier |
+| Linting | ESLint 9 (flat config) + Prettier |
 
 ---
 
@@ -35,7 +36,8 @@ Date property values are stored and filtered as **ISO 8601 strings** — no conv
 ## File Structure
 
 ```
-graph-viz/
+grapphy/
+├── plan/                # Product spec, implementation plan, roadmap tasks
 ├── e2e/
 │   ├── fixtures/sample-graph.json
 │   ├── drop-zone.spec.ts
@@ -43,6 +45,7 @@ graph-viz/
 │   └── property-analysis.spec.ts
 ├── src/
 │   ├── components/
+│   │   ├── ui/          # shadcn/ui generated components (lint-excluded)
 │   │   ├── DropZone.tsx, GraphView.tsx, LeftSidebar.tsx, RightSidebar.tsx
 │   │   ├── NodeTooltip.tsx, PropertyFilterPanel.tsx, FilterSlider.tsx
 │   ├── hooks/
@@ -51,10 +54,10 @@ graph-viz/
 │   ├── lib/
 │   │   ├── buildGraph.ts, validateGraph.ts, colorScales.ts
 │   │   ├── computeStats.ts, computeHistogram.ts, detectPropertyType.ts
-│   ├── test/         # Vitest unit tests for lib/ functions only
+│   ├── test/            # Vitest unit tests for lib/ functions only
 │   ├── types.ts, App.tsx, main.tsx, index.css
-├── playwright.config.ts, vite.config.ts, tailwind.config.js
-├── tsconfig.json, .eslintrc.cjs, .prettierrc
+├── playwright.config.ts, vite.config.ts, postcss.config.js
+├── tsconfig.json, eslint.config.js, .prettierrc
 ```
 
 ---

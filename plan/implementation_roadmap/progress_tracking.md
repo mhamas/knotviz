@@ -15,7 +15,7 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 - [x] 07 — Sigma Canvas
 - [x] 08 — Canvas Controls
 - [x] 08b — Canvas Rotation
-- [ ] 09 — Left Sidebar Shell
+- [x] 09 — Left Sidebar Shell
 - [ ] 10 — FA2 + Debounce Hooks
 - [ ] 11 — Simulation UI
 - [ ] 12 — Position-Aware Loading
@@ -53,4 +53,4 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 
 ## Next task
 
-**09 — Left Sidebar Shell** (prereq: 07 ✓)
+**10 — FA2 + Debounce Hooks** (prereq: 05 ✓)

@@ -4,6 +4,7 @@ import type Graph from 'graphology'
 import type { GraphData, PositionMode, TooltipState } from '../types'
 import { FilenameLabel } from './FilenameLabel'
 import { CanvasControls } from './CanvasControls'
+import { LeftSidebar } from './LeftSidebar'
 
 interface Props {
   graphData: GraphData
@@ -23,6 +24,7 @@ interface Props {
 export function GraphView({
   graph,
   filename,
+  onLoadNewFile,
 }: Props): React.JSX.Element {
   const containerRef = useRef<HTMLDivElement>(null)
   const sigmaRef = useRef<Sigma | null>(null)
@@ -137,6 +139,11 @@ export function GraphView({
 
   return (
     <div className="flex h-screen w-screen">
+      <LeftSidebar
+        nodeCount={graph.order}
+        edgeCount={graph.size}
+        onLoadNewFile={onLoadNewFile}
+      />
       <div className="relative flex-1">
         <div
           ref={containerRef}

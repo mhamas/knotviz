@@ -11,7 +11,7 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 - [x] 03 — Parse + Validate
 - [x] 04 — Null Defaults
 - [x] 05 — Build Graph
-- [ ] 06 — Drop Zone
+- [x] 06 — Drop Zone
 - [ ] 07 — Sigma Canvas
 - [ ] 08 — Canvas Controls
 - [ ] 09 — Left Sidebar Shell
@@ -52,4 +52,4 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 
 ## Next task
 
-**06 — Drop Zone** (prereq: 05 ✓)
+**07 — Sigma Canvas** (prereq: 06 ✓)

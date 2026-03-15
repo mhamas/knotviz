@@ -1,7 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Sigma from 'sigma'
 import type Graph from 'graphology'
 import type { GraphData, PositionMode, TooltipState } from '../types'
+import { FilenameLabel } from './FilenameLabel'
+import { CanvasControls } from './CanvasControls'
 
 interface Props {
   graphData: GraphData
@@ -83,6 +85,18 @@ export function GraphView({
   // Suppress unused var warning — will be used in Task 14
   void setTooltipState
 
+  const handleZoomIn = useCallback((): void => {
+    sigmaRef.current?.getCamera().animatedZoom({ duration: 200 })
+  }, [])
+
+  const handleZoomOut = useCallback((): void => {
+    sigmaRef.current?.getCamera().animatedUnzoom({ duration: 200 })
+  }, [])
+
+  const handleFit = useCallback((): void => {
+    sigmaRef.current?.getCamera().animatedReset({ duration: 200 })
+  }, [])
+
   return (
     <div className="flex h-screen w-screen">
       <div className="relative flex-1">
@@ -92,9 +106,12 @@ export function GraphView({
           className="h-full w-full"
           style={{ backgroundColor: '#f8fafc' }}
         />
-        <div className="absolute left-3 top-2 text-xs text-slate-400">
-          {filename}
-        </div>
+        <FilenameLabel filename={filename} />
+        <CanvasControls
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onFit={handleFit}
+        />
       </div>
     </div>
   )

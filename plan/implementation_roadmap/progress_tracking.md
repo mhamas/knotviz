@@ -7,7 +7,7 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 ## R1: Core Viewer
 
 - [x] 01 — Project Scaffold
-- [ ] 02 — Type Definitions
+- [x] 02 — Type Definitions
 - [ ] 03 — Parse + Validate
 - [ ] 04 — Null Defaults
 - [ ] 05 — Build Graph
@@ -52,4 +52,4 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 
 ## Next task
 
-**02 — Type Definitions** (prereq: 01 ✓)
+**03 — Parse + Validate** (prereq: 02 ✓)

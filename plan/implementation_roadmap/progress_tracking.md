@@ -9,7 +9,7 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 - [x] 01 — Project Scaffold
 - [x] 02 — Type Definitions
 - [x] 03 — Parse + Validate
-- [ ] 04 — Null Defaults
+- [x] 04 — Null Defaults
 - [ ] 05 — Build Graph
 - [ ] 06 — Drop Zone
 - [ ] 07 — Sigma Canvas
@@ -52,4 +52,4 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 
 ## Next task
 
-**04 — Null Defaults** (prereq: 03 ✓)
+**05 — Build Graph** (prereq: 04 ✓)

@@ -40,7 +40,7 @@ npm install sigma graphology graphology-layout-forceatlas2 graphology-layout-ran
 npm install -D tailwindcss postcss autoprefixer
 npx tailwindcss init -p
 npx shadcn@latest init
-npx shadcn@latest add button slider checkbox tabs select popover command radio-group
+npx shadcn@latest add button slider checkbox tabs select popover command radio-group alert-dialog
 npm install -D vitest @vitest/coverage-v8 jsdom @testing-library/jest-dom
 npm install -D @playwright/test
 npx playwright install
@@ -177,7 +177,8 @@ graph-viz/
 │   │   ├── useFA2Simulation.ts
 │   │   ├── useFilterState.ts
 │   │   ├── useNodeColors.ts
-│   │   └── useColorGradient.ts
+│   │   ├── useColorGradient.ts
+│   │   └── useDebounce.ts
 │   │   NOTE: CLAUDE.md lists usePropertyAnalysis.ts — that is an outdated name.
 │   │   The three hooks above supersede it. Do not create usePropertyAnalysis.ts.
 │   ├── lib/
@@ -459,8 +460,15 @@ export function buildGraph(nullDefaultResult: NullDefaultResult): { graph: Graph
  * Rules (applied in order):
  * 1. All non-null values are JS booleans → 'boolean'
  * 2. All non-null values are JS numbers → 'number'
- * 3. 100% of non-null values are valid ISO 8601 date strings → 'date'
+ * 3. 100% of non-null values match the ISO 8601 date regex → 'date'
  * 4. Otherwise → 'string'
+ *
+ * ISO 8601 validation regex (applied per non-null value):
+ *   /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})?)?$/
+ * Accepts date-only ("2021-03-15") and datetime formats.
+ * Rejects ambiguous strings like "2021", "Q1 2021", "March 15".
+ * Does NOT validate calendar correctness (e.g. "2021-13-45") — out of scope.
+ * Edge case: if all values are null/undefined → default to 'number' (safe fallback).
  *
  * Called once per graph load, result is stable for the session.
  *
@@ -478,7 +486,9 @@ export function detectPropertyTypes(nodes: NodeInput[]): Map<string, PropertyTyp
 /**
  * Computes descriptive statistics for an array of numeric values.
  * Null/undefined are excluded from all calculations.
- * Requires at least one non-null value; returns null if array is empty.
+ * Requires at least one non-null value; returns null if array is empty or all-null.
+ * NOTE: Stats cover number properties only. Date values (ISO strings) are never
+ * passed here — StatsTab filters to number-type properties before calling this function.
  *
  * @example
  * computeStats([1, 2, 3, 4, 5])
@@ -496,6 +506,8 @@ export function computeStats(values: Array<number | null | undefined>): Property
  *
  * Returns an empty array for empty input.
  * The last bucket's `to` boundary is inclusive.
+ * min === max guard: when all values are identical, produce 3 buckets each with
+ * width 0 — all values fall into the first bucket. Never divide by zero.
  *
  * @example
  * computeHistogram([1, 2, 3, 4, 5])
@@ -573,8 +585,11 @@ export interface FA2SimulationHandle {
  *   4. sigma.fit() to reset camera.
  *   5. Restart only if was running in step 1.
  *
- * Worker crashes: caught via `layout.on('killed', handler)` or worker onerror
- *   → sets errorMessage, marks isRunning = false.
+ * Worker error sources — handle both:
+ *   - `layout.on('killed', handler)` — FA2 library-level termination (e.g. out of memory)
+ *   - `layout.supervisor.worker.onerror = handler` — unhandled JS exception in worker
+ *   Both paths: set errorMessage = "Simulation failed — reload file to continue.",
+ *   mark isRunning = false. errorMessage persists until the user loads a new file.
  * Cleanup: layout.kill() on unmount.
  *
  * @example
@@ -621,11 +636,20 @@ export interface FilterStateHandle {
  * ```
  *
  * STRING FILTER INITIALISATION — runs once per string property on load:
- * - Collect all distinct values for the property from nodeValueIndex.
+ * - Collect all distinct non-null values for the property from nodeValueIndex.
  * - Sort alphabetically.
+ * - If `allValues.length === 0` (all null/absent): set `selectedValues = new Set()` (all nodes pass).
  * - If `allValues.length <= 50`: set `selectedValues = new Set(allValues)` (all pre-selected).
- * - If `allValues.length > 50`: set `selectedValues = new Set()` (no restriction).
+ * - If `allValues.length > 50`: set `selectedValues = new Set()` (no restriction — all nodes pass).
  * - Store `allValues` in the StringFilterState for use by StringFilter dropdown.
+ *
+ * SEMANTIC NOTE — two meanings of "empty selectedValues":
+ *   selectedValues.size === 0 always means NO RESTRICTION (all nodes pass).
+ *   selectedValues = new Set(allValues) means only nodes whose value is in allValues pass.
+ *   Since the ≤50 case pre-selects all known values, both effectively pass all nodes on load.
+ *
+ * FILTER EVALUATION rule: a node passes a string filter when:
+ *   filter is disabled, OR selectedValues.size === 0, OR node's value is in selectedValues.
  *
  * The `propertyMetas` argument provides types so the hook knows which filter
  * variant to initialise without re-running type detection.
@@ -696,6 +720,30 @@ export function useColorGradient(
   matchingNodeIds: Set<string>,
   state: ColorGradientState
 ): Map<string, string> | null
+```
+
+### `hooks/useDebounce.ts`
+
+```ts
+/**
+ * Returns a debounced version of `fn` that delays invocation until `delay` ms
+ * after the last call. Used by all continuous controls in the app.
+ *
+ * **Debounce ownership rule:** always debounce at the leaf component level.
+ * Parent components (`LeftSidebar`, `GraphView`) receive already-debounced values.
+ * This applies to: gravity/speed sliders, number filter range, date pickers,
+ * string search input, and canvas resize.
+ *
+ * @param fn - Function to debounce.
+ * @param delay - Debounce delay in milliseconds (default 150).
+ * @returns Stable debounced function reference (does not change between renders).
+ * @example
+ * const debouncedSearch = useDebounce((q: string) => setQuery(q), 150)
+ */
+export function useDebounce<T extends (...args: unknown[]) => unknown>(
+  fn: T,
+  delay = 150
+): T
 ```
 
 ---
@@ -778,9 +826,10 @@ interface Props {
 Behavior:
 - Drag enter/over: highlight border.
 - Drop: run `parseJSON → validateGraph → applyNullDefaults → buildGraph` pipeline in full.
-- If `replacementCount > 0`: show `<NullDefaultModal>` before calling `onLoad`.
-  - On modal Cancel: discard the in-memory graph and data; do nothing.
-  - On modal "Load anyway": call `onLoad(data, graph, positionMode, filename)`.
+- If `replacementCount > 0`: show `<NullDefaultModal>` (shadcn `AlertDialog` — not `Dialog`,
+  so the user cannot dismiss via Escape or click-outside; must choose explicitly) before calling `onLoad`.
+  - On "Cancel": discard the in-memory graph and data; do nothing.
+  - On "Load anyway" (primary action): call `onLoad(data, graph, positionMode, filename)`.
 - If `replacementCount === 0`: call `onLoad` directly without modal.
 - On any pipeline error: display inline error message; drop zone stays active immediately.
 - Shows spinner from file drop until `onLoad` is called (covers full pipeline).
@@ -809,7 +858,11 @@ const sigma = new Sigma(graph, containerRef.current!, {
   renderEdgeLabels: false,
   defaultNodeColor: '#94a3b8',
   defaultEdgeColor: '#94a3b8',
-  labelRenderedSizeThreshold: 8,    // labels fade in above 8px visual radius
+  labelRenderedSizeThreshold: 8,    // hides labels until node reaches 8px visual radius
+  // NOTE: Sigma v3 `labelRenderedSizeThreshold` is a hard cutoff, not a smooth fade.
+  // The spec calls for a ~150ms CSS opacity transition. Verify at implementation time:
+  // if Sigma v3 does not support opacity interpolation natively, add a custom label
+  // renderer that interpolates opacity as zoom crosses the threshold.
   labelFont: 'system-ui, sans-serif',
   labelSize: 12,
   // Selected-node ring: override color + highlight for the node whose tooltip is open.
@@ -824,19 +877,25 @@ const sigma = new Sigma(graph, containerRef.current!, {
 ```
 
 `tooltipStateRef` is a `useRef<TooltipState | null>` kept in sync with the `tooltipState`
-React state. The `nodeReducer` runs every render frame — reading from a ref avoids
+React state. Add this effect immediately after the Sigma init effect:
+```ts
+useEffect(() => {
+  tooltipStateRef.current = tooltipState
+}, [tooltipState])
+```
+The `nodeReducer` runs every render frame — reading from a ref avoids
 stale closure issues without re-creating Sigma on tooltip changes.
 
 **Partial-position warning** — rendered below the canvas when `positionMode === 'partial'`:
 ```tsx
 {positionMode === 'partial' && (
-  <div className="...inline-warning...">
+  <div className="mx-3 mt-2 rounded px-3 py-2 text-[13px] bg-yellow-50 border border-yellow-300 text-yellow-900">
     Some nodes have positions and some do not — positions ignored.
     Run the simulation to generate a layout.
   </div>
 )}
 ```
-This is a non-blocking inline message, not a modal. It persists until the user loads a new file.
+Non-blocking inline message. Not dismissible — persists until the user loads a new file.
 
 **Node color + size sync** — called whenever `nodeColors` map changes:
 ```ts
@@ -863,16 +922,29 @@ sigma.refresh()
 ```
 Never remount Sigma on filter or color changes.
 
-**Node click handler**:
+**Node click handler** (grayed-out nodes are ignored; cursor shows `default` on hover):
 ```ts
 sigma.on('clickNode', ({ node }) => {
   if (hasActiveFilters && !matchingNodeIds.has(node)) return  // grayed-out: ignore
   const { x, y } = sigma.graphToViewport(graph.getNodeAttributes(node))
   setTooltipState({ nodeId: node, x, y })
 })
+sigma.on('enterNode', ({ node }) => {
+  const isGrayed = hasActiveFilters && !matchingNodeIds.has(node)
+  sigma.getContainer().style.cursor = isGrayed ? 'default' : 'pointer'
+})
+sigma.on('leaveNode', () => {
+  sigma.getContainer().style.cursor = 'default'
+})
 ```
 
-**Canvas resize**: `window.addEventListener('resize', debounce(() => sigma.resize(), 100))`
+**Canvas resize** (debounced, cleaned up on unmount):
+```ts
+const handleResize = useDebounce(() => sigma.resize(), 100)
+window.addEventListener('resize', handleResize)
+// in useEffect cleanup:
+return () => window.removeEventListener('resize', handleResize)
+```
 
 **File drag-over on window**: show `<DragOverlay>`, on drop trigger confirmation dialog flow. When simulation is running, stop it first, then show dialog.
 
@@ -880,6 +952,13 @@ sigma.on('clickNode', ({ node }) => {
 - "Loading a new file will clear the current graph. Continue?"
 - Cancel: keep current state.
 - Confirm: call `onLoadNewFile()` → App resets to DropZone → user drops new file.
+
+**Sequence when simulation is running** (DoD item 6 — order matters):
+1. Receive drop event → show `<DragOverlay>`.
+2. If simulation is running: call `stop()` and wait for the `'stop'` worker event.
+3. Only after worker confirms stop: show the confirmation `AlertDialog`.
+4. Cancel: call `start()` to resume; hide `<DragOverlay>`.
+5. Confirm: call `onLoadNewFile()`.
 
 ### `LeftSidebar.tsx`
 
@@ -959,9 +1038,18 @@ Implemented by wrapping the tab trigger label:
 
 Layout (top, pinned — not scrolled):
 1. `"N nodes match"` with `aria-live="polite"`.
-2. `"Filters combine with AND — nodes must match all enabled filters."` (muted note, immediately below count).
-3. "Clear all filters" button.
-4. Zero-match banner: `"No nodes match the current filters."` + "Clear all filters" button — shown inline below the Clear button when matchCount === 0 and hasActiveFilters.
+2. `"Filters combine with AND — nodes must match all enabled filters."` — muted note immediately
+   below count. Styling: `text-[12px] text-slate-400 italic my-1`.
+3. "Clear all filters" button (always visible when any filter is enabled).
+4. Zero-match banner — shown inline below the Clear button when `matchCount === 0` and `hasActiveFilters`:
+   ```tsx
+   <div className="rounded px-3 py-2 text-sm bg-amber-50 border border-amber-200 text-amber-900">
+     <p>No nodes match the current filters.</p>
+     <button onClick={clearAllFilters} className="underline mt-1">Clear all filters</button>
+   </div>
+   ```
+   The pinned "Clear all filters" button (row 3) **remains visible** alongside the banner —
+   the banner button is an additional affordance. Both call `clearAllFilters`.
 
 This order matches the spec's textual description: the AND note is pinned immediately below the
 count so it remains visible without scrolling. The Clear button sits between the AND note and the
@@ -1006,7 +1094,8 @@ interface Props {
 ```
 
 - Debounce: 150ms (handled in this component via `useDebounce`).
-- Display: round to 2dp for display; raw number for filter comparison.
+- Display: use `toFixed(2)` for `|value| >= 0.01`; use `toPrecision(3)` for smaller values to
+  avoid rounding e.g. `0.001` to `0.00`. Raw (unrounded) number used for filter comparison.
 
 ### `filters/StringFilter.tsx`
 
@@ -1019,13 +1108,16 @@ interface Props {
 
 UI:
 - Selected values render as removable tags above the search input.
-- Search input: prefix matching against `state.allValues`, debounced 150ms.
+- Search input: **case-insensitive** prefix matching against `state.allValues`, debounced 150ms.
 - Dropdown: up to 10 matching values, selected ones show ✓.
-- Tag overflow: when tags exceed 2 rows, show `+N more` chip; clicking expands.
-- Empty tags: show hint `"All values included."` Passes all nodes.
+  Keyboard navigation: Up/Down arrows move focus between options; Enter selects/deselects;
+  Escape closes the dropdown.
+- Tag overflow: when tags exceed 2 rows, show `+N more` chip; clicking it expands the tag area
+  inline (no animation — wrapping flex container shows all tags + "Show less" link at the end).
+- Empty tags (`selectedValues.size === 0`): show hint `"All values included."` All nodes pass.
 - Default (≤50 unique values): all values pre-selected. Shows "Clear all" link.
 - Default (>50 unique values): no restriction. Placeholder: `"Search to filter by specific values."`
-- Empty string display: show as `""` (literal double-quote notation).
+- Empty string display: show as `""` (literal double-quote notation, monospace font).
 
 ### `filters/DateFilter.tsx`
 
@@ -1068,6 +1160,10 @@ interface Props {
   screenPosition: { x: number; y: number }
   graphData: GraphData
   propertyMetas: PropertyMeta[]
+  /** Keys replaced with type defaults for this node.
+   *  Resolved in GraphView: `graph.getNodeAttribute(nodeId, '_defaultedProperties') ?? []`
+   *  and passed down. NodeTooltip must not access the graph directly. */
+  defaultedProperties: string[]
   canvasBounds: DOMRect
   onClose: () => void
 }
@@ -1083,10 +1179,16 @@ Behavior:
 - Boolean: `true` / `false` (single line).
 - Date: **two lines** — Line 1: `"2021-03-15 · 1,423 days ago"`, Line 2: raw ISO string (11px, muted).
   Days computed as `Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)`.
-  **Exception:** if the property key is in the node's `_defaultedProperties` attribute, suppress
+  **Exception:** if the property key is in the `defaultedProperties` prop, suppress
   the "· N days ago" annotation and show only the raw ISO string (single line, no elapsed time).
   This prevents defaulted `"1970-01-01"` values from displaying a misleading "~20,278 days ago".
 - Property name truncation + `title` attribute.
+
+**Accessibility:**
+- Tooltip `div` must have `role="dialog"`, `aria-label="Node details"`, `aria-modal="false"`.
+- Close button must have `aria-label="Close"`.
+- Click-outside detection: `useEffect` attaches `mousedown` on `document`; if the event target
+  is outside the tooltip ref, call `onClose()`. Remove listener on cleanup.
 
 > **⚠ DoD item 31 note:** DoD item 31 says *"raw values as smaller secondary lines beneath each row"*
 > for all property types. This is misleading wording. The spec body is unambiguous: **only date
@@ -1113,8 +1215,12 @@ interface Props {
 ```
 
 - Node counts use `aria-live="polite"`.
-- Property dropdown hidden if `numberProperties.length === 0`; shows message instead.
-- Stats computed from `computeStats()` over values of `selectedProperty` for `matchingNodeIds` (or all nodes when no filters active).
+- Property dropdown hidden if `numberProperties.length === 0`; shows message instead:
+  `"No number properties detected. Stats are available for number-type properties only."`
+- Stats computed from `computeStats()` over values of `selectedProperty` for `matchingNodeIds`
+  (or all nodes when no filters active).
+- When `computeStats()` returns `null` (no values for property among filtered nodes),
+  display all stat fields as `—` (em-dash).
 - `<Histogram>` rendered below stats.
 
 ### `Histogram.tsx`
@@ -1129,7 +1235,12 @@ interface Props {
 }
 ```
 
-Implementation: SVG or simple `div` bars with relative heights. Hover state shows tooltip per bar.
+Implementation: `<div>` bars with `position: relative` and absolute-positioned hover tooltips
+(simpler than SVG; no resize handling needed; `title` attribute provides accessible fallback).
+Bar hover tooltip format: `"10.0 – 20.0: 5 nodes"` — both boundaries shown as inclusive for
+readability (the last bucket is truly inclusive; intermediate buckets are exclusive on the right,
+but this distinction is not shown in the tooltip label).
+Relative bar height: `height: (count / maxCount * 100)%` within a fixed-height container.
 
 ### `ColorTab.tsx`
 
@@ -1148,14 +1259,19 @@ interface Props {
 
 Layout:
 1. Property selector (`Select` — all properties + "None" default).
-2. Palette selector (`Select` — Viridis, Plasma, Blues, Reds, Rainbow, RdBu) with color picker inside dropdown for adding custom colors.
-3. Gradient legend:
-   - Number/date: horizontal gradient bar, min/max labels.
-   - Boolean/string: discrete colored chips with value labels.
-4. Empty states:
+2. Palette selector (`Select` — Viridis, Plasma, Blues, Reds, Rainbow, RdBu) with an additional
+   "＋ Add color" item at the bottom of the dropdown. Selecting it reveals a native
+   `<input type="color">` element (no extra dependency). The chosen hex is appended to
+   `ColorGradientState.customColors`. Custom colors persist for the session (stored in state).
+3. Gradient legend (replaces the legend area entirely when an empty state applies):
+   - Number/date: horizontal gradient bar with min/max labels.
+   - Boolean/string: discrete colored chips with value labels. If more than 8 values,
+     chips scroll horizontally within the 300px sidebar.
+   - All same value (min === max for number/date): legend area replaced by
+     `"All nodes have the same value — uniform color applied."`
+4. Empty states (shown in place of the legend):
    - No property selected: `"Select a property to visualise node colors."`
    - Property selected, no active node values: `"No data for selected property."`
-   - All same value (min === max for number/date): `"All nodes have the same value — uniform color applied."`
 
 ### `ErrorBoundary.tsx`
 
@@ -1169,6 +1285,7 @@ Layout:
 
 - Must be a class component (React Error Boundaries require `componentDidCatch`).
 - Fallback UI: `"Graph failed to render. Check browser console for details."`
+- Log in `componentDidCatch`: `console.error('React boundary caught:', error, errorInfo.componentStack)`
 - Does not catch async errors inside `useEffect` — those are handled by `GraphView` directly.
 
 ### `DragOverlay.tsx`
@@ -1186,7 +1303,10 @@ interface Props {
 - `position: absolute`, covers the entire Sigma canvas container.
 - Background: `rgba(0, 0, 0, 0.4)` — z-index layer 2 (above canvas, below tooltip and modals).
 - Centered text: `"Drop to load new graph."` (white, 16px, semibold).
-- Rendered always; shown/hidden via `isVisible` prop (`opacity-0 pointer-events-none` when hidden).
+- Rendered always; shown/hidden via `isVisible` prop with a smooth 150ms fade:
+  ```tsx
+  className={`transition-opacity duration-150 ${isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+  ```
 
 ### `FilenameLabel.tsx`
 
@@ -1217,7 +1337,8 @@ interface Props {
 ```
 
 - `position: absolute`, bottom: 12px, right: 12px.
-- Three `Button` (shadcn, variant `outline`, small) stacked vertically: `+` / `−` / `⊡`.
+- Three `Button` (shadcn, variant `outline`, size `icon` — 32×32px, icon 16px) stacked vertically: `+` / `−` / `⊡`.
+  Hover: `hover:bg-slate-50`. Active: `active:bg-slate-100`. Cursor: `pointer`.
 - Handlers in `GraphView`:
   ```ts
   onZoomIn:  () => sigma.getCamera().animatedZoom({ duration: 200 })
@@ -1313,6 +1434,12 @@ const CANVAS_BG = '#f8fafc'  // slate-50
 
 // Sidebar backgrounds
 const SIDEBAR_BG = '#ffffff'
+
+// Z-index layers (use Tailwind z-* or inline style — must not overlap)
+const Z_MODALS          = 50  // AlertDialog, confirmation dialogs, null-default modal
+const Z_TOOLTIP         = 30  // NodeTooltip
+const Z_DRAG_OVERLAY    = 20  // full-canvas drag-and-drop overlay
+const Z_CANVAS_CONTROLS = 10  // +/−/fit buttons, FilenameLabel
 ```
 
 ---
@@ -1331,9 +1458,9 @@ const SIDEBAR_BG = '#ffffff'
 | Filters / Stats / Color tab switcher | `Tabs` |
 | Stats property dropdown | `Select` |
 | Color property + palette dropdowns | `Select` |
-| Null-default modal, confirmation dialogs | `Dialog` |
+| Null-default modal, confirmation dialogs | `AlertDialog` (must use AlertDialog — not Dialog — so user cannot dismiss via Escape/click-outside) |
 | Large-graph warning | `AlertDialog` |
-| Download toast | shadcn `Sonner` or custom `<div>` toast |
+| Download toast | Custom `<div>` with `setTimeout` auto-dismiss (~2s). No Sonner dependency. |
 
 ---
 
@@ -1419,8 +1546,8 @@ Pure functions in `lib/` only. No React, no Sigma, no canvas.
 - Stop button stops simulation
 - Gravity slider change stops/restarts simulation
 - Randomize Layout re-randomizes and fits camera
-- Large graph (>10k nodes) → confirmation dialog shown before run
-- File drop while simulating → simulation stops, then confirmation dialog
+- Large graph (>10k nodes) → confirmation dialog shown before run with "Run anyway" and "Cancel" buttons; Cancel keeps simulation stopped; Run anyway starts it
+- File drop while simulating → simulation stops first (await 'stop' event), then confirmation dialog appears
 
 **`filters.spec.ts`**:
 - Right sidebar shows all property keys with type badges after loading
@@ -1432,8 +1559,10 @@ Pure functions in `lib/` only. No React, no Sigma, no canvas.
 - Clear all filters resets all to defaults
 - Zero-match banner appears when no nodes match; "Clear all" button in banner works
 - Switching between Filters/Stats/Color tabs does not change highlight state
-- Grayed-out node: click does not open tooltip
-- Tooltip auto-closes when its node becomes grayed-out (filter change)
+- Grayed-out node: click does not open tooltip; cursor is `default` on hover
+- Tooltip auto-closes when its node becomes grayed-out by a filter change; focus returns to canvas
+- String filter: Up/Down arrow keys navigate dropdown options; Enter selects; Escape closes
+- String filter tag overflow: `+N more` chip appears; clicking it expands inline; "Show less" collapses
 
 **`stats.spec.ts`**:
 - Stats tab shows total and filtered node counts
@@ -1469,7 +1598,7 @@ Button order: **Cancel** (ghost/secondary, left) | **Confirm action** (primary, 
 | New file (graph already loaded) | Drop file / "Load new file" button | Full app state reset |
 | New file (simulation running) | Drop file while simulating | Stop sim → reset state |
 | Null-default modal | `replacementCount > 0` on load | Proceed with defaults applied |
-| Large-graph warning | Run pressed, node count > 10,000 | Start simulation |
+| Large-graph warning | Run pressed, node count > 10,000 | Start simulation — dialog title: "Large graph", body: "This graph has N nodes. The simulation may be slow.", buttons: [Cancel] (ghost) / [Run anyway] (primary) |
 
 ---
 
@@ -1477,9 +1606,14 @@ Button order: **Cancel** (ghost/secondary, left) | **Confirm action** (primary, 
 
 **Download flow:**
 1. User clicks "↓ Download Graph".
-2. Show filename `<input>` prompt (shadcn `Dialog`), pre-filled with original filename.
+2. Show filename `<input type="text">` prompt (shadcn `Dialog`), pre-filled with original filename
+   (including `.json` extension). Input is auto-selected so the user can type immediately to replace.
+   Validation: if input is empty, the Confirm button is disabled. Forbidden characters: `/` and `\`
+   (strip or reject silently). If user clears input and confirms is disabled, default filename is not
+   used — user must provide a non-empty name.
 3. On confirm: serialize graph via Sigma coordinates → JSON string → Blob → `URL.createObjectURL` → `<a download>` click → `URL.revokeObjectURL`.
-4. Show toast: `"Graph downloaded."` (auto-dismiss after ~2s).
+4. Show toast: `"Graph downloaded."` — custom `<div>` positioned bottom-center of viewport,
+   auto-dismissed via `setTimeout(hideToast, 2000)`. No Sonner or external toast library.
 
 **Serialization:**
 ```ts
@@ -1555,6 +1689,43 @@ Expected behaviour: positions ignored entirely, inline warning shown.
   ]
 }
 ```
+
+---
+
+## Release Structure
+
+Build order: **R1 Core Viewer → R2 Filter System → R3 Stats + Export → R4 Color**.
+
+| Chunk | Release | Description |
+|---|---|---|
+| 1 | R1 | Scaffold, file drop, JSON pipeline (parseJSON → validateGraph → applyNullDefaults → buildGraph) |
+| 2 | R1 | Sigma renderer, FA2 simulation, LeftSidebar simulation controls, partial-position warning |
+| 3 | R1 | NodeTooltip, ErrorBoundary |
+| 4 | R1 | CanvasControls, FilenameLabel, DragOverlay, large-graph warning dialog |
+| 5 | R2 | All filter controls (Number/String/Date/Boolean), useFilterState, node highlight/gray |
+| 6 | R2 | FiltersTab UX: count, AND note, zero-match banner, clear-all |
+| 7 | R3 | StatsTab: node counts, number property stats, Histogram |
+| 8 | R3 | Download/export, filename prompt, custom toast, export round-trip E2E |
+| 9 | R4 | ColorTab: gradient, palette selector, custom color, legend, useColorGradient, useNodeColors |
+
+Each chunk is done when: all unit tests pass (`npm run test`), all relevant E2E tests pass
+(`npm run test:e2e`), zero lint errors (`npm run lint`), all exported symbols have JSDoc.
+
+> **TODO before R1 starts:** Map each DoD item from `product_specification.md §Definition of Done`
+> to a specific chunk in the table above. Without this mapping, per-chunk QA criteria are undefined.
+
+---
+
+## Responsive Design
+
+**Target viewport:** 14-inch and 16-inch MacBooks (approximately 1440×900 to 1728×1080 logical pixels).
+No mobile or touch-only support required.
+
+**Minimum supported width:** 1024px. Below this width, a horizontal scrollbar is acceptable —
+sidebars do not collapse or stack. No responsive breakpoints needed.
+
+**Sidebar overflow:** Right sidebar content scrolls vertically at 10+ properties (`overflow-y: auto`).
+Neither sidebar changes width at different viewport sizes (left: 240px, right: 300px always).
 
 ---
 

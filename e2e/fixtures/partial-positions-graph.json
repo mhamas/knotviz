@@ -1,0 +1,14 @@
+{
+  "version": "1",
+  "nodes": [
+    { "id": "1", "label": "Alice", "x": 100.0, "y": -50.0,  "properties": { "age": 34 } },
+    { "id": "2", "label": "Bob",   "x": -80.0, "y": 120.0,  "properties": { "age": 28 } },
+    { "id": "3", "label": "Carol",                           "properties": { "age": 45 } },
+    { "id": "4", "label": "Dave",                            "properties": { "age": 31 } },
+    { "id": "5", "label": "Eve",                             "properties": { "age": 27 } }
+  ],
+  "edges": [
+    { "source": "1", "target": "2" },
+    { "source": "2", "target": "3" }
+  ]
+}

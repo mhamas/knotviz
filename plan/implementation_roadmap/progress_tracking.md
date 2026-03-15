@@ -10,7 +10,7 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 - [x] 02 — Type Definitions
 - [x] 03 — Parse + Validate
 - [x] 04 — Null Defaults
-- [ ] 05 — Build Graph
+- [x] 05 — Build Graph
 - [ ] 06 — Drop Zone
 - [ ] 07 — Sigma Canvas
 - [ ] 08 — Canvas Controls
@@ -52,4 +52,4 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 
 ## Next task
 
-**05 — Build Graph** (prereq: 04 ✓)
+**06 — Drop Zone** (prereq: 05 ✓)

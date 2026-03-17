@@ -49,10 +49,14 @@ function App(): React.JSX.Element {
           onRandomizeLayout={(): void => {}}
           nodeSize={5}
           edgeSize={1}
-          isEdgesHidden={false}
+          isEdgesVisible={true}
+          isNodeLabelsVisible={false}
+          isHighlightNeighbors={false}
           onNodeSizeChange={(): void => {}}
           onEdgeSizeChange={(): void => {}}
-          onEdgesHiddenChange={(): void => {}}
+          onEdgesVisibleChange={(): void => {}}
+          onNodeLabelsVisibleChange={(): void => {}}
+          onHighlightNeighborsChange={(): void => {}}
           onReset={handleBrowseFile}
         />
         <div className="relative flex-1">

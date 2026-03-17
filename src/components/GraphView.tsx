@@ -31,6 +31,7 @@ export function GraphView({
   const containerRef = useRef<HTMLDivElement>(null)
   const sigmaRef = useRef<Sigma | null>(null)
   const tooltipStateRef = useRef<TooltipState | null>(null)
+  const hoveredNodeRef = useRef<string | null>(null)
 
   const [tooltipState, setTooltipState] = useState<TooltipState | null>(null)
   const [simulationSettings, setSimulationSettings] = useState<SimulationSettings>({
@@ -39,12 +40,18 @@ export function GraphView({
   })
   const [nodeSize, setNodeSize] = useState(5)
   const [edgeSize, setEdgeSize] = useState(1)
-  const [isEdgesHidden, setIsEdgesHidden] = useState(false)
+  const [isEdgesVisible, setIsEdgesVisible] = useState(true)
+  const [isNodeLabelsVisible, setIsNodeLabelsVisible] = useState(false)
+  const [isHighlightNeighbors, setIsHighlightNeighbors] = useState(false)
 
   const simulation = useFA2Simulation(graph, simulationSettings)
 
   // Keep display refs in sync for use in reducers
-  const isEdgesHiddenRef = useRef(isEdgesHidden)
+  const isEdgesVisibleRef = useRef(isEdgesVisible)
+  const isNodeLabelsVisibleRef = useRef(isNodeLabelsVisible)
+  const isHighlightNeighborsRef = useRef(isHighlightNeighbors)
+  const hoveredNeighborsRef = useRef<Set<string>>(new Set())
+  const hoveredEdgesRef = useRef<Set<string>>(new Set())
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -52,9 +59,22 @@ export function GraphView({
   }, [tooltipState])
 
   useEffect(() => {
-    isEdgesHiddenRef.current = isEdgesHidden
+    isEdgesVisibleRef.current = isEdgesVisible
     sigmaRef.current?.refresh()
-  }, [isEdgesHidden])
+  }, [isEdgesVisible])
+
+  useEffect(() => {
+    isNodeLabelsVisibleRef.current = isNodeLabelsVisible
+    sigmaRef.current?.setSetting(
+      'labelRenderedSizeThreshold',
+      isNodeLabelsVisible ? 0 : Infinity,
+    )
+  }, [isNodeLabelsVisible])
+
+  useEffect(() => {
+    isHighlightNeighborsRef.current = isHighlightNeighbors
+    sigmaRef.current?.refresh()
+  }, [isHighlightNeighbors])
 
   // Sigma init — runs once on mount
   useEffect(() => {
@@ -62,25 +82,66 @@ export function GraphView({
 
     const sigma = new Sigma(graph, containerRef.current, {
       renderEdgeLabels: false,
+      zIndex: true,
       defaultNodeColor: '#94a3b8',
       defaultEdgeColor: '#94a3b8',
       minEdgeThickness: 0.1,
-      labelRenderedSizeThreshold: 8,
+      labelRenderedSizeThreshold: Infinity,
       labelFont: 'system-ui, sans-serif',
       labelSize: 12,
       nodeReducer: (node, attrs) => {
-        if (node === tooltipStateRef.current?.nodeId) {
-          return { ...attrs, color: '#3b82f6', highlighted: true }
+        const result = { ...attrs }
+        const isHovered = node === hoveredNodeRef.current
+        if (node === tooltipStateRef.current?.nodeId || isHovered) {
+          result.color = '#3b82f6'
+          result.highlighted = true
+        } else if (
+          isHighlightNeighborsRef.current &&
+          hoveredNodeRef.current &&
+          hoveredNeighborsRef.current.has(node)
+        ) {
+          result.highlighted = true
+        } else if (
+          isHighlightNeighborsRef.current &&
+          hoveredNodeRef.current &&
+          !hoveredNeighborsRef.current.has(node)
+        ) {
+          result.color = '#e2e8f0'
+          result.size = Math.max((result.size as number) * 0.5, 1)
+          result.label = null
+          result.zIndex = 0
         }
-        return attrs
+        return result
       },
-      edgeReducer: (_edge, attrs) => {
-        if (isEdgesHiddenRef.current) return { ...attrs, hidden: true }
+      edgeReducer: (edge, attrs) => {
+        if (!isEdgesVisibleRef.current) return { ...attrs, hidden: true }
+        if (isHighlightNeighborsRef.current && hoveredNodeRef.current) {
+          if (hoveredEdgesRef.current.has(edge)) {
+            return { ...attrs, color: '#3b82f6', zIndex: 1 }
+          }
+          return { ...attrs, color: '#f1f5f9' }
+        }
         return attrs
       },
     })
 
     sigmaRef.current = sigma
+
+    // Hover: highlight node and optionally its neighbors
+    sigma.on('enterNode', ({ node }) => {
+      hoveredNodeRef.current = node
+      if (isHighlightNeighborsRef.current) {
+        hoveredNeighborsRef.current = new Set(graph.neighbors(node))
+        hoveredEdgesRef.current = new Set(graph.edges(node))
+      }
+      sigma.refresh()
+    })
+    sigma.on('leaveNode', () => {
+      hoveredNodeRef.current = null
+      hoveredNeighborsRef.current = new Set()
+      hoveredEdgesRef.current = new Set()
+      sigma.refresh()
+    })
 
     // Fit camera to show all nodes
     sigma.getCamera().animatedReset({ duration: 0 })
@@ -125,6 +186,27 @@ export function GraphView({
       container.removeEventListener('wheel', handleWheel, { capture: true })
     }
   }, [])
+
+  // Space bar toggles simulation
+  const { isRunning, start: simStart, stop: simStop } = simulation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.code !== 'Space') return
+      // Don't trigger when typing in an input
+      const tag = (e.target as HTMLElement).tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return
+      e.preventDefault()
+      if (isRunning) {
+        simStop()
+      } else {
+        simStart()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return (): void => {
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isRunning, simStart, simStop])
 
   // Canvas resize handler
   useEffect(() => {
@@ -188,10 +270,14 @@ export function GraphView({
         onRandomizeLayout={simulation.randomizeLayout}
         nodeSize={nodeSize}
         edgeSize={edgeSize}
-        isEdgesHidden={isEdgesHidden}
+        isEdgesVisible={isEdgesVisible}
+        isNodeLabelsVisible={isNodeLabelsVisible}
+        isHighlightNeighbors={isHighlightNeighbors}
         onNodeSizeChange={setNodeSize}
         onEdgeSizeChange={setEdgeSize}
-        onEdgesHiddenChange={setIsEdgesHidden}
+        onEdgesVisibleChange={setIsEdgesVisible}
+        onNodeLabelsVisibleChange={setIsNodeLabelsVisible}
+        onHighlightNeighborsChange={setIsHighlightNeighbors}
         onReset={onLoadNewFile}
       />
       <div className="relative flex-1">

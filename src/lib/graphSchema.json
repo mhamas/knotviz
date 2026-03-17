@@ -36,7 +36,8 @@
         "properties": {
           "source": { "type": "string" },
           "target": { "type": "string" },
-          "label": { "type": "string" }
+          "label": { "type": "string" },
+          "weight": { "type": "number" }
         }
       }
     }

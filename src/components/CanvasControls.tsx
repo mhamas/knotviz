@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button'
+import { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp'
 
 interface Props {
   onZoomIn: () => void
@@ -63,6 +64,8 @@ export function CanvasControls({ onZoomIn, onZoomOut, onFit, onRotateCW, onRotat
       >
         ↻
       </Button>
+      <div className="my-0.5" />
+      <KeyboardShortcutsHelp />
     </div>
   )
 }

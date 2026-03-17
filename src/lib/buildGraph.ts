@@ -74,6 +74,9 @@ export function buildGraph(nullDefaultResult: NullDefaultResult): {
     if (edge.label) {
       edgeAttrs.label = edge.label
     }
+    if (typeof edge.weight === 'number') {
+      edgeAttrs.weight = edge.weight
+    }
     graph.addEdge(edge.source, edge.target, edgeAttrs)
   }
 

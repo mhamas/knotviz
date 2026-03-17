@@ -34,10 +34,14 @@ interface Props {
   onRandomizeLayout: () => void
   nodeSize: number
   edgeSize: number
-  isEdgesHidden: boolean
+  isEdgesVisible: boolean
+  isNodeLabelsVisible: boolean
+  isHighlightNeighbors: boolean
   onNodeSizeChange: (v: number) => void
   onEdgeSizeChange: (v: number) => void
-  onEdgesHiddenChange: (v: boolean) => void
+  onEdgesVisibleChange: (v: boolean) => void
+  onNodeLabelsVisibleChange: (v: boolean) => void
+  onHighlightNeighborsChange: (v: boolean) => void
   onReset: () => void
 }
 
@@ -75,10 +79,14 @@ export function LeftSidebar({
   onRandomizeLayout,
   nodeSize,
   edgeSize,
-  isEdgesHidden,
+  isEdgesVisible,
+  isNodeLabelsVisible,
+  isHighlightNeighbors,
   onNodeSizeChange,
   onEdgeSizeChange,
-  onEdgesHiddenChange,
+  onEdgesVisibleChange,
+  onNodeLabelsVisibleChange,
+  onHighlightNeighborsChange,
   onReset,
 }: Props): React.JSX.Element {
   const debouncedGravityChange = useDebounce(onGravityChange, 150)
@@ -174,8 +182,8 @@ export function LeftSidebar({
         <LabeledSlider
           label="Node size"
           value={nodeSize}
-          min={1}
-          max={20}
+          min={0}
+          max={10}
           step={0.1}
           defaultValue={[nodeSize]}
           onValueChange={(value): void => {
@@ -187,8 +195,8 @@ export function LeftSidebar({
         <LabeledSlider
           label="Edge size"
           value={edgeSize}
-          min={0.1}
-          max={5}
+          min={0}
+          max={2}
           step={0.1}
           defaultValue={[edgeSize]}
           onValueChange={(value): void => {
@@ -198,9 +206,21 @@ export function LeftSidebar({
         />
 
         <SidebarCheckbox
-          label="Hide edges"
-          checked={isEdgesHidden}
-          onCheckedChange={onEdgesHiddenChange}
+          label="Show edges"
+          checked={isEdgesVisible}
+          onCheckedChange={onEdgesVisibleChange}
+        />
+
+        <SidebarCheckbox
+          label="Show node labels"
+          checked={isNodeLabelsVisible}
+          onCheckedChange={onNodeLabelsVisibleChange}
+        />
+
+        <SidebarCheckbox
+          label="Highlight neighbors on hover"
+          checked={isHighlightNeighbors}
+          onCheckedChange={onHighlightNeighborsChange}
         />
       </div>
 

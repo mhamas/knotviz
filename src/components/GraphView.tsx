@@ -4,16 +4,6 @@ import type Graph from 'graphology'
 import type { GraphData, PositionMode, TooltipState } from '../types'
 import type { SimulationSettings } from '../hooks/useFA2Simulation'
 import { useFA2Simulation } from '../hooks/useFA2Simulation'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { FilenameLabel } from './FilenameLabel'
 import { CanvasControls } from './CanvasControls'
 import { LeftSidebar } from './LeftSidebar'
@@ -266,20 +256,7 @@ export function GraphView({
     camera.animate({ angle: camera.angle - Math.PI / 12 }, { duration: 200 })
   }, [])
 
-  const [isDownloadDialogOpen, setIsDownloadDialogOpen] = useState(false)
-  const [downloadFilename, setDownloadFilename] = useState('')
-
-  const handleDownloadClick = useCallback((): void => {
-    const base = filename.replace(/\.json$/i, '')
-    setDownloadFilename(`${base}_export.json`)
-    setIsDownloadDialogOpen(true)
-  }, [filename])
-
-  const handleDownloadConfirm = useCallback((): void => {
-    let name = downloadFilename.trim().replace(/[/\\]/g, '')
-    if (!name) return
-    if (!name.endsWith('.json')) name += '.json'
-
+  const handleDownload = useCallback((): void => {
     const exported: GraphData = {
       version: '1',
       nodes: graphData.nodes.map((n) => ({
@@ -293,11 +270,10 @@ export function GraphView({
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = name
+    a.download = filename
     a.click()
     URL.revokeObjectURL(url)
-    setIsDownloadDialogOpen(false)
-  }, [graph, graphData, downloadFilename])
+  }, [graph, graphData, filename])
 
   return (
     <div className="flex h-screen w-screen">
@@ -323,7 +299,7 @@ export function GraphView({
         onEdgesVisibleChange={setIsEdgesVisible}
         onNodeLabelsVisibleChange={setIsNodeLabelsVisible}
         onHighlightNeighborsChange={setIsHighlightNeighbors}
-        onDownload={handleDownloadClick}
+        onDownload={handleDownload}
         onReset={onLoadNewFile}
       />
       <div className="relative flex-1">
@@ -349,35 +325,6 @@ export function GraphView({
         />
       </div>
 
-      <AlertDialog open={isDownloadDialogOpen} onOpenChange={setIsDownloadDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Download graph</AlertDialogTitle>
-            <AlertDialogDescription>
-              Export the graph with current node positions. Choose a filename:
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <input
-            type="text"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
-            value={downloadFilename}
-            onChange={(e): void => setDownloadFilename(e.target.value)}
-            onKeyDown={(e): void => {
-              if (e.key === 'Enter' && downloadFilename.trim()) handleDownloadConfirm()
-            }}
-            autoFocus
-          />
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDownloadConfirm}
-              disabled={!downloadFilename.trim()}
-            >
-              Download
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }

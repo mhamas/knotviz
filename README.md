@@ -113,7 +113,8 @@ Full schema: `src/lib/graphSchema.json`
 |---|---|
 | `npm run dev` | Start dev server |
 | `npm run build` | Production build (typecheck + bundle) |
-| `npm run verify` | Typecheck + lint + unit tests |
+| `npm run test:all` | **Full gate** — typecheck + lint + unit tests + E2E |
+| `npm run verify` | Typecheck + lint + unit tests (no E2E) |
 | `npm run test` | Unit tests (Vitest) |
 | `npm run test:e2e` | E2E tests (Playwright — Chromium + Firefox) |
 | `npm run test:e2e:ui` | E2E tests with interactive Playwright UI |

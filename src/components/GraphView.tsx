@@ -91,7 +91,7 @@ export function GraphView({
       labelRenderedSizeThreshold: Infinity,
       labelFont: 'system-ui, sans-serif',
       labelSize: 12,
-      nodeReducer: (node, attrs) => {
+      nodeReducer: (node: string, attrs: Record<string, unknown>): Record<string, unknown> => {
         const result = { ...attrs }
         const isHovered = node === hoveredNodeRef.current
         if (node === tooltipStateRef.current?.nodeId || isHovered) {
@@ -115,7 +115,7 @@ export function GraphView({
         }
         return result
       },
-      edgeReducer: (edge, attrs) => {
+      edgeReducer: (edge: string, attrs: Record<string, unknown>): Record<string, unknown> => {
         if (!isEdgesVisibleRef.current) return { ...attrs, hidden: true }
         if (isHighlightNeighborsRef.current && hoveredNodeRef.current) {
           if (hoveredEdgesRef.current.has(edge)) {

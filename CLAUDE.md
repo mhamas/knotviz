@@ -73,18 +73,18 @@ grapphy/
 
 ## Verification (MANDATORY)
 
-After every implementation change, you MUST run `npm run verify` **and** `npm run test:e2e` before considering the work done. All must pass with zero errors. **Do not commit if any test fails.**
+After every implementation change, you MUST run `npm run test:all` before considering the work done. All checks must pass with zero errors. **Do not commit if any test fails.**
 
 ```bash
-npm run verify    # tsc --noEmit && eslint src && vitest run
-npm run test:e2e  # Playwright E2E tests (Chromium + Firefox)
+npm run test:all  # typecheck + lint + unit tests + E2E tests (single command)
 ```
 
 Individual commands if needed:
+- `npm run verify` — typecheck + lint + unit tests (no E2E)
 - `npm run typecheck` — TypeScript type checking (strict mode)
 - `npm run lint` — ESLint (warnings from `src/components/ui/` are excluded)
 - `npm run test` — Vitest unit tests (`src/test/`)
-- `npm run test:e2e` — Playwright E2E tests (`e2e/`)
+- `npm run test:e2e` — Playwright E2E tests (`e2e/`, Chromium + Firefox)
 - `npm run test:e2e:ui` — Playwright interactive UI runner
 - `npm run build` — Full production build (typecheck + Vite bundle)
 
@@ -110,9 +110,8 @@ Progress is tracked in `plan/implementation_roadmap/progress_tracking.md`. Befor
    - **Unit tests** (`src/test/`) for new or changed pure functions in `lib/`.
    - **E2E tests** (`e2e/`) for any user-facing feature, UI change, or interaction flow.
    - Choose the test type that best covers the change. Many tasks warrant both.
-2. Run `npm run verify` — must pass with zero errors.
-3. Run `npm run test:e2e` — all E2E tests must pass with zero errors.
-4. **Do not commit if any test fails.** Fix the issue first.
+2. Run `npm run test:all` — must pass with zero errors.
+3. **Do not commit if any test fails.** Fix the issue first.
 5. If the task adds UI, use Playwright MCP to visually verify the rendered output.
 6. If the task warrants user testing (UI changes, new interactions), tell the user what to test and how (e.g. "run `npm run dev` and try dragging a JSON file onto the drop zone").
 7. Mark the task `[x]` in `progress_tracking.md` and update the "Next task" line.
@@ -197,8 +196,13 @@ Every exported function, hook, and component must have a one-sentence descriptio
 
 ---
 
-## What NOT to Build
+## Scope Boundaries
 
-- No routing, no backend/API calls, no multi-property comparison
-- No edge weight visualization, no undo/redo
-- No React Testing Library component tests (E2E covers this)
+The app is a client-side-only prototype. These categories are out of scope:
+
+- **No server-side**: no routing, no backend/API calls, no auth, no database
+- **No complex analysis**: no multi-property comparison, no edge weight visualization
+- **No state history**: no undo/redo
+- **No component-level tests**: no React Testing Library — E2E covers UI
+
+For the current feature set, see `README.md`.

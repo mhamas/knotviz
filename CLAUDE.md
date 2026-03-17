@@ -38,25 +38,33 @@ Date property values are stored and filtered as **ISO 8601 strings** — no conv
 ```
 grapphy/
 ├── plan/                # Product spec, implementation plan, roadmap tasks
-├── e2e/
-│   ├── fixtures/sample-graph.json
+├── e2e/                 # Playwright E2E tests
+│   ├── fixtures/        # Test graph files (sample, all-positions, partial, invalid, empty, weighted)
 │   ├── drop-zone.spec.ts
+│   ├── graph-view.spec.ts
 │   ├── simulation.spec.ts
-│   └── property-analysis.spec.ts
+│   ├── display-controls.spec.ts
+│   ├── position-loading.spec.ts
+│   └── reset-and-export.spec.ts
 ├── src/
 │   ├── components/
 │   │   ├── ui/          # shadcn/ui generated components (lint-excluded)
 │   │   ├── sidebar/     # Reusable sidebar design system (see below)
-│   │   ├── DropZone.tsx, GraphView.tsx, LeftSidebar.tsx, RightSidebar.tsx
-│   │   ├── NodeTooltip.tsx, PropertyFilterPanel.tsx, FilterSlider.tsx
+│   │   ├── DropZone.tsx, GraphView.tsx, LeftSidebar.tsx
+│   │   ├── CanvasControls.tsx, FilenameLabel.tsx, KeyboardShortcutsHelp.tsx
+│   │   └── ErrorBoundary.tsx
 │   ├── hooks/
 │   │   ├── useFA2Simulation.ts
-│   │   └── usePropertyAnalysis.ts
+│   │   └── useDebounce.ts
 │   ├── lib/
-│   │   ├── buildGraph.ts, validateGraph.ts, colorScales.ts
-│   │   ├── computeStats.ts, computeHistogram.ts, detectPropertyType.ts
+│   │   ├── buildGraph.ts, validateGraph.ts, parseJSON.ts
+│   │   ├── applyNullDefaults.ts, detectPropertyTypes.ts
+│   │   ├── graphSchema.json, utils.ts
 │   ├── test/            # Vitest unit tests for lib/ functions only
+│   │   ├── buildGraph.test.ts, validateGraph.test.ts
+│   │   ├── applyNullDefaults.test.ts, detectPropertyTypes.test.ts
 │   ├── types.ts, App.tsx, main.tsx, index.css
+├── scripts/             # Utility scripts (e.g. csv-to-graph converter)
 ├── playwright.config.ts, vite.config.ts, postcss.config.js
 ├── tsconfig.json, eslint.config.js, .prettierrc
 ```
@@ -65,16 +73,19 @@ grapphy/
 
 ## Verification (MANDATORY)
 
-After every implementation change, you MUST run `npm run verify` before considering the work done. This runs typecheck + lint + unit tests in sequence. All three must pass with zero errors.
+After every implementation change, you MUST run `npm run verify` **and** `npm run test:e2e` before considering the work done. All must pass with zero errors. **Do not commit if any test fails.**
 
 ```bash
 npm run verify    # tsc --noEmit && eslint src && vitest run
+npm run test:e2e  # Playwright E2E tests (Chromium + Firefox)
 ```
 
 Individual commands if needed:
 - `npm run typecheck` — TypeScript type checking (strict mode)
 - `npm run lint` — ESLint (warnings from `src/components/ui/` are excluded)
-- `npm run test` — Vitest unit tests
+- `npm run test` — Vitest unit tests (`src/test/`)
+- `npm run test:e2e` — Playwright E2E tests (`e2e/`)
+- `npm run test:e2e:ui` — Playwright interactive UI runner
 - `npm run build` — Full production build (typecheck + Vite bundle)
 
 ### Visual verification with Playwright MCP
@@ -95,11 +106,17 @@ Use this for: layout issues, component visibility, drag-and-drop flows, tooltip 
 
 Progress is tracked in `plan/implementation_roadmap/progress_tracking.md`. Before starting work, read that file to find the next task. After completing a task:
 
-1. Run `npm run verify` — must pass with zero errors.
-2. If the task adds UI, use Playwright MCP to visually verify the rendered output.
-3. If the task warrants user testing (UI changes, new interactions), tell the user what to test and how (e.g. "run `npm run dev` and try dragging a JSON file onto the drop zone").
-4. Mark the task `[x]` in `progress_tracking.md` and update the "Next task" line.
-5. Commit and push.
+1. **Write tests** — every task/feature must include appropriate tests:
+   - **Unit tests** (`src/test/`) for new or changed pure functions in `lib/`.
+   - **E2E tests** (`e2e/`) for any user-facing feature, UI change, or interaction flow.
+   - Choose the test type that best covers the change. Many tasks warrant both.
+2. Run `npm run verify` — must pass with zero errors.
+3. Run `npm run test:e2e` — all E2E tests must pass with zero errors.
+4. **Do not commit if any test fails.** Fix the issue first.
+5. If the task adds UI, use Playwright MCP to visually verify the rendered output.
+6. If the task warrants user testing (UI changes, new interactions), tell the user what to test and how (e.g. "run `npm run dev` and try dragging a JSON file onto the drop zone").
+7. Mark the task `[x]` in `progress_tracking.md` and update the "Next task" line.
+8. Commit and push.
 
 Status markers: `[x]` done, `[ ]` not started, `[>]` in progress.
 
@@ -134,7 +151,27 @@ Import via `import { SectionHeading, LabeledSlider, ... } from '@/components/sid
 
 - **FA2 simulation** runs in a Web Worker (`graphology-layout-forceatlas2/worker`) to keep the UI thread free. Slider changes: `stop()` → update settings → `start()`. Reset: `stop()` → randomize positions → `start()`.
 - **Node color updates** apply without remounting Sigma: `graph.updateEachNodeAttributes(...)` + `sigma.refresh()`.
-- **Unit tests** cover only pure functions in `lib/`. No React Testing Library component tests — E2E covers UI.
+- **Unit tests** (`src/test/`) cover pure functions in `lib/`. No React Testing Library component tests — E2E covers UI.
+- **E2E tests** (`e2e/`) cover all user-facing features using Playwright across Chromium and Firefox. Chromium uses SwiftShader (`--use-gl=angle --use-angle=swiftshader`) for headless WebGL support.
+
+---
+
+## Testing Requirements
+
+Every task or feature **must** include tests. This is non-negotiable.
+
+| Test type | Location | Covers | Command |
+|---|---|---|---|
+| Unit (Vitest) | `src/test/*.test.ts` | Pure functions in `lib/` | `npm run test` |
+| E2E (Playwright) | `e2e/*.spec.ts` | UI features, interactions, user flows | `npm run test:e2e` |
+
+**Test fixtures** live in `e2e/fixtures/` — graph JSON files for different scenarios (valid, invalid, empty, partial positions, weighted edges, etc.).
+
+### Rules
+1. New `lib/` functions must have unit tests.
+2. New UI features or interaction changes must have E2E tests.
+3. All tests (unit + E2E) must pass before committing. No exceptions.
+4. When fixing a bug, add a regression test that would have caught it.
 
 ---
 
@@ -163,5 +200,5 @@ Every exported function, hook, and component must have a one-sentence descriptio
 ## What NOT to Build
 
 - No routing, no backend/API calls, no multi-property comparison
-- No edge weight visualization, no export, no undo/redo
+- No edge weight visualization, no undo/redo
 - No React Testing Library component tests (E2E covers this)

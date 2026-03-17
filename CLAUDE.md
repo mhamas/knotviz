@@ -46,6 +46,7 @@ grapphy/
 ├── src/
 │   ├── components/
 │   │   ├── ui/          # shadcn/ui generated components (lint-excluded)
+│   │   ├── sidebar/     # Reusable sidebar design system (see below)
 │   │   ├── DropZone.tsx, GraphView.tsx, LeftSidebar.tsx, RightSidebar.tsx
 │   │   ├── NodeTooltip.tsx, PropertyFilterPanel.tsx, FilterSlider.tsx
 │   ├── hooks/
@@ -101,6 +102,31 @@ Progress is tracked in `plan/implementation_roadmap/progress_tracking.md`. Befor
 5. Commit and push.
 
 Status markers: `[x]` done, `[ ]` not started, `[>]` in progress.
+
+---
+
+## UI Component Library (`src/components/sidebar/`)
+
+All sidebar and panel UI **must** use the shared design system components from `@/components/sidebar`. Do NOT write ad-hoc styled elements with inline Tailwind classes for any of the patterns below — always use the corresponding component. This ensures visual consistency and lets us change the design from a single place.
+
+| Component | Purpose | Key props |
+|---|---|---|
+| `SectionHeading` | Bold uppercase section title, optional `?` help popover | `children`, `help?` |
+| `HelpPopover` | Clickable `?` icon that opens a popover | `children`, `side?` |
+| `LabeledSlider` | Label row (name + value + optional help) above a Slider | `label`, `value`, `help?`, `formatValue?`, slider props |
+| `CollapsibleSection` | `<details>` toggle with styled arrow | `label`, `children` |
+| `SidebarButton` | Outline action button with color variants | `children`, `onClick`, `color?: 'neutral' \| 'green' \| 'red'`, `disabled?`, `className?` |
+| `SidebarCheckbox` | Checkbox with styled label | `label`, `checked`, `onCheckedChange` |
+| `StatRow` | Key-value row for metadata (e.g. node/edge counts) | `label`, `value` |
+
+Import via `import { SectionHeading, LabeledSlider, ... } from '@/components/sidebar'`.
+
+### Rules
+
+1. **Always use these components** when building sidebar or panel UI. If a pattern isn't covered, create a new component in `sidebar/` and export it from `sidebar/index.ts` — don't inline it.
+2. **No complex ad-hoc components** outside of the design system. If a UI element will appear more than once or represents a distinct pattern (heading, control, display row), it belongs in `sidebar/`.
+3. **Style changes go in the component**, not at the call site. Use `className` prop only for layout concerns (e.g. `flex-1`, `w-1/2`, `mt-4`), never for colors, fonts, or spacing that are part of the design system.
+4. **shadcn/ui** (`src/components/ui/`) provides low-level primitives (Button, Slider, Checkbox, Popover, AlertDialog). The `sidebar/` layer composes these into app-specific components with consistent styling. Use `ui/` directly only when `sidebar/` doesn't have a suitable wrapper.
 
 ---
 

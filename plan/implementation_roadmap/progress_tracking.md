@@ -18,7 +18,7 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 - [x] 09 — Left Sidebar Shell
 - [x] 10 — FA2 + Debounce Hooks
 - [x] 11 — Simulation UI
-- [ ] 11b — Display Controls
+- [x] 11b — Display Controls
 - [ ] 12 — Position-Aware Loading
 - [ ] 13 — File Management
 - [ ] 14 — Node Tooltip

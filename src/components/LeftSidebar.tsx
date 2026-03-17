@@ -42,6 +42,7 @@ interface Props {
   onEdgesVisibleChange: (v: boolean) => void
   onNodeLabelsVisibleChange: (v: boolean) => void
   onHighlightNeighborsChange: (v: boolean) => void
+  onDownload: () => void
   onReset: () => void
 }
 
@@ -87,6 +88,7 @@ export function LeftSidebar({
   onEdgesVisibleChange,
   onNodeLabelsVisibleChange,
   onHighlightNeighborsChange,
+  onDownload,
   onReset,
 }: Props): React.JSX.Element {
   const debouncedGravityChange = useDebounce(onGravityChange, 150)
@@ -235,9 +237,14 @@ export function LeftSidebar({
 
       </div>
 
+      <div className="mt-auto flex flex-col gap-2">
+        <SidebarButton onClick={onDownload} disabled={isDisabled}>
+          ↓ Download graph
+        </SidebarButton>
+
       <AlertDialog>
         <AlertDialogTrigger
-          className={`mt-auto w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 ${isDisabled ? 'pointer-events-none opacity-40' : 'cursor-pointer'}`}
+          className={`w-full rounded-md border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 ${isDisabled ? 'pointer-events-none opacity-40' : 'cursor-pointer'}`}
           disabled={isDisabled}
         >
           Reset graph
@@ -255,6 +262,7 @@ export function LeftSidebar({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
 
     </div>
   )

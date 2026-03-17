@@ -4,6 +4,16 @@ import type Graph from 'graphology'
 import type { GraphData, PositionMode, TooltipState } from '../types'
 import type { SimulationSettings } from '../hooks/useFA2Simulation'
 import { useFA2Simulation } from '../hooks/useFA2Simulation'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { FilenameLabel } from './FilenameLabel'
 import { CanvasControls } from './CanvasControls'
 import { LeftSidebar } from './LeftSidebar'
@@ -24,7 +34,9 @@ interface Props {
  * @returns Graph canvas view element.
  */
 export function GraphView({
+  graphData,
   graph,
+  positionMode,
   filename,
   onLoadNewFile,
 }: Props): React.JSX.Element {
@@ -254,6 +266,39 @@ export function GraphView({
     camera.animate({ angle: camera.angle - Math.PI / 12 }, { duration: 200 })
   }, [])
 
+  const [isDownloadDialogOpen, setIsDownloadDialogOpen] = useState(false)
+  const [downloadFilename, setDownloadFilename] = useState('')
+
+  const handleDownloadClick = useCallback((): void => {
+    const base = filename.replace(/\.json$/i, '')
+    setDownloadFilename(`${base}_export.json`)
+    setIsDownloadDialogOpen(true)
+  }, [filename])
+
+  const handleDownloadConfirm = useCallback((): void => {
+    let name = downloadFilename.trim().replace(/[/\\]/g, '')
+    if (!name) return
+    if (!name.endsWith('.json')) name += '.json'
+
+    const exported: GraphData = {
+      version: '1',
+      nodes: graphData.nodes.map((n) => ({
+        ...n,
+        x: graph.getNodeAttribute(n.id, 'x') as number,
+        y: graph.getNodeAttribute(n.id, 'y') as number,
+      })),
+      edges: graphData.edges,
+    }
+    const blob = new Blob([JSON.stringify(exported, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = name
+    a.click()
+    URL.revokeObjectURL(url)
+    setIsDownloadDialogOpen(false)
+  }, [graph, graphData, downloadFilename])
+
   return (
     <div className="flex h-screen w-screen">
       <LeftSidebar
@@ -278,6 +323,7 @@ export function GraphView({
         onEdgesVisibleChange={setIsEdgesVisible}
         onNodeLabelsVisibleChange={setIsNodeLabelsVisible}
         onHighlightNeighborsChange={setIsHighlightNeighbors}
+        onDownload={handleDownloadClick}
         onReset={onLoadNewFile}
       />
       <div className="relative flex-1">
@@ -287,6 +333,12 @@ export function GraphView({
           className="h-full w-full"
           style={{ backgroundColor: '#f8fafc' }}
         />
+        {positionMode === 'partial' && (
+          <div className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded border border-yellow-300 bg-yellow-50 px-3 py-2 text-xs text-yellow-900">
+            Some nodes have positions and some do not — positions were randomized.
+            Run the simulation to generate a layout.
+          </div>
+        )}
         <FilenameLabel filename={filename} />
         <CanvasControls
           onZoomIn={handleZoomIn}
@@ -296,6 +348,36 @@ export function GraphView({
           onRotateCCW={handleRotateCCW}
         />
       </div>
+
+      <AlertDialog open={isDownloadDialogOpen} onOpenChange={setIsDownloadDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Download graph</AlertDialogTitle>
+            <AlertDialogDescription>
+              Export the graph with current node positions. Choose a filename:
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <input
+            type="text"
+            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+            value={downloadFilename}
+            onChange={(e): void => setDownloadFilename(e.target.value)}
+            onKeyDown={(e): void => {
+              if (e.key === 'Enter' && downloadFilename.trim()) handleDownloadConfirm()
+            }}
+            autoFocus
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDownloadConfirm}
+              disabled={!downloadFilename.trim()}
+            >
+              Download
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

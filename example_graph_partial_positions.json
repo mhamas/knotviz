@@ -1,0 +1,30 @@
+{
+  "version": "1",
+  "nodes": [
+    { "id": "1", "label": "Alpha",   "x": 0,   "y": 0,   "properties": { "weight": 10 } },
+    { "id": "2", "label": "Bravo",   "x": 100, "y": 0,   "properties": { "weight": 25 } },
+    { "id": "3", "label": "Charlie", "properties": { "weight": 15 } },
+    { "id": "4", "label": "Delta",   "properties": { "weight": 30 } },
+    { "id": "5", "label": "Echo",    "x": 100, "y": 100, "properties": { "weight": 5 } },
+    { "id": "6", "label": "Foxtrot", "properties": { "weight": 20 } },
+    { "id": "7", "label": "Golf",    "properties": { "weight": 12 } },
+    { "id": "8", "label": "Hotel",   "x": 100, "y": 200, "properties": { "weight": 18 } },
+    { "id": "9", "label": "India",   "properties": { "weight": 22 } },
+    { "id": "10","label": "Juliet",  "properties": { "weight": 8 } }
+  ],
+  "edges": [
+    { "source": "1", "target": "2" },
+    { "source": "1", "target": "3" },
+    { "source": "2", "target": "4" },
+    { "source": "3", "target": "5" },
+    { "source": "4", "target": "6" },
+    { "source": "5", "target": "7" },
+    { "source": "6", "target": "8" },
+    { "source": "7", "target": "9" },
+    { "source": "8", "target": "10" },
+    { "source": "9", "target": "1" },
+    { "source": "10", "target": "3" },
+    { "source": "4", "target": "7" },
+    { "source": "2", "target": "9" }
+  ]
+}

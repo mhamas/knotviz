@@ -19,7 +19,7 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 - [x] 10 — FA2 + Debounce Hooks
 - [x] 11 — Simulation UI
 - [x] 11b — Display Controls
-- [ ] 12 — Position-Aware Loading
+- [x] 12 — Position-Aware Loading
 - [ ] 13 — File Management
 - [ ] 14 — Node Tooltip
 
@@ -38,7 +38,7 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 - [ ] 22 — Stats Library
 - [ ] 23 — Histogram
 - [ ] 24 — StatsTab
-- [ ] 25 — Graph Export
+- [x] 25 — Graph Export
 
 ## R4: Color
 
@@ -54,4 +54,4 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 
 ## Next task
 
-**12 — Position-Aware Loading** (prereq: 05 ✓)
+**13 — File Management** (prereq: 07 ✓, 11 ✓)

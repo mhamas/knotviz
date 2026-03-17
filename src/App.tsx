@@ -57,6 +57,7 @@ function App(): React.JSX.Element {
           onEdgesVisibleChange={(): void => {}}
           onNodeLabelsVisibleChange={(): void => {}}
           onHighlightNeighborsChange={(): void => {}}
+          onDownload={(): void => {}}
           onReset={handleBrowseFile}
         />
         <div className="relative flex-1">

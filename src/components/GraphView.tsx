@@ -37,13 +37,24 @@ export function GraphView({
     gravity: 1,
     speed: 1,
   })
+  const [nodeSize, setNodeSize] = useState(5)
+  const [edgeSize, setEdgeSize] = useState(1)
+  const [isEdgesHidden, setIsEdgesHidden] = useState(false)
 
   const simulation = useFA2Simulation(graph, simulationSettings)
 
-  // Keep ref in sync with state
+  // Keep display refs in sync for use in reducers
+  const isEdgesHiddenRef = useRef(isEdgesHidden)
+
+  // Keep refs in sync with state
   useEffect(() => {
     tooltipStateRef.current = tooltipState
   }, [tooltipState])
+
+  useEffect(() => {
+    isEdgesHiddenRef.current = isEdgesHidden
+    sigmaRef.current?.refresh()
+  }, [isEdgesHidden])
 
   // Sigma init — runs once on mount
   useEffect(() => {
@@ -53,6 +64,7 @@ export function GraphView({
       renderEdgeLabels: false,
       defaultNodeColor: '#94a3b8',
       defaultEdgeColor: '#94a3b8',
+      minEdgeThickness: 0.1,
       labelRenderedSizeThreshold: 8,
       labelFont: 'system-ui, sans-serif',
       labelSize: 12,
@@ -60,6 +72,10 @@ export function GraphView({
         if (node === tooltipStateRef.current?.nodeId) {
           return { ...attrs, color: '#3b82f6', highlighted: true }
         }
+        return attrs
+      },
+      edgeReducer: (_edge, attrs) => {
+        if (isEdgesHiddenRef.current) return { ...attrs, hidden: true }
         return attrs
       },
     })
@@ -74,6 +90,17 @@ export function GraphView({
       sigmaRef.current = null
     }
   }, [graph])
+
+  // Apply node/edge size changes
+  useEffect(() => {
+    graph.updateEachNodeAttributes((_node, attrs) => ({ ...attrs, size: nodeSize }))
+    sigmaRef.current?.refresh()
+  }, [graph, nodeSize])
+
+  useEffect(() => {
+    graph.updateEachEdgeAttributes((_edge, attrs) => ({ ...attrs, size: edgeSize }))
+    sigmaRef.current?.refresh()
+  }, [graph, edgeSize])
 
   // Shift+wheel rotation handler
   useEffect(() => {
@@ -159,7 +186,13 @@ export function GraphView({
         onGravityChange={(v): void => setSimulationSettings((s) => ({ ...s, gravity: v }))}
         onSpeedChange={(v): void => setSimulationSettings((s) => ({ ...s, speed: v }))}
         onRandomizeLayout={simulation.randomizeLayout}
-        onLoadNewFile={onLoadNewFile}
+        nodeSize={nodeSize}
+        edgeSize={edgeSize}
+        isEdgesHidden={isEdgesHidden}
+        onNodeSizeChange={setNodeSize}
+        onEdgeSizeChange={setEdgeSize}
+        onEdgesHiddenChange={setIsEdgesHidden}
+        onReset={onLoadNewFile}
       />
       <div className="relative flex-1">
         <div

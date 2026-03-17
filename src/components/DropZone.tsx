@@ -18,6 +18,7 @@ import {
 
 interface Props {
   onLoad: (data: GraphData, graph: Graph, positionMode: PositionMode, filename: string) => void
+  fileInputRef?: React.RefObject<HTMLInputElement | null>
 }
 
 /**
@@ -28,7 +29,7 @@ interface Props {
  * @param props - Component props with onLoad callback.
  * @returns Drop zone UI element.
  */
-export function DropZone({ onLoad }: Props): React.JSX.Element {
+export function DropZone({ onLoad, fileInputRef: externalFileInputRef }: Props): React.JSX.Element {
   const [isDragOver, setIsDragOver] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -40,7 +41,8 @@ export function DropZone({ onLoad }: Props): React.JSX.Element {
     replacementCount: number
   } | null>(null)
 
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const internalFileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = externalFileInputRef ?? internalFileInputRef
 
   const processFile = useCallback(
     (file: File): void => {
@@ -102,9 +104,9 @@ export function DropZone({ onLoad }: Props): React.JSX.Element {
     [processFile]
   )
 
-  const handleClick = useCallback((): void => {
+  const handleClick = (): void => {
     fileInputRef.current?.click()
-  }, [])
+  }
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -128,10 +130,10 @@ export function DropZone({ onLoad }: Props): React.JSX.Element {
   }, [])
 
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-slate-50">
+    <div className="flex h-full w-full items-center justify-center bg-slate-50">
       <div
         data-testid="drop-zone"
-        className={`flex h-64 w-96 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${
+        className={`flex h-80 w-[32rem] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${
           isDragOver ? 'border-blue-400 bg-blue-50' : 'border-slate-300 bg-white'
         }`}
         onDragOver={handleDragOver}

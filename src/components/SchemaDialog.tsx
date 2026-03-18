@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -6,6 +6,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
+import { CopyableCode, TabPills } from '@/components/sidebar'
 import graphSchema from '@/lib/graphSchema.json'
 
 type TabId = 'explanation' | 'schema' | 'examples'
@@ -130,44 +131,6 @@ function FieldTable({ title, fields }: { title: string; fields: FieldRow[] }): R
         </tbody>
       </table>
     </section>
-  )
-}
-
-function CopyableCode({
-  code,
-  label,
-}: {
-  code: string
-  label: string
-}): React.JSX.Element {
-  const [isCopied, setIsCopied] = useState(false)
-
-  const handleCopy = useCallback((): void => {
-    navigator.clipboard.writeText(code).then(() => {
-      setIsCopied(true)
-      setTimeout(() => setIsCopied(false), 2000)
-    })
-  }, [code])
-
-  return (
-    <div>
-      <div className="mb-1.5 flex items-center justify-between">
-        <span className="text-xs font-medium text-slate-500">{label}</span>
-        <button
-          onClick={handleCopy}
-          className="cursor-pointer rounded border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 active:bg-slate-100"
-        >
-          {isCopied ? 'Copied!' : 'Copy'}
-        </button>
-      </div>
-      <pre
-        className="cursor-pointer overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-3 font-mono text-xs leading-relaxed text-slate-700 hover:bg-slate-100"
-        onClick={handleCopy}
-        title="Click to copy"
-      >
-        {code}
-      </pre>
-    </div>
   )
 }
 
@@ -301,23 +264,7 @@ export function SchemaDialog({ isOpen, onOpenChange }: Props): React.JSX.Element
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex gap-1">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              onClick={(): void => setActiveTab(tab.id)}
-              className={`cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                activeTab === tab.id
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <TabPills tabs={TABS} activeTab={activeTab} onTabChange={setActiveTab} />
 
         <div className="min-h-0 flex-1 overflow-y-auto">
           {activeTab === 'explanation' && (

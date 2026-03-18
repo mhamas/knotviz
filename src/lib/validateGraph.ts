@@ -1,7 +1,30 @@
+import Ajv from 'ajv'
 import type { GraphData, NodeInput, EdgeInput, PropertyValue } from '../types'
+import graphSchema from './graphSchema.json'
 
 /**
- * Validates a raw JS object against the versioned graph schema.
+ * Structural schema for top-level validation via ajv. Checks that the
+ * top-level shape is correct (version, nodes array, edges array) without
+ * validating individual items — those are processed leniently below.
+ */
+const structuralSchema = {
+  type: 'object',
+  required: graphSchema.required,
+  properties: {
+    version: graphSchema.properties.version,
+    nodes: { type: 'array', description: 'Array of node objects.' },
+    edges: { type: 'array', description: 'Array of edge objects.' },
+  },
+}
+
+const ajv = new Ajv({ allErrors: true })
+const validateStructure = ajv.compile(structuralSchema)
+
+/**
+ * Validates a raw JS object against the graph JSON Schema.
+ *
+ * Phase 1: ajv validates top-level structure (version, nodes/edges arrays).
+ * Phase 2: per-item lenient processing — invalid nodes/edges are skipped with warnings.
  *
  * Non-fatal skips (logged via console.warn, not thrown):
  * - Node missing `id` → skip node
@@ -10,27 +33,34 @@ import type { GraphData, NodeInput, EdgeInput, PropertyValue } from '../types'
  *
  * @param raw - Parsed JSON value from parseJSON.
  * @returns Validated GraphData object.
- * @throws {Error} "Unsupported schema version" — missing or wrong version.
- * @throws {Error} "File must contain nodes and edges arrays" — missing or non-array nodes/edges.
+ * @throws {Error} Schema validation failure — version, nodes, or edges issue.
  * @throws {Error} "Graph has no nodes to display" — zero valid nodes.
  * @example
  * const data = validateGraph(parseJSON(fileText))
  */
 export function validateGraph(raw: unknown): GraphData {
-  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+  // Phase 1: structural validation via JSON Schema
+  if (!validateStructure(raw)) {
+    const errors = validateStructure.errors ?? []
+    const first = errors[0]
+
+    if (first?.keyword === 'const' && first.instancePath === '/version') {
+      throw new Error('Unsupported schema version')
+    }
+    if (first?.keyword === 'required') {
+      const missing = first.params?.missingProperty as string | undefined
+      if (missing === 'version') {
+        throw new Error('Unsupported schema version')
+      }
+      throw new Error('File must contain nodes and edges arrays')
+    }
+    // Fallback for type errors, missing fields, etc.
     throw new Error('File must contain nodes and edges arrays')
   }
 
   const obj = raw as Record<string, unknown>
 
-  if (!('version' in obj) || obj.version !== '1') {
-    throw new Error('Unsupported schema version')
-  }
-
-  if (!('nodes' in obj) || !('edges' in obj) || !Array.isArray(obj.nodes) || !Array.isArray(obj.edges)) {
-    throw new Error('File must contain nodes and edges arrays')
-  }
-
+  // Phase 2: lenient per-item processing
   const validNodes: NodeInput[] = []
   for (const node of obj.nodes as unknown[]) {
     if (typeof node !== 'object' || node === null) {
@@ -94,6 +124,9 @@ export function validateGraph(raw: unknown): GraphData {
     const validEdge: EdgeInput = { source: e.source, target: e.target }
     if (typeof e.label === 'string') {
       validEdge.label = e.label
+    }
+    if (typeof e.weight === 'number') {
+      validEdge.weight = e.weight
     }
     validEdges.push(validEdge)
   }

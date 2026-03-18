@@ -5,6 +5,7 @@ import { parseJSON } from '../lib/parseJSON'
 import { validateGraph } from '../lib/validateGraph'
 import { applyNullDefaults } from '../lib/applyNullDefaults'
 import { buildGraph } from '../lib/buildGraph'
+import { SchemaDialog } from './SchemaDialog'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -35,6 +36,7 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
   const [isDragOver, setIsDragOver] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isSchemaOpen, setIsSchemaOpen] = useState(false)
   const [pendingLoad, setPendingLoad] = useState<{
     data: GraphData
     graph: Graph
@@ -163,6 +165,15 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
               Drop a .json graph file here
             </p>
             <p className="mt-1 text-xs text-slate-400">or click to browse</p>
+            <button
+              className="mt-3 cursor-pointer text-xs text-slate-400 underline hover:text-slate-600"
+              onClick={(e): void => {
+                e.stopPropagation()
+                setIsSchemaOpen(true)
+              }}
+            >
+              View expected JSON schema
+            </button>
           </>
         )}
 
@@ -180,6 +191,8 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
         className="hidden"
         onChange={handleFileChange}
       />
+
+      <SchemaDialog isOpen={isSchemaOpen} onOpenChange={setIsSchemaOpen} />
 
       <AlertDialog open={pendingLoad !== null} onOpenChange={(isOpen) => { if (!isOpen) handleCancelLoad() }}>
         <AlertDialogContent>

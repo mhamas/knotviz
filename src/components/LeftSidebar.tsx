@@ -258,7 +258,7 @@ export function LeftSidebar({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={onReset}>Reset</AlertDialogAction>
+            <AlertDialogAction onClick={(): void => onReset()}>Reset</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

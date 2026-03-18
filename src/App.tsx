@@ -21,9 +21,11 @@ interface LoadedData {
  */
 function App(): React.JSX.Element {
   const [loadedData, setLoadedData] = useState<LoadedData | null>(null)
+  const [pendingFile, setPendingFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleLoadNewFile = useCallback((): void => {
+  const handleLoadNewFile = useCallback((file?: File): void => {
+    setPendingFile(file ?? null)
     setLoadedData(null)
   }, [])
 
@@ -63,7 +65,9 @@ function App(): React.JSX.Element {
         <div className="relative flex-1">
           <DropZone
             fileInputRef={fileInputRef}
+            pendingFile={pendingFile}
             onLoad={(data, graph, positionMode, filename): void => {
+              setPendingFile(null)
               setLoadedData({ data, graph, positionMode, filename })
             }}
           />

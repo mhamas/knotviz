@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import type Graph from 'graphology'
 import type { GraphData, PositionMode, NullDefaultResult } from '../types'
 import { parseJSON } from '../lib/parseJSON'
@@ -19,6 +19,8 @@ import {
 interface Props {
   onLoad: (data: GraphData, graph: Graph, positionMode: PositionMode, filename: string) => void
   fileInputRef?: React.RefObject<HTMLInputElement | null>
+  /** If set, this file will be auto-processed on mount (e.g. from a drag-drop on loaded graph). */
+  pendingFile?: File | null
 }
 
 /**
@@ -29,7 +31,7 @@ interface Props {
  * @param props - Component props with onLoad callback.
  * @returns Drop zone UI element.
  */
-export function DropZone({ onLoad, fileInputRef: externalFileInputRef }: Props): React.JSX.Element {
+export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFile }: Props): React.JSX.Element {
   const [isDragOver, setIsDragOver] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -83,6 +85,15 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef }: Props):
     },
     [onLoad]
   )
+
+  // Auto-process a file passed from drag-drop on loaded graph
+  const [initialPendingFile] = useState(pendingFile)
+  useEffect(() => {
+    if (initialPendingFile) {
+      const id = requestAnimationFrame(() => processFile(initialPendingFile))
+      return (): void => cancelAnimationFrame(id)
+    }
+  }, [initialPendingFile, processFile])
 
   const handleDragOver = useCallback((e: React.DragEvent): void => {
     e.preventDefault()

@@ -26,7 +26,7 @@ interface Props {
   graph: Graph
   positionMode: PositionMode
   filename: string
-  onLoadNewFile: () => void
+  onLoadNewFile: (file?: File) => void
 }
 
 /**
@@ -281,8 +281,9 @@ export function GraphView({
 
   const handleConfirmNewFile = useCallback((): void => {
     setIsConfirmNewFileOpen(false)
+    const file = pendingFileRef.current
     pendingFileRef.current = null
-    onLoadNewFile()
+    onLoadNewFile(file ?? undefined)
   }, [onLoadNewFile])
 
   const handleCancelNewFile = useCallback((): void => {

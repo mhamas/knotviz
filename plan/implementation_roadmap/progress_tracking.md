@@ -20,8 +20,8 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 - [x] 11 — Simulation UI
 - [x] 11b — Display Controls
 - [x] 12 — Position-Aware Loading
-- [ ] 13 — File Management
-- [ ] 14 — Node Tooltip
+- [x] 13 — File Management
+- [x] 14 — Node Tooltip
 
 ## R2: Filter System
 
@@ -54,4 +54,4 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 
 ## Next task
 
-**13 — File Management** (prereq: 07 ✓, 11 ✓)
+**15 — Filter State Hook** (prereq: 04 ✓)

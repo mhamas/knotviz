@@ -108,6 +108,8 @@ export interface TooltipState {
   /** Pixel position relative to the Sigma canvas container. */
   x: number
   y: number
+  /** Canvas bounds at the time the tooltip was opened. */
+  canvasBounds: DOMRect
 }
 
 // ─── Loading pipeline ──────────────────────────────────────────────────────

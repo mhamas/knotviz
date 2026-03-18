@@ -1,12 +1,25 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Sigma from 'sigma'
 import type Graph from 'graphology'
-import type { GraphData, PositionMode, TooltipState } from '../types'
+import type { GraphData, PositionMode, PropertyMeta, TooltipState } from '../types'
 import type { SimulationSettings } from '../hooks/useFA2Simulation'
 import { useFA2Simulation } from '../hooks/useFA2Simulation'
+import { detectPropertyTypes } from '../lib/detectPropertyTypes'
 import { FilenameLabel } from './FilenameLabel'
 import { CanvasControls } from './CanvasControls'
 import { LeftSidebar } from './LeftSidebar'
+import { DragOverlay } from './DragOverlay'
+import { NodeTooltip } from './NodeTooltip'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 interface Props {
   graphData: GraphData
@@ -36,6 +49,7 @@ export function GraphView({
   const hoveredNodeRef = useRef<string | null>(null)
 
   const [tooltipState, setTooltipState] = useState<TooltipState | null>(null)
+  const [isDragOver, setIsDragOver] = useState(false)
   const [simulationSettings, setSimulationSettings] = useState<SimulationSettings>({
     gravity: 1,
     speed: 1,
@@ -145,6 +159,19 @@ export function GraphView({
       sigma.refresh()
     })
 
+    // Click node: open tooltip
+    sigma.on('clickNode', ({ node }) => {
+      const attrs = graph.getNodeAttributes(node) as { x: number; y: number }
+      const pos = sigma.graphToViewport(attrs)
+      const bounds = containerRef.current?.getBoundingClientRect() ?? new DOMRect()
+      setTooltipState({ nodeId: node, x: pos.x, y: pos.y, canvasBounds: bounds })
+    })
+
+    // Click stage: close tooltip
+    sigma.on('clickStage', () => {
+      setTooltipState(null)
+    })
+
     // Fit camera to show all nodes
     sigma.getCamera().animatedReset({ duration: 0 })
 
@@ -210,6 +237,59 @@ export function GraphView({
     }
   }, [isRunning, simStart, simStop])
 
+  // Drag-and-drop overlay for loading new file over existing graph
+  const dragCounterRef = useRef(0)
+  const pendingFileRef = useRef<File | null>(null)
+  const [isConfirmNewFileOpen, setIsConfirmNewFileOpen] = useState(false)
+
+  useEffect(() => {
+    const handleDragEnter = (e: DragEvent): void => {
+      e.preventDefault()
+      dragCounterRef.current++
+      if (dragCounterRef.current === 1) setIsDragOver(true)
+    }
+    const handleDragOver = (e: DragEvent): void => {
+      e.preventDefault()
+    }
+    const handleDragLeave = (e: DragEvent): void => {
+      e.preventDefault()
+      dragCounterRef.current--
+      if (dragCounterRef.current === 0) setIsDragOver(false)
+    }
+    const handleDrop = (e: DragEvent): void => {
+      e.preventDefault()
+      dragCounterRef.current = 0
+      setIsDragOver(false)
+      const file = e.dataTransfer?.files[0]
+      if (file) {
+        pendingFileRef.current = file
+        setIsConfirmNewFileOpen(true)
+      }
+    }
+
+    window.addEventListener('dragenter', handleDragEnter)
+    window.addEventListener('dragover', handleDragOver)
+    window.addEventListener('dragleave', handleDragLeave)
+    window.addEventListener('drop', handleDrop)
+    return (): void => {
+      window.removeEventListener('dragenter', handleDragEnter)
+      window.removeEventListener('dragover', handleDragOver)
+      window.removeEventListener('dragleave', handleDragLeave)
+      window.removeEventListener('drop', handleDrop)
+    }
+  }, [])
+
+  const handleConfirmNewFile = useCallback((): void => {
+    setIsConfirmNewFileOpen(false)
+    pendingFileRef.current = null
+    onLoadNewFile()
+  }, [onLoadNewFile])
+
+  const handleCancelNewFile = useCallback((): void => {
+    setIsConfirmNewFileOpen(false)
+    pendingFileRef.current = null
+  }, [])
+
   // Canvas resize handler
   useEffect(() => {
     const sigma = sigmaRef.current
@@ -227,8 +307,11 @@ export function GraphView({
     }
   }, [])
 
-  // Suppress unused var warning — will be used in Task 14
-  void setTooltipState
+  // Detect property types for tooltip display
+  const propertyMetas: PropertyMeta[] = useMemo(() => {
+    const typeMap = detectPropertyTypes(graphData.nodes)
+    return Array.from(typeMap.entries()).map(([key, type]) => ({ key, type }))
+  }, [graphData.nodes])
 
   const handleZoomIn = useCallback((): void => {
     sigmaRef.current?.getCamera().animatedZoom({ duration: 200 })
@@ -315,6 +398,17 @@ export function GraphView({
             Run the simulation to generate a layout.
           </div>
         )}
+        {tooltipState && tooltipState.canvasBounds && (
+          <NodeTooltip
+            nodeId={tooltipState.nodeId}
+            screenPosition={{ x: tooltipState.x, y: tooltipState.y }}
+            graphData={graphData}
+            propertyMetas={propertyMetas}
+            canvasBounds={tooltipState.canvasBounds}
+            onClose={(): void => setTooltipState(null)}
+          />
+        )}
+        <DragOverlay isVisible={isDragOver} />
         <FilenameLabel filename={filename} />
         <CanvasControls
           onZoomIn={handleZoomIn}
@@ -325,6 +419,20 @@ export function GraphView({
         />
       </div>
 
+      <AlertDialog open={isConfirmNewFileOpen} onOpenChange={(isOpen): void => { if (!isOpen) handleCancelNewFile() }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Load new file?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Loading a new file will clear the current graph. Continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelNewFile}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmNewFile}>Load new file</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

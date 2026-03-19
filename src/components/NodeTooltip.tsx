@@ -20,28 +20,17 @@ const TOOLTIP_MARGIN = 12
  * @param type - The detected property type.
  * @returns Formatted string(s).
  */
-function formatValue(
-  value: PropertyValue,
-  type: string,
-): { primary: string; secondary?: string } {
+function formatValue(value: PropertyValue, type: string): string {
   if (type === 'number' && typeof value === 'number') {
-    return { primary: value.toFixed(2) }
-  }
-  if (type === 'boolean') {
-    return { primary: String(value) }
+    return value.toFixed(2)
   }
   if (type === 'date' && typeof value === 'string') {
     const date = new Date(value)
-    if (isNaN(date.getTime())) {
-      return { primary: value }
-    }
+    if (isNaN(date.getTime())) return value
     const daysAgo = Math.floor((Date.now() - date.getTime()) / 86_400_000)
-    return {
-      primary: `${value} · ${daysAgo.toLocaleString()} days ago`,
-      secondary: value,
-    }
+    return `${value} · ${daysAgo.toLocaleString()} days ago`
   }
-  return { primary: String(value) }
+  return String(value)
 }
 
 /**
@@ -157,15 +146,12 @@ export function NodeTooltip({
           {sortedMetas.map((meta) => {
             const value = properties[meta.key]
             if (value === undefined || value === null) return null
-            const formatted = formatValue(value, meta.type)
             return (
-              <div key={meta.key} className="flex flex-col">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="text-[11px] font-medium text-slate-500">{meta.key}</span>
-                  <span className="truncate text-right text-xs text-slate-800">
-                    {formatted.primary}
-                  </span>
-                </div>
+              <div key={meta.key} className="flex items-baseline justify-between gap-2">
+                <span className="text-[11px] font-medium text-slate-500">{meta.key}</span>
+                <span className="truncate text-right text-xs text-slate-800">
+                  {formatValue(value, meta.type)}
+                </span>
               </div>
             )
           })}

@@ -66,6 +66,8 @@ export function GraphView({
   const isEdgesVisibleRef = useRef(isEdgesVisible)
   const isNodeLabelsVisibleRef = useRef(isNodeLabelsVisible)
   const isHighlightNeighborsRef = useRef(isHighlightNeighbors)
+  const nodeSizeRef = useRef(nodeSize)
+  const edgeSizeRef = useRef(edgeSize)
   const hoveredNeighborsRef = useRef<Set<string>>(new Set())
   const hoveredEdgesRef = useRef<Set<string>>(new Set())
 
@@ -101,12 +103,16 @@ export function GraphView({
       zIndex: true,
       defaultNodeColor: '#94a3b8',
       defaultEdgeColor: '#94a3b8',
-      minEdgeThickness: 0.1,
+      minEdgeThickness: 0,
       labelRenderedSizeThreshold: Infinity,
       labelFont: 'system-ui, sans-serif',
       labelSize: 12,
       nodeReducer: (node: string, attrs: Record<string, unknown>): Record<string, unknown> => {
         const result = { ...attrs }
+        if (nodeSizeRef.current === 0) {
+          result.hidden = true
+          return result
+        }
         const isHovered = node === hoveredNodeRef.current
         if (node === tooltipStateRef.current?.nodeId || isHovered) {
           result.color = '#3b82f6'
@@ -130,7 +136,7 @@ export function GraphView({
         return result
       },
       edgeReducer: (edge: string, attrs: Record<string, unknown>): Record<string, unknown> => {
-        if (!isEdgesVisibleRef.current) return { ...attrs, hidden: true }
+        if (!isEdgesVisibleRef.current || edgeSizeRef.current === 0) return { ...attrs, hidden: true }
         if (isHighlightNeighborsRef.current && hoveredNodeRef.current) {
           if (hoveredEdgesRef.current.has(edge)) {
             return { ...attrs, color: '#3b82f6', zIndex: 1 }
@@ -182,13 +188,20 @@ export function GraphView({
   }, [graph])
 
   // Apply node/edge size changes
+  // Note: Sigma defaults size to 2 (nodes) / 0.5 (edges) when size is falsy,
+  // so we use a tiny positive value instead of 0 to avoid that override.
+  // The nodeReducer/edgeReducer handle hiding at exactly 0.
   useEffect(() => {
-    graph.updateEachNodeAttributes((_node, attrs) => ({ ...attrs, size: nodeSize }))
+    nodeSizeRef.current = nodeSize
+    const graphSize = nodeSize === 0 ? 0.001 : nodeSize
+    graph.updateEachNodeAttributes((_node, attrs) => ({ ...attrs, size: graphSize }))
     sigmaRef.current?.refresh()
   }, [graph, nodeSize])
 
   useEffect(() => {
-    graph.updateEachEdgeAttributes((_edge, attrs) => ({ ...attrs, size: edgeSize }))
+    edgeSizeRef.current = edgeSize
+    const graphSize = edgeSize === 0 ? 0.001 : edgeSize
+    graph.updateEachEdgeAttributes((_edge, attrs) => ({ ...attrs, size: graphSize }))
     sigmaRef.current?.refresh()
   }, [graph, edgeSize])
 

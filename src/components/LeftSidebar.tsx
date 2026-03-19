@@ -186,11 +186,11 @@ export function LeftSidebar({
           value={nodeSize}
           min={0}
           max={10}
-          step={0.1}
+          step={0.01}
           defaultValue={[nodeSize]}
           onValueChange={(value): void => {
             const v = Array.isArray(value) ? value[0] : value
-            debouncedNodeSizeChange(Math.round(v * 10) / 10)
+            debouncedNodeSizeChange(Math.round(v * 100) / 100)
           }}
         />
 
@@ -199,11 +199,11 @@ export function LeftSidebar({
           value={edgeSize}
           min={0}
           max={2}
-          step={0.1}
+          step={0.01}
           defaultValue={[edgeSize]}
           onValueChange={(value): void => {
             const v = Array.isArray(value) ? value[0] : value
-            debouncedEdgeSizeChange(Math.round(v * 10) / 10)
+            debouncedEdgeSizeChange(Math.round(v * 100) / 100)
           }}
         />
 

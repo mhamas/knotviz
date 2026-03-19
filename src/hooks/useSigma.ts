@@ -110,7 +110,7 @@ export function useSigma(graph: Graph): UseSigmaReturn {
           hoveredNodeRef.current &&
           !hoveredNeighborsRef.current.has(node)
         ) {
-          result.color = '#e2e8f0'
+          result.color = '#f0f3f7'
           result.size = Math.max((result.size as number) * 0.5, 1)
           result.label = null
           result.zIndex = 0
@@ -123,7 +123,7 @@ export function useSigma(graph: Graph): UseSigmaReturn {
           if (hoveredEdgesRef.current.has(edge)) {
             return { ...attrs, color: '#3b82f6', zIndex: 1 }
           }
-          return { ...attrs, color: '#f1f5f9' }
+          return { ...attrs, color: '#f0f3f7' }
         }
         return attrs
       },

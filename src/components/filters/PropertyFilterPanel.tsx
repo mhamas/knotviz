@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import type {
   BooleanFilterState,
   FilterState,
@@ -18,9 +17,8 @@ interface Props {
 }
 
 /**
- * Collapsible panel for a single property filter.
- * Header: chevron, enable checkbox, property name, type badge.
- * Body: renders the correct filter component based on property type.
+ * Panel for a single property filter.
+ * Checkbox enables the filter and reveals the control; unchecked hides it.
  *
  * @param props - Property metadata, filter state, and change handlers.
  * @returns Property filter panel element.
@@ -32,23 +30,10 @@ export function PropertyFilterPanel({
   onNumberChange,
   onBooleanChange,
 }: Props): React.JSX.Element {
-  const [isExpanded, setIsExpanded] = useState(true)
-
   return (
     <div data-testid={`filter-panel-${meta.key}`} className="border-b border-slate-100 pb-2">
       {/* Header */}
       <div className="flex items-center gap-1.5 py-1">
-        <button
-          type="button"
-          onClick={(): void => setIsExpanded(!isExpanded)}
-          className="flex h-4 w-4 shrink-0 items-center justify-center text-slate-400 hover:text-slate-600"
-          aria-label={isExpanded ? 'Collapse' : 'Expand'}
-        >
-          <span className={`inline-block text-xs transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
-            ▶
-          </span>
-        </button>
-
         <Checkbox
           className="border-slate-400 data-checked:border-primary data-checked:bg-primary"
           checked={filterState.isEnabled}
@@ -64,9 +49,9 @@ export function PropertyFilterPanel({
         </span>
       </div>
 
-      {/* Body */}
-      {isExpanded && (
-        <div className={`mt-1 pl-6 ${!filterState.isEnabled ? 'pointer-events-none opacity-50' : ''}`}>
+      {/* Body — only shown when filter is enabled */}
+      {filterState.isEnabled && (
+        <div className="mt-1 pl-6">
           {filterState.type === 'number' && onNumberChange && (
             <NumberFilter
               state={filterState as NumberFilterState}

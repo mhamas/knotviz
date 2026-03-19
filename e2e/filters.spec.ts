@@ -64,12 +64,16 @@ test.describe('Filter Panels', () => {
     await expect(page.getByTestId('filter-panel-joined').locator('span.bg-slate-100', { hasText: 'date' })).toBeVisible()
   })
 
-  test('number filter has dual-handle slider', async ({ page }) => {
-    await expect(page.getByTestId('filter-panel-age').getByTestId('number-filter')).toBeVisible()
+  test('number filter shows slider when enabled', async ({ page }) => {
+    const panel = page.getByTestId('filter-panel-age')
+    await panel.getByRole('checkbox').click()
+    await expect(panel.getByTestId('number-filter')).toBeVisible()
   })
 
-  test('boolean filter has radio group', async ({ page }) => {
-    await expect(page.getByTestId('filter-panel-active').getByTestId('boolean-filter')).toBeVisible()
+  test('boolean filter shows radio group when enabled', async ({ page }) => {
+    const panel = page.getByTestId('filter-panel-active')
+    await panel.getByRole('checkbox').click()
+    await expect(panel.getByTestId('boolean-filter')).toBeVisible()
   })
 
   test('filters are disabled by default', async ({ page }) => {
@@ -157,33 +161,23 @@ test.describe('Clear All Filters', () => {
   })
 })
 
-test.describe('Panel Collapse', () => {
+test.describe('Filter Toggle', () => {
   test.beforeEach(async ({ page }) => {
     await loadGraph(page, 'sample-graph.json')
   })
 
-  test('chevron collapses panel body', async ({ page }) => {
+  test('filter body hidden when unchecked, shown when checked', async ({ page }) => {
     const panel = page.getByTestId('filter-panel-age')
-    // Number filter visible initially
-    await expect(panel.getByTestId('number-filter')).toBeVisible()
-
-    // Click chevron to collapse
-    await panel.getByLabel('Collapse').click()
+    // Initially unchecked — no filter body
     await expect(panel.getByTestId('number-filter')).not.toBeVisible()
 
-    // Click again to expand
-    await panel.getByLabel('Expand').click()
-    await expect(panel.getByTestId('number-filter')).toBeVisible()
-  })
-
-  test('checkbox remains clickable when collapsed', async ({ page }) => {
-    const panel = page.getByTestId('filter-panel-active')
-    // Collapse
-    await panel.getByLabel('Collapse').click()
-
-    // Checkbox still works
+    // Check — filter body appears
     await panel.getByRole('checkbox').click()
-    await expect(page.getByText('Clear all filters').first()).toBeVisible()
+    await expect(panel.getByTestId('number-filter')).toBeVisible()
+
+    // Uncheck — filter body hides
+    await panel.getByRole('checkbox').click()
+    await expect(panel.getByTestId('number-filter')).not.toBeVisible()
   })
 })
 

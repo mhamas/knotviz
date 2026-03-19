@@ -25,15 +25,15 @@ export function RightSidebar({ propertyMetas, filterHandle }: Props): React.JSX.
           <TabsTrigger value="color">Color</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="filters" className="flex-1 overflow-hidden">
+        <TabsContent value="filters" className="min-h-0 flex-1 overflow-hidden">
           <FiltersTab propertyMetas={propertyMetas} filterHandle={filterHandle} />
         </TabsContent>
 
-        <TabsContent value="stats" className="flex-1 p-3">
+        <TabsContent value="stats" className="min-h-0 flex-1 overflow-y-auto p-3">
           <p className="text-xs italic text-slate-400">Stats — coming soon.</p>
         </TabsContent>
 
-        <TabsContent value="color" className="flex-1 p-3">
+        <TabsContent value="color" className="min-h-0 flex-1 overflow-y-auto p-3">
           <p className="text-xs italic text-slate-400">Color — coming soon.</p>
         </TabsContent>
       </Tabs>

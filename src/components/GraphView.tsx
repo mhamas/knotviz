@@ -86,17 +86,21 @@ export function GraphView({
   const nodeIds = useMemo(() => graphData.nodes.map((n) => n.id), [graphData.nodes])
   const nodeColors = useNodeColors(nodeIds, filterHandle.matchingNodeIds, filterHandle.hasActiveFilters)
 
-  // Apply filter colors to graph attributes
+  // Apply filter colors, z-index, and size adjustments to graph attributes
   useEffect(() => {
-    graph.updateEachNodeAttributes((node, attrs) => ({
-      ...attrs,
-      color: nodeColors.get(node) ?? COLOR_DEFAULT,
-    }))
+    graph.updateEachNodeAttributes((node, attrs) => {
+      const isHidden = filterHandle.hasActiveFilters && !filterHandle.matchingNodeIds.has(node)
+      return {
+        ...attrs,
+        color: nodeColors.get(node) ?? COLOR_DEFAULT,
+        hidden: isHidden,
+      }
+    })
     graph.updateEachEdgeAttributes((_edge, attrs, source, target) => {
-      const isGrayed =
+      const isHidden =
         filterHandle.hasActiveFilters &&
         (!filterHandle.matchingNodeIds.has(source) || !filterHandle.matchingNodeIds.has(target))
-      return { ...attrs, color: isGrayed ? COLOR_GRAYED : COLOR_DEFAULT }
+      return { ...attrs, color: isHidden ? COLOR_GRAYED : COLOR_DEFAULT, hidden: isHidden }
     })
     refreshSigma()
   }, [graph, nodeColors, filterHandle.hasActiveFilters, filterHandle.matchingNodeIds, refreshSigma])

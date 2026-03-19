@@ -13,11 +13,13 @@ import type {
 
 export interface FilterStateHandle {
   filters: FilterMap
+  resetKey: number
   setNumberFilter: (key: string, min: number, max: number) => void
   setStringFilter: (key: string, values: Set<string>) => void
   setDateFilter: (key: string, after: string | null, before: string | null) => void
   setBooleanFilter: (key: string, selected: BooleanFilterState['selected']) => void
   setFilterEnabled: (key: string, isEnabled: boolean) => void
+  setAllFiltersEnabled: (isEnabled: boolean) => void
   clearAllFilters: () => void
   matchingNodeIds: Set<string>
   hasActiveFilters: boolean
@@ -187,6 +189,7 @@ export function useFilterState(
   const [filters, setFilters] = useState<FilterMap>(() =>
     initializeFilters(propertyMetas, nodeValueIndex),
   )
+  const [resetKey, setResetKey] = useState(0)
 
   const updateFilter = useCallback(
     (key: string, updater: (prev: FilterState) => FilterState): void => {
@@ -245,15 +248,23 @@ export function useFilterState(
     [updateFilter],
   )
 
+  const setAllFiltersEnabled = useCallback(
+    (isEnabled: boolean): void => {
+      setFilters((prev) => {
+        const next = new Map<string, FilterState>()
+        for (const [key, filter] of prev) {
+          next.set(key, { ...filter, isEnabled })
+        }
+        return next
+      })
+    },
+    [],
+  )
+
   const clearAllFilters = useCallback((): void => {
-    setFilters((prev) => {
-      const next = new Map<string, FilterState>()
-      for (const [key, filter] of prev) {
-        next.set(key, { ...filter, isEnabled: false })
-      }
-      return next
-    })
-  }, [])
+    setFilters(() => initializeFilters(propertyMetas, nodeValueIndex))
+    setResetKey((k) => k + 1)
+  }, [propertyMetas, nodeValueIndex])
 
   const matchingNodeIds = useMemo(
     () => computeMatchingNodeIds(graphData, filters, nodeValueIndex),
@@ -267,11 +278,13 @@ export function useFilterState(
 
   return {
     filters,
+    resetKey,
     setNumberFilter,
     setStringFilter,
     setDateFilter,
     setBooleanFilter,
     setFilterEnabled,
+    setAllFiltersEnabled,
     clearAllFilters,
     matchingNodeIds,
     hasActiveFilters,

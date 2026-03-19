@@ -18,7 +18,7 @@ interface Props {
 
 /**
  * Panel for a single property filter.
- * Checkbox enables the filter and reveals the control; unchecked hides it.
+ * Controls are always visible; dimmed and non-interactive when disabled.
  *
  * @param props - Property metadata, filter state, and change handlers.
  * @returns Property filter panel element.
@@ -49,29 +49,27 @@ export function PropertyFilterPanel({
         </span>
       </div>
 
-      {/* Body — only shown when filter is enabled */}
-      {filterState.isEnabled && (
-        <div className="mt-1 pl-6">
-          {filterState.type === 'number' && onNumberChange && (
-            <NumberFilter
-              state={filterState as NumberFilterState}
-              onChange={onNumberChange}
-            />
-          )}
-          {filterState.type === 'boolean' && onBooleanChange && (
-            <BooleanFilter
-              state={filterState as BooleanFilterState}
-              onChange={onBooleanChange}
-            />
-          )}
-          {filterState.type === 'string' && (
-            <p className="text-[11px] italic text-slate-400">String filter (coming soon)</p>
-          )}
-          {filterState.type === 'date' && (
-            <p className="text-[11px] italic text-slate-400">Date filter (coming soon)</p>
-          )}
-        </div>
-      )}
+      {/* Body — always visible, dimmed when disabled */}
+      <div className={`mt-1 pl-6 ${!filterState.isEnabled ? 'pointer-events-none opacity-30' : ''}`}>
+        {filterState.type === 'number' && onNumberChange && (
+          <NumberFilter
+            state={filterState as NumberFilterState}
+            onChange={onNumberChange}
+          />
+        )}
+        {filterState.type === 'boolean' && onBooleanChange && (
+          <BooleanFilter
+            state={filterState as BooleanFilterState}
+            onChange={onBooleanChange}
+          />
+        )}
+        {filterState.type === 'string' && (
+          <p className="text-[11px] italic text-slate-400">String filter (coming soon)</p>
+        )}
+        {filterState.type === 'date' && (
+          <p className="text-[11px] italic text-slate-400">Date filter (coming soon)</p>
+        )}
+      </div>
     </div>
   )
 }

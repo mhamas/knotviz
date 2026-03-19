@@ -64,16 +64,12 @@ test.describe('Filter Panels', () => {
     await expect(page.getByTestId('filter-panel-joined').locator('span.bg-slate-100', { hasText: 'date' })).toBeVisible()
   })
 
-  test('number filter shows slider when enabled', async ({ page }) => {
-    const panel = page.getByTestId('filter-panel-age')
-    await panel.getByRole('checkbox').click()
-    await expect(panel.getByTestId('number-filter')).toBeVisible()
+  test('number filter slider is always visible', async ({ page }) => {
+    await expect(page.getByTestId('filter-panel-age').getByTestId('number-filter')).toBeVisible()
   })
 
-  test('boolean filter shows radio group when enabled', async ({ page }) => {
-    const panel = page.getByTestId('filter-panel-active')
-    await panel.getByRole('checkbox').click()
-    await expect(panel.getByTestId('boolean-filter')).toBeVisible()
+  test('boolean filter radio group is always visible', async ({ page }) => {
+    await expect(page.getByTestId('filter-panel-active').getByTestId('boolean-filter')).toBeVisible()
   })
 
   test('filters are disabled by default', async ({ page }) => {
@@ -135,29 +131,51 @@ test.describe('Boolean Filter Interaction', () => {
   })
 })
 
-test.describe('Clear All Filters', () => {
+test.describe('Select All / Unselect All / Clear All', () => {
   test.beforeEach(async ({ page }) => {
     await loadGraph(page, 'sample-graph.json')
   })
 
-  test('clear all button appears when filter is enabled', async ({ page }) => {
-    // Enable a filter
-    const panel = page.getByTestId('filter-panel-active')
-    await panel.getByRole('checkbox').click()
-
-    // Clear button appears
-    await expect(page.getByText('Clear all filters').first()).toBeVisible()
+  test('select all and unselect all buttons are always visible', async ({ page }) => {
+    await expect(page.getByTestId('filter-toggle-all')).toBeVisible()
+    await expect(page.getByTestId('filter-clear-all')).toBeVisible()
   })
 
-  test('clear all resets match count', async ({ page }) => {
+  test('shows Select all when no filters enabled', async ({ page }) => {
+    await expect(page.getByTestId('filter-toggle-all')).toHaveText('Select all')
+  })
+
+  test('select all enables all filter checkboxes', async ({ page }) => {
+    await page.getByTestId('filter-toggle-all').click()
+    await expect(page.getByTestId('filter-toggle-all')).toHaveText('Unselect all')
+  })
+
+  test('unselect all disables all filter checkboxes', async ({ page }) => {
+    // Enable one filter
+    await page.getByTestId('filter-panel-active').getByRole('checkbox').click()
+    await expect(page.getByTestId('filter-toggle-all')).toHaveText('Unselect all')
+
+    // Unselect all
+    await page.getByTestId('filter-toggle-all').click()
+    await expect(page.getByTestId('filter-toggle-all')).toHaveText('Select all')
+    await expect(page.getByTestId('filter-match-count')).toHaveText('5 nodes match')
+  })
+
+  test('clear all resets filters to default state', async ({ page }) => {
     const panel = page.getByTestId('filter-panel-active')
     await panel.getByRole('checkbox').click()
     await panel.getByRole('radio', { name: 'True' }).click()
     await expect(page.getByTestId('filter-match-count')).toHaveText('3 nodes match')
 
-    // Clear all
-    await page.getByText('Clear all filters').first().click()
+    // Clear all resets everything
+    await page.getByTestId('filter-clear-all').click()
     await expect(page.getByTestId('filter-match-count')).toHaveText('5 nodes match')
+    await expect(page.getByTestId('filter-toggle-all')).toHaveText('Select all')
+
+    // Verify boolean radio was reset to "Either" — re-enable and all should match
+    await panel.getByRole('checkbox').click()
+    await expect(page.getByTestId('filter-match-count')).toHaveText('5 nodes match')
+    await expect(panel.getByRole('radio', { name: 'Either' })).toBeChecked()
   })
 })
 
@@ -166,27 +184,10 @@ test.describe('Filter Toggle', () => {
     await loadGraph(page, 'sample-graph.json')
   })
 
-  test('filter body hidden when unchecked, shown when checked', async ({ page }) => {
+  test('filter controls always visible, dimmed when disabled', async ({ page }) => {
     const panel = page.getByTestId('filter-panel-age')
-    // Initially unchecked — no filter body
-    await expect(panel.getByTestId('number-filter')).not.toBeVisible()
-
-    // Check — filter body appears
-    await panel.getByRole('checkbox').click()
+    // Controls visible even when unchecked
     await expect(panel.getByTestId('number-filter')).toBeVisible()
-
-    // Uncheck — filter body hides
-    await panel.getByRole('checkbox').click()
-    await expect(panel.getByTestId('number-filter')).not.toBeVisible()
   })
 })
 
-test.describe('AND Logic', () => {
-  test.beforeEach(async ({ page }) => {
-    await loadGraph(page, 'sample-graph.json')
-  })
-
-  test('AND note is visible', async ({ page }) => {
-    await expect(page.getByText('Filters combine with AND')).toBeVisible()
-  })
-})

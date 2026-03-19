@@ -98,15 +98,10 @@ test.describe('Boolean Filter Interaction', () => {
     await loadGraph(page, 'sample-graph.json')
   })
 
-  test('enabling boolean filter with true reduces matches', async ({ page }) => {
+  test('enabling boolean filter defaults to true and reduces matches', async ({ page }) => {
     const panel = page.getByTestId('filter-panel-active')
-    // Enable
+    // Enable — defaults to true, Alice, Carol, Eve are active
     await panel.getByRole('checkbox').click()
-
-    // Select "true" — Alice, Carol, Eve are active
-    await panel.getByRole('radio', { name: 'True' }).click()
-
-    // Wait for filter to take effect
     await expect(page.getByTestId('filter-match-count')).toHaveText('3 nodes match')
   })
 
@@ -119,15 +114,16 @@ test.describe('Boolean Filter Interaction', () => {
     await expect(page.getByTestId('filter-match-count')).toHaveText('2 nodes match')
   })
 
-  test('boolean filter either shows all matches', async ({ page }) => {
+  test('toggling between true and false updates matches', async ({ page }) => {
     const panel = page.getByTestId('filter-panel-active')
     await panel.getByRole('checkbox').click()
-    await panel.getByRole('radio', { name: 'True' }).click()
+
+    // Default is True — Alice, Carol, Eve
     await expect(page.getByTestId('filter-match-count')).toHaveText('3 nodes match')
 
-    // Switch to either
-    await panel.getByRole('radio', { name: 'Either' }).click()
-    await expect(page.getByTestId('filter-match-count')).toHaveText('5 nodes match')
+    // Switch to False — Bob, Dave
+    await panel.getByRole('radio', { name: 'False' }).click()
+    await expect(page.getByTestId('filter-match-count')).toHaveText('2 nodes match')
   })
 })
 
@@ -164,18 +160,18 @@ test.describe('Select All / Unselect All / Clear All', () => {
   test('clear all resets filters to default state', async ({ page }) => {
     const panel = page.getByTestId('filter-panel-active')
     await panel.getByRole('checkbox').click()
-    await panel.getByRole('radio', { name: 'True' }).click()
-    await expect(page.getByTestId('filter-match-count')).toHaveText('3 nodes match')
+    await panel.getByRole('radio', { name: 'False' }).click()
+    await expect(page.getByTestId('filter-match-count')).toHaveText('2 nodes match')
 
     // Clear all resets everything
     await page.getByTestId('filter-clear-all').click()
     await expect(page.getByTestId('filter-match-count')).toHaveText('5 nodes match')
     await expect(page.getByTestId('filter-toggle-all')).toHaveText('Select all')
 
-    // Verify boolean radio was reset to "Either" — re-enable and all should match
+    // Verify boolean radio was reset to True — re-enable and 3 should match
     await panel.getByRole('checkbox').click()
-    await expect(page.getByTestId('filter-match-count')).toHaveText('5 nodes match')
-    await expect(panel.getByRole('radio', { name: 'Either' })).toBeChecked()
+    await expect(page.getByTestId('filter-match-count')).toHaveText('3 nodes match')
+    await expect(panel.getByRole('radio', { name: 'True' })).toBeChecked()
   })
 })
 

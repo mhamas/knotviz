@@ -77,7 +77,7 @@ function initializeFilters(
       filters.set(meta.key, {
         type: 'boolean',
         isEnabled: false,
-        selected: 'either',
+        selected: true,
       } satisfies BooleanFilterState)
     } else if (meta.type === 'string') {
       const distinct = new Set<string>()
@@ -130,8 +130,7 @@ function nodePassesFilter(
       return value >= filter.min && value <= filter.max
     }
     case 'boolean': {
-      if (filter.selected === 'either') return true
-      return String(value) === filter.selected
+      return value === filter.selected
     }
     case 'string': {
       if (filter.selectedValues.size === 0) return true

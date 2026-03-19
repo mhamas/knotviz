@@ -69,11 +69,11 @@ describe('initializeFilters', () => {
     expect(ageFilter.max).toBe(45)
   })
 
-  it('initializes boolean filter with either', () => {
+  it('initializes boolean filter with true', () => {
     const filters = initializeFilters(metas, index)
     const boolFilter = filters.get('active') as BooleanFilterState
     expect(boolFilter.type).toBe('boolean')
-    expect(boolFilter.selected).toBe('either')
+    expect(boolFilter.selected).toBe(true)
     expect(boolFilter.isEnabled).toBe(false)
   })
 
@@ -137,20 +137,14 @@ describe('nodePassesFilter', () => {
   })
 
   it('boolean filter: true', () => {
-    const filter: BooleanFilterState = { type: 'boolean', isEnabled: true, selected: 'true' }
+    const filter: BooleanFilterState = { type: 'boolean', isEnabled: true, selected: true }
     expect(nodePassesFilter('1', filter, index, 'active')).toBe(true) // Alice: true
     expect(nodePassesFilter('2', filter, index, 'active')).toBe(false) // Bob: false
   })
 
   it('boolean filter: false', () => {
-    const filter: BooleanFilterState = { type: 'boolean', isEnabled: true, selected: 'false' }
+    const filter: BooleanFilterState = { type: 'boolean', isEnabled: true, selected: false }
     expect(nodePassesFilter('1', filter, index, 'active')).toBe(false)
-    expect(nodePassesFilter('2', filter, index, 'active')).toBe(true)
-  })
-
-  it('boolean filter: either always passes', () => {
-    const filter: BooleanFilterState = { type: 'boolean', isEnabled: true, selected: 'either' }
-    expect(nodePassesFilter('1', filter, index, 'active')).toBe(true)
     expect(nodePassesFilter('2', filter, index, 'active')).toBe(true)
   })
 
@@ -240,7 +234,7 @@ describe('computeMatchingNodeIds', () => {
       type: 'number', isEnabled: true, min: 30, max: 50, domainMin: 27, domainMax: 45,
     })
     filters.set('active', {
-      type: 'boolean', isEnabled: true, selected: 'true',
+      type: 'boolean', isEnabled: true, selected: true,
     })
     const matching = computeMatchingNodeIds(sampleGraph, filters, index)
     // Alice (34, true) and Carol (45, true) — Dave (31, false) excluded

@@ -62,7 +62,7 @@ export interface DateFilterState {
 export interface BooleanFilterState {
   type: 'boolean'
   isEnabled: boolean
-  selected: 'true' | 'false' | 'either'
+  selected: boolean
 }
 
 export type FilterState =

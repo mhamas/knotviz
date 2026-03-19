@@ -25,11 +25,11 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 
 ## R2: Filter System
 
-- [ ] 15 — Filter State Hook
-- [ ] 16 — NumberFilter
-- [ ] 17 — BooleanFilter
-- [ ] 18 — PropertyFilterPanel
-- [ ] 19 — FiltersTab + useNodeColors
+- [x] 15 — Filter State Hook
+- [x] 16 — NumberFilter
+- [x] 17 — BooleanFilter
+- [x] 18 — PropertyFilterPanel
+- [x] 19 — FiltersTab + useNodeColors
 - [ ] 20 — StringFilter
 - [ ] 21 — DateFilter
 
@@ -54,4 +54,4 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 
 ## Next task
 
-**15 — Filter State Hook** (prereq: 04 ✓)
+**20 — StringFilter** (prereq: 19 ✓)

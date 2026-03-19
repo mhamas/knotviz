@@ -38,7 +38,7 @@ test.describe('Reset Graph', () => {
     await page.getByRole('button', { name: 'Reset graph' }).click()
     await page.getByRole('button', { name: 'Cancel' }).click()
     await expect(page.getByTestId('sigma-canvas')).toBeVisible()
-    await expect(page.getByText('Nodes').locator('..').getByText('5')).toBeVisible()
+    await expect(page.getByTestId('stat-nodes').getByText('5')).toBeVisible()
   })
 
   test('confirm resets to drop zone', async ({ page }) => {
@@ -108,8 +108,8 @@ test.describe('Graph Export', () => {
 
     // Should load without errors, positions preserved
     await expect(page.getByTestId('sigma-canvas')).toBeVisible()
-    await expect(page.getByText('Nodes').locator('..').getByText('5')).toBeVisible()
-    await expect(page.getByText('Edges').locator('..').getByText('6')).toBeVisible()
+    await expect(page.getByTestId('stat-nodes').getByText('5')).toBeVisible()
+    await expect(page.getByTestId('stat-edges').getByText('6')).toBeVisible()
     // No partial position warning since exported file has all positions
     await expect(page.getByText('positions were randomized')).not.toBeVisible()
   })

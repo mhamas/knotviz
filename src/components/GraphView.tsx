@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import type Graph from 'graphology'
 import type { GraphData, PositionMode, PropertyMeta } from '../types'
 import type { SimulationSettings } from '../hooks/useFA2Simulation'
@@ -6,11 +6,15 @@ import { useFA2Simulation } from '../hooks/useFA2Simulation'
 import { useSigma } from '../hooks/useSigma'
 import { useFileDrop } from '../hooks/useFileDrop'
 import { useSpacebarToggle } from '../hooks/useSpacebarToggle'
+import { useFilterState } from '../hooks/useFilterState'
+import { useNodeColors } from '../hooks/useNodeColors'
 import { detectPropertyTypes } from '../lib/detectPropertyTypes'
+import { COLOR_DEFAULT, COLOR_GRAYED } from '../lib/colors'
 import { useGraphStore } from '@/stores/useGraphStore'
 import { FilenameLabel } from './FilenameLabel'
 import { CanvasControls } from './CanvasControls'
 import { LeftSidebar } from './LeftSidebar'
+import { RightSidebar } from './RightSidebar'
 import { DragOverlay } from './DragOverlay'
 import { NodeTooltip } from './NodeTooltip'
 import {
@@ -64,6 +68,7 @@ export function GraphView({
     handleFit,
     handleRotateCW,
     handleRotateCCW,
+    refresh: refreshSigma,
   } = useSigma(graph)
 
   const { isDragOver, isConfirmOpen, handleConfirm, handleCancel } = useFileDrop(onLoadNewFile)
@@ -74,6 +79,27 @@ export function GraphView({
     const typeMap = detectPropertyTypes(graphData.nodes)
     return Array.from(typeMap.entries()).map(([key, type]) => ({ key, type }))
   }, [graphData.nodes])
+
+  // Filter system
+  const filterHandle = useFilterState(graphData, propertyMetas)
+
+  const nodeIds = useMemo(() => graphData.nodes.map((n) => n.id), [graphData.nodes])
+  const nodeColors = useNodeColors(nodeIds, filterHandle.matchingNodeIds, filterHandle.hasActiveFilters)
+
+  // Apply filter colors to graph attributes
+  useEffect(() => {
+    graph.updateEachNodeAttributes((node, attrs) => ({
+      ...attrs,
+      color: nodeColors.get(node) ?? COLOR_DEFAULT,
+    }))
+    graph.updateEachEdgeAttributes((_edge, attrs, source, target) => {
+      const isGrayed =
+        filterHandle.hasActiveFilters &&
+        (!filterHandle.matchingNodeIds.has(source) || !filterHandle.matchingNodeIds.has(target))
+      return { ...attrs, color: isGrayed ? COLOR_GRAYED : COLOR_DEFAULT }
+    })
+    refreshSigma()
+  }, [graph, nodeColors, filterHandle.hasActiveFilters, filterHandle.matchingNodeIds, refreshSigma])
 
   const handleDownload = useCallback((): void => {
     const exported: GraphData = {
@@ -138,6 +164,10 @@ export function GraphView({
           onRotateCCW={handleRotateCCW}
         />
       </div>
+      <RightSidebar
+        propertyMetas={propertyMetas}
+        filterHandle={filterHandle}
+      />
 
       <AlertDialog open={isConfirmOpen} onOpenChange={(isOpen): void => { if (!isOpen) handleCancel() }}>
         <AlertDialogContent>

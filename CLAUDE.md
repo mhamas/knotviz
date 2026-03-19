@@ -44,17 +44,21 @@ grapphy/
 │   ├── graph-view.spec.ts
 │   ├── simulation.spec.ts
 │   ├── display-controls.spec.ts
+│   ├── filters.spec.ts
 │   ├── position-loading.spec.ts
 │   └── reset-and-export.spec.ts
 ├── src/
 │   ├── components/
 │   │   ├── ui/          # shadcn/ui generated components (lint-excluded)
 │   │   ├── sidebar/     # Reusable sidebar design system (see below)
-│   │   ├── DropZone.tsx, GraphView.tsx, LeftSidebar.tsx
+│   │   ├── filters/     # Filter UI components (NumberFilter, BooleanFilter, PropertyFilterPanel)
+│   │   ├── DropZone.tsx, GraphView.tsx, LeftSidebar.tsx, RightSidebar.tsx
+│   │   ├── FiltersTab.tsx
 │   │   ├── CanvasControls.tsx, FilenameLabel.tsx, KeyboardShortcutsHelp.tsx
 │   │   └── ErrorBoundary.tsx
 │   ├── hooks/
-│   │   ├── useFA2Simulation.ts
+│   │   ├── useFA2Simulation.ts, useSigma.ts, useFileDrop.ts, useSpacebarToggle.ts
+│   │   ├── useFilterState.ts, useNodeColors.ts
 │   │   └── useDebounce.ts
 │   ├── lib/
 │   │   ├── buildGraph.ts, validateGraph.ts, parseJSON.ts

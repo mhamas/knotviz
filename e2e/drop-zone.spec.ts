@@ -28,8 +28,8 @@ test.describe('Drop Zone — File Loading', () => {
     const fileChooser = await fileChooserPromise
     await fileChooser.setFiles(fixture('sample-graph.json'))
 
-    await expect(page.getByText('Nodes').locator('..').getByText('5')).toBeVisible()
-    await expect(page.getByText('Edges').locator('..').getByText('6')).toBeVisible()
+    await expect(page.getByTestId('stat-nodes').getByText('5')).toBeVisible()
+    await expect(page.getByTestId('stat-edges').getByText('6')).toBeVisible()
     await expect(page.getByTestId('sigma-canvas')).toBeVisible()
     await expect(page.getByText('sample-graph.json')).toBeVisible()
   })

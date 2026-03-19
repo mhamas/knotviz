@@ -52,12 +52,12 @@ test.describe('File Management — Load New File', () => {
     await expect(page.getByText('Load new file?')).toBeVisible()
     await page.getByRole('button', { name: 'Cancel' }).click()
     await expect(page.getByTestId('sigma-canvas')).toBeVisible()
-    await expect(page.getByText('Nodes').locator('..').getByText('5')).toBeVisible()
+    await expect(page.getByTestId('stat-nodes').getByText('5')).toBeVisible()
   })
 
   test('confirm loads the dropped file', async ({ page }) => {
     await loadGraph(page, 'sample-graph.json')
-    await expect(page.getByText('Nodes').locator('..').getByText('5')).toBeVisible()
+    await expect(page.getByTestId('stat-nodes').getByText('5')).toBeVisible()
 
     // Drop the all-positions fixture (3 nodes) as a valid replacement file
     const fixtureContent = JSON.stringify({
@@ -81,7 +81,7 @@ test.describe('File Management — Load New File', () => {
 
     // New graph should be loaded (3 nodes, 1 edge)
     await expect(page.getByTestId('sigma-canvas')).toBeVisible()
-    await expect(page.getByText('Nodes').locator('..').getByText('3')).toBeVisible()
-    await expect(page.getByText('Edges').locator('..').getByText('2')).toBeVisible()
+    await expect(page.getByTestId('stat-nodes').getByText('3')).toBeVisible()
+    await expect(page.getByTestId('stat-edges').getByText('2')).toBeVisible()
   })
 })

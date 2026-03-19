@@ -20,8 +20,8 @@ test.describe('Graph View — Canvas and Controls', () => {
   })
 
   test('renders sigma canvas with correct node and edge counts', async ({ page }) => {
-    await expect(page.getByText('Nodes').locator('..').getByText('5')).toBeVisible()
-    await expect(page.getByText('Edges').locator('..').getByText('6')).toBeVisible()
+    await expect(page.getByTestId('stat-nodes').getByText('5')).toBeVisible()
+    await expect(page.getByTestId('stat-edges').getByText('6')).toBeVisible()
   })
 
   test('shows filename label', async ({ page }) => {

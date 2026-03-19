@@ -13,6 +13,7 @@ interface UseSigmaReturn {
   handleFit: () => void
   handleRotateCW: () => void
   handleRotateCCW: () => void
+  refresh: () => void
 }
 
 /**
@@ -252,6 +253,10 @@ export function useSigma(graph: Graph): UseSigmaReturn {
     camera.animate({ angle: camera.angle - Math.PI / 12 }, { duration: 200 })
   }, [])
 
+  const refresh = useCallback((): void => {
+    sigmaRef.current?.refresh()
+  }, [])
+
   return {
     containerRef,
     tooltipState,
@@ -261,5 +266,6 @@ export function useSigma(graph: Graph): UseSigmaReturn {
     handleFit,
     handleRotateCW,
     handleRotateCCW,
+    refresh,
   }
 }

@@ -11,7 +11,7 @@ interface Props {
  */
 export function StatRow({ label, value }: Props): React.JSX.Element {
   return (
-    <div className="flex justify-between text-xs" style={{ fontVariantNumeric: 'tabular-nums' }}>
+    <div className="flex justify-between text-xs" style={{ fontVariantNumeric: 'tabular-nums' }} data-testid={`stat-${label.toLowerCase()}`}>
       <span className="font-medium text-slate-600">{label}</span>
       <span className="text-slate-400">{value}</span>
     </div>

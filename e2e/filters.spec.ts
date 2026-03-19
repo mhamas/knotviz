@@ -175,6 +175,30 @@ test.describe('Select All / Unselect All / Clear All', () => {
   })
 })
 
+test.describe('Multi-Filter AND Logic', () => {
+  test.beforeEach(async ({ page }) => {
+    await loadGraph(page, 'sample-graph.json')
+  })
+
+  test('enabling boolean + number filters applies AND logic', async ({ page }) => {
+    // Enable boolean (true) → Alice, Carol, Eve = 3
+    const boolPanel = page.getByTestId('filter-panel-active')
+    await boolPanel.getByRole('checkbox').click()
+    await expect(page.getByTestId('filter-match-count')).toHaveText('3 nodes match')
+
+    // Enable age filter (full range) → still 3 (AND with all ages)
+    const agePanel = page.getByTestId('filter-panel-age')
+    await agePanel.getByRole('checkbox').click()
+    await expect(page.getByTestId('filter-match-count')).toHaveText('3 nodes match')
+  })
+
+  test('partial select shows Unselect all button', async ({ page }) => {
+    // Enable just one of five filters
+    await page.getByTestId('filter-panel-active').getByRole('checkbox').click()
+    await expect(page.getByTestId('filter-toggle-all')).toHaveText('Unselect all')
+  })
+})
+
 test.describe('Filter Toggle', () => {
   test.beforeEach(async ({ page }) => {
     await loadGraph(page, 'sample-graph.json')

@@ -93,6 +93,37 @@ describe('initializeFilters', () => {
     expect(dateFilter.before).toBeNull()
   })
 
+  it('number filter with identical values has domainMin === domainMax', () => {
+    const graph: GraphData = {
+      version: '1',
+      nodes: [
+        { id: '1', properties: { score: 5 } },
+        { id: '2', properties: { score: 5 } },
+      ],
+      edges: [],
+    }
+    const idx = buildNodeValueIndex(graph)
+    const filters = initializeFilters([{ key: 'score', type: 'number' }], idx)
+    const f = filters.get('score') as NumberFilterState
+    expect(f.domainMin).toBe(5)
+    expect(f.domainMax).toBe(5)
+    expect(f.min).toBe(5)
+    expect(f.max).toBe(5)
+  })
+
+  it('string filter: exactly 50 distinct values → all pre-selected', () => {
+    const nodes = Array.from({ length: 50 }, (_, i) => ({
+      id: String(i),
+      properties: { tag: `tag_${String(i).padStart(2, '0')}` },
+    }))
+    const graph: GraphData = { version: '1', nodes, edges: [] }
+    const idx = buildNodeValueIndex(graph)
+    const filters = initializeFilters([{ key: 'tag', type: 'string' }], idx)
+    const strFilter = filters.get('tag') as StringFilterState
+    expect(strFilter.selectedValues.size).toBe(50)
+    expect(strFilter.allValues.length).toBe(50)
+  })
+
   it('string filter: >50 distinct values → empty selectedValues', () => {
     const nodes = Array.from({ length: 51 }, (_, i) => ({
       id: String(i),
@@ -208,6 +239,29 @@ describe('nodePassesFilter', () => {
     }
     expect(nodePassesFilter('1', filter, idx, 'age')).toBe(false)
   })
+
+  it('boolean filter: node without property fails', () => {
+    const graph: GraphData = { version: '1', nodes: [{ id: '1' }], edges: [] }
+    const idx = buildNodeValueIndex(graph)
+    const filter: BooleanFilterState = { type: 'boolean', isEnabled: true, selected: true }
+    expect(nodePassesFilter('1', filter, idx, 'active')).toBe(false)
+  })
+
+  it('string filter: node without property fails', () => {
+    const graph: GraphData = { version: '1', nodes: [{ id: '1' }], edges: [] }
+    const idx = buildNodeValueIndex(graph)
+    const filter: StringFilterState = {
+      type: 'string', isEnabled: true, selectedValues: new Set(['x']), allValues: ['x'],
+    }
+    expect(nodePassesFilter('1', filter, idx, 'status')).toBe(false)
+  })
+
+  it('date filter: node without property fails', () => {
+    const graph: GraphData = { version: '1', nodes: [{ id: '1' }], edges: [] }
+    const idx = buildNodeValueIndex(graph)
+    const filter: DateFilterState = { type: 'date', isEnabled: true, after: '2020-01-01', before: null }
+    expect(nodePassesFilter('1', filter, idx, 'joined')).toBe(false)
+  })
 })
 
 describe('computeMatchingNodeIds', () => {
@@ -239,6 +293,20 @@ describe('computeMatchingNodeIds', () => {
     const matching = computeMatchingNodeIds(sampleGraph, filters, index)
     // Alice (34, true) and Carol (45, true) — Dave (31, false) excluded
     expect(matching).toEqual(new Set(['1', '3']))
+  })
+
+  it('AND logic: number + boolean + date', () => {
+    const filters = initializeFilters(metas, index)
+    filters.set('age', {
+      type: 'number', isEnabled: true, min: 25, max: 35, domainMin: 27, domainMax: 45,
+    })
+    filters.set('active', { type: 'boolean', isEnabled: true, selected: true })
+    filters.set('joined', { type: 'date', isEnabled: true, after: '2020-01-01', before: null })
+    const matching = computeMatchingNodeIds(sampleGraph, filters, index)
+    // Alice (34, true, 2021) and Eve (27, true, 2024) pass age+active
+    // But Alice joined 2021 > 2020 ✓, Eve joined 2024 > 2020 ✓
+    // Carol (45) excluded by age, Bob (false) excluded by active, Dave (false) excluded by active
+    expect(matching).toEqual(new Set(['1', '5']))
   })
 
   it('all filters enabled with restrictive values → may yield zero matches', () => {

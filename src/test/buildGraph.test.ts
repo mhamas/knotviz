@@ -140,4 +140,38 @@ describe('buildGraph', () => {
     const { graph } = buildGraph(result)
     expect(graph.getNodeAttribute('1', '_defaultedProperties')).toEqual([])
   })
+
+  it('stores edge weight as Graphology attribute', () => {
+    const result = makeResult({
+      version: '1',
+      nodes: [{ id: '1' }, { id: '2' }],
+      edges: [{ source: '1', target: '2', weight: 0.8 }],
+    })
+    const { graph } = buildGraph(result)
+    const edgeKey = graph.edges('1', '2')[0]
+    expect(graph.getEdgeAttribute(edgeKey, 'weight')).toBe(0.8)
+  })
+
+  it('omits weight attribute when edge has no weight', () => {
+    const result = makeResult({
+      version: '1',
+      nodes: [{ id: '1' }, { id: '2' }],
+      edges: [{ source: '1', target: '2' }],
+    })
+    const { graph } = buildGraph(result)
+    const edgeKey = graph.edges('1', '2')[0]
+    expect(graph.getEdgeAttribute(edgeKey, 'weight')).toBeUndefined()
+  })
+
+  it('stores edge label as Graphology attribute', () => {
+    const result = makeResult({
+      version: '1',
+      nodes: [{ id: '1' }, { id: '2' }],
+      edges: [{ source: '1', target: '2', label: 'knows', weight: 1.5 }],
+    })
+    const { graph } = buildGraph(result)
+    const edgeKey = graph.edges('1', '2')[0]
+    expect(graph.getEdgeAttribute(edgeKey, 'label')).toBe('knows')
+    expect(graph.getEdgeAttribute(edgeKey, 'weight')).toBe(1.5)
+  })
 })

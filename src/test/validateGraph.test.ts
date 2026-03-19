@@ -116,4 +116,57 @@ describe('validateGraph', () => {
     expect(warn).toHaveBeenCalled()
     warn.mockRestore()
   })
+
+  it('throws for version: null', () => {
+    expect(() => validateGraph({ version: null, nodes: [{ id: '1' }], edges: [] })).toThrow()
+  })
+
+  it('throws for version: 123 (number instead of string)', () => {
+    expect(() => validateGraph({ version: 123, nodes: [{ id: '1' }], edges: [] })).toThrow()
+  })
+
+  it('throws when edges is an object instead of array', () => {
+    expect(() => validateGraph({ version: '1', nodes: [{ id: '1' }], edges: {} })).toThrow(
+      'File must contain nodes and edges arrays'
+    )
+  })
+
+  it('throws when both nodes and edges are missing', () => {
+    expect(() => validateGraph({ version: '1' })).toThrow()
+  })
+
+  it('preserves edge weight and label through validation', () => {
+    const result = validateGraph({
+      version: '1',
+      nodes: [{ id: '1' }, { id: '2' }],
+      edges: [{ source: '1', target: '2', label: 'knows', weight: 0.8 }],
+    })
+    expect(result.edges[0].label).toBe('knows')
+    expect(result.edges[0].weight).toBe(0.8)
+  })
+
+  it('skips edge with missing source or target', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const result = validateGraph({
+      version: '1',
+      nodes: [{ id: '1' }],
+      edges: [{ source: '1' }, { target: '1' }, { source: '1', target: '1' }],
+    })
+    expect(result.edges).toHaveLength(1)
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+  })
+
+  it('skips non-object nodes with warning', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const result = validateGraph({
+      version: '1',
+      nodes: ['not-a-node', null, { id: '1' }],
+      edges: [],
+    })
+    expect(result.nodes).toHaveLength(1)
+    expect(result.nodes[0].id).toBe('1')
+    expect(warn).toHaveBeenCalled()
+    warn.mockRestore()
+  })
 })

@@ -14,8 +14,8 @@ dist
 .DS_Store
 Thumbs.db
 
-# Large example files
-example_graph_50k.json
+# Manual testing graphs
+graphs_for_manual_testing/
 
 # Playwright MCP
 .playwright-mcp

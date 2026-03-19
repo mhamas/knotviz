@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import type Graph from 'graphology'
 import type { GraphData, PositionMode } from './types'
+import { useGraphStore } from '@/stores/useGraphStore'
 import { DropZone } from './components/DropZone'
 import { GraphView } from './components/GraphView'
 import { LeftSidebar } from './components/LeftSidebar'
@@ -25,6 +26,7 @@ function App(): React.JSX.Element {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleLoadNewFile = useCallback((file?: File): void => {
+    useGraphStore.getState().resetStore()
     setPendingFile(file ?? null)
     setLoadedData(null)
   }, [])
@@ -36,32 +38,7 @@ function App(): React.JSX.Element {
   if (loadedData === null) {
     return (
       <div className="flex h-screen w-screen">
-        <LeftSidebar
-          isDisabled
-          isRunning={false}
-          simulationError={null}
-          gravity={1}
-          speed={1}
-          nodeCount={0}
-          edgeCount={0}
-          onRun={(): void => {}}
-          onStop={(): void => {}}
-          onGravityChange={(): void => {}}
-          onSpeedChange={(): void => {}}
-          onRandomizeLayout={(): void => {}}
-          nodeSize={5}
-          edgeSize={1}
-          isEdgesVisible={true}
-          isNodeLabelsVisible={false}
-          isHighlightNeighbors={false}
-          onNodeSizeChange={(): void => {}}
-          onEdgeSizeChange={(): void => {}}
-          onEdgesVisibleChange={(): void => {}}
-          onNodeLabelsVisibleChange={(): void => {}}
-          onHighlightNeighborsChange={(): void => {}}
-          onDownload={(): void => {}}
-          onReset={handleBrowseFile}
-        />
+        <LeftSidebar onReset={handleBrowseFile} />
         <div className="relative flex-1">
           <DropZone
             fileInputRef={fileInputRef}

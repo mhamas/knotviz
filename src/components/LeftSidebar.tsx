@@ -18,32 +18,16 @@ import {
   StatRow,
 } from '@/components/sidebar'
 import { useDebounce } from '@/hooks/useDebounce'
+import { useGraphStore } from '@/stores/useGraphStore'
 
 interface Props {
-  isDisabled?: boolean
-  isRunning: boolean
-  simulationError: string | null
-  gravity: number
-  speed: number
-  nodeCount: number
-  edgeCount: number
-  onRun: () => void
-  onStop: () => void
-  onGravityChange: (v: number) => void
-  onSpeedChange: (v: number) => void
-  onRandomizeLayout: () => void
-  nodeSize: number
-  edgeSize: number
-  isEdgesVisible: boolean
-  isNodeLabelsVisible: boolean
-  isHighlightNeighbors: boolean
-  onNodeSizeChange: (v: number) => void
-  onEdgeSizeChange: (v: number) => void
-  onEdgesVisibleChange: (v: boolean) => void
-  onNodeLabelsVisibleChange: (v: boolean) => void
-  onHighlightNeighborsChange: (v: boolean) => void
-  onDownload: () => void
-  onReset: () => void
+  isRunning?: boolean
+  simulationError?: string | null
+  onRun?: () => void
+  onStop?: () => void
+  onRandomizeLayout?: () => void
+  onDownload?: () => void
+  onReset?: () => void
 }
 
 // Log scale: slider [0, 100] → value [0.1, 10.0]
@@ -61,40 +45,50 @@ function valueToSlider(v: number): number {
 
 /**
  * Left sidebar with simulation controls, graph info, and file management.
+ * Reads display/simulation settings from Zustand store; receives only
+ * imperative simulation callbacks and file-management handlers as props.
  *
- * @param props - Simulation state, settings, counts, and callbacks.
+ * @param props - Simulation state and imperative callbacks.
  * @returns Left sidebar element.
  */
+const noop = (): void => {}
+
 export function LeftSidebar({
-  isDisabled = false,
-  isRunning,
-  simulationError,
-  gravity,
-  speed,
-  nodeCount,
-  edgeCount,
-  onRun,
-  onStop,
-  onGravityChange,
-  onSpeedChange,
-  onRandomizeLayout,
-  nodeSize,
-  edgeSize,
-  isEdgesVisible,
-  isNodeLabelsVisible,
-  isHighlightNeighbors,
-  onNodeSizeChange,
-  onEdgeSizeChange,
-  onEdgesVisibleChange,
-  onNodeLabelsVisibleChange,
-  onHighlightNeighborsChange,
-  onDownload,
-  onReset,
+  isRunning = false,
+  simulationError = null,
+  onRun = noop,
+  onStop = noop,
+  onRandomizeLayout = noop,
+  onDownload = noop,
+  onReset = noop,
 }: Props): React.JSX.Element {
-  const debouncedGravityChange = useDebounce(onGravityChange, 150)
-  const debouncedSpeedChange = useDebounce(onSpeedChange, 150)
-  const debouncedNodeSizeChange = useDebounce(onNodeSizeChange, 150)
-  const debouncedEdgeSizeChange = useDebounce(onEdgeSizeChange, 150)
+  // Store state
+  const isGraphLoaded = useGraphStore((s) => s.isGraphLoaded)
+  const gravity = useGraphStore((s) => s.gravity)
+  const speed = useGraphStore((s) => s.speed)
+  const nodeSize = useGraphStore((s) => s.nodeSize)
+  const edgeSize = useGraphStore((s) => s.edgeSize)
+  const isEdgesVisible = useGraphStore((s) => s.isEdgesVisible)
+  const isNodeLabelsVisible = useGraphStore((s) => s.isNodeLabelsVisible)
+  const isHighlightNeighbors = useGraphStore((s) => s.isHighlightNeighbors)
+  const nodeCount = useGraphStore((s) => s.nodeCount)
+  const edgeCount = useGraphStore((s) => s.edgeCount)
+
+  // Store actions
+  const setGravity = useGraphStore((s) => s.setGravity)
+  const setSpeed = useGraphStore((s) => s.setSpeed)
+  const setNodeSize = useGraphStore((s) => s.setNodeSize)
+  const setEdgeSize = useGraphStore((s) => s.setEdgeSize)
+  const setIsEdgesVisible = useGraphStore((s) => s.setIsEdgesVisible)
+  const setIsNodeLabelsVisible = useGraphStore((s) => s.setIsNodeLabelsVisible)
+  const setIsHighlightNeighbors = useGraphStore((s) => s.setIsHighlightNeighbors)
+
+  const isDisabled = !isGraphLoaded
+
+  const debouncedGravityChange = useDebounce(setGravity, 150)
+  const debouncedSpeedChange = useDebounce(setSpeed, 150)
+  const debouncedNodeSizeChange = useDebounce(setNodeSize, 150)
+  const debouncedEdgeSizeChange = useDebounce(setEdgeSize, 150)
 
   return (
     <div className="flex h-screen w-60 shrink-0 flex-col gap-4 border-r border-slate-200 bg-white p-4">
@@ -210,19 +204,19 @@ export function LeftSidebar({
         <SidebarCheckbox
           label="Show edges"
           checked={isEdgesVisible}
-          onCheckedChange={onEdgesVisibleChange}
+          onCheckedChange={setIsEdgesVisible}
         />
 
         <SidebarCheckbox
           label="Show node labels"
           checked={isNodeLabelsVisible}
-          onCheckedChange={onNodeLabelsVisibleChange}
+          onCheckedChange={setIsNodeLabelsVisible}
         />
 
         <SidebarCheckbox
           label="Highlight neighbors on hover"
           checked={isHighlightNeighbors}
-          onCheckedChange={onHighlightNeighborsChange}
+          onCheckedChange={setIsHighlightNeighbors}
         />
       </div>
 

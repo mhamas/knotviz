@@ -5,6 +5,7 @@ import type { GraphData, PositionMode, PropertyMeta, TooltipState } from '../typ
 import type { SimulationSettings } from '../hooks/useFA2Simulation'
 import { useFA2Simulation } from '../hooks/useFA2Simulation'
 import { detectPropertyTypes } from '../lib/detectPropertyTypes'
+import { useGraphStore } from '@/stores/useGraphStore'
 import { FilenameLabel } from './FilenameLabel'
 import { CanvasControls } from './CanvasControls'
 import { LeftSidebar } from './LeftSidebar'
@@ -50,16 +51,20 @@ export function GraphView({
 
   const [tooltipState, setTooltipState] = useState<TooltipState | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
-  const [simulationSettings, setSimulationSettings] = useState<SimulationSettings>({
-    gravity: 1,
-    speed: 1,
-  })
-  const [nodeSize, setNodeSize] = useState(5)
-  const [edgeSize, setEdgeSize] = useState(1)
-  const [isEdgesVisible, setIsEdgesVisible] = useState(true)
-  const [isNodeLabelsVisible, setIsNodeLabelsVisible] = useState(false)
-  const [isHighlightNeighbors, setIsHighlightNeighbors] = useState(false)
 
+  // Store state
+  const nodeSize = useGraphStore((s) => s.nodeSize)
+  const edgeSize = useGraphStore((s) => s.edgeSize)
+  const isEdgesVisible = useGraphStore((s) => s.isEdgesVisible)
+  const isNodeLabelsVisible = useGraphStore((s) => s.isNodeLabelsVisible)
+  const isHighlightNeighbors = useGraphStore((s) => s.isHighlightNeighbors)
+  const gravity = useGraphStore((s) => s.gravity)
+  const speed = useGraphStore((s) => s.speed)
+
+  const simulationSettings = useMemo<SimulationSettings>(
+    () => ({ gravity, speed }),
+    [gravity, speed],
+  )
   const simulation = useFA2Simulation(graph, simulationSettings)
 
   // Keep display refs in sync for use in reducers
@@ -93,6 +98,11 @@ export function GraphView({
     isHighlightNeighborsRef.current = isHighlightNeighbors
     sigmaRef.current?.refresh()
   }, [isHighlightNeighbors])
+
+  // Mark graph as loaded in the store
+  useEffect(() => {
+    useGraphStore.getState().setGraphLoaded(graph.order, graph.size)
+  }, [graph])
 
   // Sigma init — runs once on mount
   useEffect(() => {
@@ -377,25 +387,9 @@ export function GraphView({
       <LeftSidebar
         isRunning={simulation.isRunning}
         simulationError={simulation.errorMessage}
-        gravity={simulationSettings.gravity}
-        speed={simulationSettings.speed}
-        nodeCount={graph.order}
-        edgeCount={graph.size}
         onRun={simulation.start}
         onStop={simulation.stop}
-        onGravityChange={(v): void => setSimulationSettings((s) => ({ ...s, gravity: v }))}
-        onSpeedChange={(v): void => setSimulationSettings((s) => ({ ...s, speed: v }))}
         onRandomizeLayout={simulation.randomizeLayout}
-        nodeSize={nodeSize}
-        edgeSize={edgeSize}
-        isEdgesVisible={isEdgesVisible}
-        isNodeLabelsVisible={isNodeLabelsVisible}
-        isHighlightNeighbors={isHighlightNeighbors}
-        onNodeSizeChange={setNodeSize}
-        onEdgeSizeChange={setEdgeSize}
-        onEdgesVisibleChange={setIsEdgesVisible}
-        onNodeLabelsVisibleChange={setIsNodeLabelsVisible}
-        onHighlightNeighborsChange={setIsHighlightNeighbors}
         onDownload={handleDownload}
         onReset={onLoadNewFile}
       />

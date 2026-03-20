@@ -273,15 +273,14 @@ test.describe('String Filter', () => {
     await expect(panel.getByTestId('string-filter-count')).toHaveText('1/3')
   })
 
-  test('removing a chip updates filter', async ({ page }) => {
+  test('clicking a chip removes it and updates filter', async ({ page }) => {
     const panel = page.getByTestId('filter-panel-status')
     await panel.getByRole('checkbox').first().click() // enable
 
-    // All 3 selected as chips initially. Remove one chip.
+    // All 3 selected as chips initially. Click "inactive" chip to remove.
     const chips = panel.getByTestId('string-filter-chip')
     await expect(chips).toHaveCount(3)
-    // Remove "inactive" chip → 4 nodes match (Dave excluded)
-    await chips.filter({ hasText: 'inactive' }).getByRole('button').click()
+    await chips.filter({ hasText: 'inactive' }).click()
     await expect(page.getByTestId('filter-match-count')).toHaveText('4 nodes match')
     await expect(panel.getByTestId('string-filter-count')).toHaveText('2/3')
   })
@@ -339,6 +338,35 @@ test.describe('String Filter', () => {
 
     await search.press('Escape')
     await expect(panel.getByTestId('string-filter-dropdown')).toBeHidden()
+  })
+
+  test('shows "showing all N" when none selected, N/M otherwise', async ({ page }) => {
+    const panel = page.getByTestId('filter-panel-status')
+    await panel.getByRole('checkbox').first().click() // enable
+
+    // Default: all 3 selected → shows count
+    await expect(panel.getByTestId('string-filter-count')).toHaveText('3/3')
+
+    // Deselect all → shows "showing all"
+    await panel.getByTestId('string-filter-deselect-all').click()
+    await expect(panel.getByTestId('string-filter-count')).toHaveText('showing all 3')
+
+    // Select one → back to N/M
+    const search = panel.getByTestId('string-filter-search')
+    await search.fill('ac')
+    await panel.getByTestId('string-filter-option').first().click()
+    await expect(panel.getByTestId('string-filter-count')).toHaveText('1/3')
+  })
+
+  test('focusing search input shows dropdown without typing', async ({ page }) => {
+    const panel = page.getByTestId('filter-panel-status')
+    await panel.getByRole('checkbox').first().click() // enable
+    await panel.getByTestId('string-filter-deselect-all').click()
+
+    // Click into search field — dropdown appears with unselected values
+    await panel.getByTestId('string-filter-search').click()
+    await expect(panel.getByTestId('string-filter-dropdown')).toBeVisible()
+    await expect(panel.getByTestId('string-filter-option')).toHaveCount(3)
   })
 
   test('clear all resets string filter selections', async ({ page }) => {

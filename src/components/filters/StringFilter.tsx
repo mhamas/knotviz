@@ -25,14 +25,13 @@ export function StringFilter({ state, onChange }: Props): React.JSX.Element {
 
   const isAllSelected = state.selectedValues.size === state.allValues.length
 
-  // Dropdown candidates: prefix match, exclude selected, limit 10
+  // Dropdown candidates: prefix match (or all unselected on empty search), exclude selected, limit 10
   const candidates = useMemo(() => {
-    if (!search) return []
     const lower = search.toLowerCase()
     const results: string[] = []
     for (const v of state.allValues) {
       if (state.selectedValues.has(v)) continue
-      if (v.toLowerCase().startsWith(lower)) {
+      if (!search || v.toLowerCase().startsWith(lower)) {
         results.push(v)
         if (results.length >= 10) break
       }
@@ -52,8 +51,10 @@ export function StringFilter({ state, onChange }: Props): React.JSX.Element {
     ? selectedArray.slice(selectedArray.length - MAX_VISIBLE_CHIPS)
     : selectedArray
 
-  // Dropdown is open when search has text, candidates exist, and not force-closed by Escape
-  const isOpen = search.length > 0 && candidates.length > 0 && !isForceClosed
+  const [isFocused, setIsFocused] = useState(false)
+
+  // Dropdown is open when focused (or has search text), candidates exist, and not force-closed
+  const isOpen = (isFocused || search.length > 0) && candidates.length > 0 && !isForceClosed
 
   const handleSelect = useCallback((value: string): void => {
     const next = new Set(state.selectedValues)
@@ -79,13 +80,13 @@ export function StringFilter({ state, onChange }: Props): React.JSX.Element {
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): void => {
-    if (!isOpen || candidates.length === 0) {
-      // Backspace on empty input removes last chip
-      if (e.key === 'Backspace' && !search && selectedArray.length > 0) {
-        handleRemove(selectedArray[selectedArray.length - 1])
-      }
+    // Backspace on empty input removes last chip (regardless of dropdown state)
+    if (e.key === 'Backspace' && !search && selectedArray.length > 0) {
+      handleRemove(selectedArray[selectedArray.length - 1])
       return
     }
+
+    if (!isOpen || candidates.length === 0) return
 
     if (e.key === 'ArrowDown') {
       e.preventDefault()
@@ -145,7 +146,9 @@ export function StringFilter({ state, onChange }: Props): React.JSX.Element {
           None
         </button>
         <span className="text-[11px] text-slate-400" data-testid="string-filter-count">
-          {state.selectedValues.size}/{state.allValues.length}
+          {state.selectedValues.size === 0
+            ? `showing all ${state.allValues.length}`
+            : `${state.selectedValues.size}/${state.allValues.length}`}
         </span>
       </div>
 
@@ -165,27 +168,22 @@ export function StringFilter({ state, onChange }: Props): React.JSX.Element {
             </span>
           )}
 
-          {/* Visible chips */}
+          {/* Visible chips — entire chip is clickable to remove */}
           {visibleChips.map((value) => (
-            <span
+            <button
               key={value}
-              className="flex shrink-0 items-center gap-0.5 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-700"
-              title={value}
+              type="button"
+              onClick={(e): void => {
+                e.stopPropagation()
+                handleRemove(value)
+              }}
+              className="flex shrink-0 cursor-pointer items-center gap-0.5 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-700 hover:bg-slate-200"
+              title={`Remove ${value}`}
               data-testid="string-filter-chip"
             >
               <span className="max-w-[60px] truncate">{value}</span>
-              <button
-                type="button"
-                onClick={(e): void => {
-                  e.stopPropagation()
-                  handleRemove(value)
-                }}
-                className="ml-0.5 text-slate-400 hover:text-slate-700"
-                aria-label={`Remove ${value}`}
-              >
-                ×
-              </button>
-            </span>
+              <span className="ml-0.5 text-slate-400">×</span>
+            </button>
           ))}
 
           {/* Search input */}
@@ -196,6 +194,11 @@ export function StringFilter({ state, onChange }: Props): React.JSX.Element {
             value={search}
             onChange={(e): void => handleSearchChange(e.target.value)}
             onKeyDown={handleKeyDown}
+            onFocus={(): void => {
+              setIsFocused(true)
+              setIsForceClosed(false)
+            }}
+            onBlur={(): void => setIsFocused(false)}
             placeholder={selectedArray.length === 0 ? 'Search…' : ''}
             className="min-w-[40px] flex-1 border-none bg-transparent text-[11px] text-slate-700 outline-none placeholder:text-slate-300"
           />

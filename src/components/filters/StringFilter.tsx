@@ -6,7 +6,7 @@ interface Props {
   onChange: (selectedValues: Set<string>) => void
 }
 
-const MAX_VISIBLE_CHIPS = 10
+const MAX_VISIBLE_CHIPS = 8
 
 /**
  * Chip-based string filter with prefix search and dropdown selection.

@@ -30,8 +30,8 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 - [x] 17 — BooleanFilter
 - [x] 18 — PropertyFilterPanel
 - [x] 19 — FiltersTab + useNodeColors
-- [ ] 20 — StringFilter
-- [ ] 21 — DateFilter
+- [x] 20 — StringFilter
+- [x] 21 — DateFilter
 
 ## R3: Stats + Export
 
@@ -54,4 +54,4 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 
 ## Next task
 
-**20 — StringFilter** (prereq: 19 ✓)
+**22 — Stats Library** (prereq: none)

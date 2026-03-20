@@ -16,7 +16,7 @@ export interface FilterStateHandle {
   resetKey: number
   setNumberFilter: (key: string, min: number, max: number) => void
   setStringFilter: (key: string, values: Set<string>) => void
-  setDateFilter: (key: string, after: string | null, before: string | null) => void
+  setDateFilter: (key: string, after: string, before: string) => void
   setBooleanFilter: (key: string, selected: BooleanFilterState['selected']) => void
   setFilterEnabled: (key: string, isEnabled: boolean) => void
   setAllFiltersEnabled: (isEnabled: boolean) => void
@@ -98,11 +98,22 @@ function initializeFilters(
         allValues,
       } satisfies StringFilterState)
     } else if (meta.type === 'date') {
+      const dates: string[] = []
+      if (values) {
+        for (const v of values.values()) {
+          if (typeof v === 'string') dates.push(v)
+        }
+      }
+      dates.sort()
+      const domainMin = dates.length > 0 ? dates[0] : '1970-01-01'
+      const domainMax = dates.length > 0 ? dates[dates.length - 1] : '1970-01-01'
       filters.set(meta.key, {
         type: 'date',
         isEnabled: false,
-        after: null,
-        before: null,
+        after: domainMin,
+        before: domainMax,
+        domainMin,
+        domainMax,
       } satisfies DateFilterState)
     }
   }
@@ -139,9 +150,7 @@ function nodePassesFilter(
     }
     case 'date': {
       if (typeof value !== 'string') return false
-      if (filter.after !== null && value < filter.after) return false
-      if (filter.before !== null && value > filter.before) return false
-      return true
+      return value >= filter.after && value <= filter.before
     }
   }
 }
@@ -221,7 +230,7 @@ export function useFilterState(
   )
 
   const setDateFilter = useCallback(
-    (key: string, after: string | null, before: string | null): void => {
+    (key: string, after: string, before: string): void => {
       updateFilter(
         key,
         (prev) => ({ ...prev, after, before }) as DateFilterState,

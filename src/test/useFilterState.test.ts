@@ -85,12 +85,14 @@ describe('initializeFilters', () => {
     expect(strFilter.selectedValues).toEqual(new Set(['active', 'inactive', 'pending']))
   })
 
-  it('initializes date filter with null bounds', () => {
+  it('initializes date filter with domain bounds', () => {
     const filters = initializeFilters(metas, index)
     const dateFilter = filters.get('joined') as DateFilterState
     expect(dateFilter.type).toBe('date')
-    expect(dateFilter.after).toBeNull()
-    expect(dateFilter.before).toBeNull()
+    expect(dateFilter.domainMin).toBe('2019-07-20')
+    expect(dateFilter.domainMax).toBe('2024-05-30')
+    expect(dateFilter.after).toBe('2019-07-20')
+    expect(dateFilter.before).toBe('2024-05-30')
   })
 
   it('number filter with identical values has domainMin === domainMax', () => {
@@ -200,26 +202,29 @@ describe('nodePassesFilter', () => {
     expect(nodePassesFilter('4', filter, index, 'status')).toBe(true)
   })
 
-  it('date filter: after constraint', () => {
+  it('date filter: after constraint (before at domain max)', () => {
     const filter: DateFilterState = {
-      type: 'date', isEnabled: true, after: '2022-01-01', before: null,
+      type: 'date', isEnabled: true, after: '2022-01-01', before: '2024-05-30',
+      domainMin: '2019-07-20', domainMax: '2024-05-30',
     }
     expect(nodePassesFilter('2', filter, index, 'joined')).toBe(true) // 2023-11-02
     expect(nodePassesFilter('3', filter, index, 'joined')).toBe(false) // 2019-07-20
     expect(nodePassesFilter('4', filter, index, 'joined')).toBe(true) // 2022-01-10
   })
 
-  it('date filter: before constraint', () => {
+  it('date filter: before constraint (after at domain min)', () => {
     const filter: DateFilterState = {
-      type: 'date', isEnabled: true, after: null, before: '2022-01-01',
+      type: 'date', isEnabled: true, after: '2019-07-20', before: '2022-01-01',
+      domainMin: '2019-07-20', domainMax: '2024-05-30',
     }
     expect(nodePassesFilter('1', filter, index, 'joined')).toBe(true) // 2021-03-15
     expect(nodePassesFilter('2', filter, index, 'joined')).toBe(false) // 2023-11-02
   })
 
-  it('date filter: both constraints', () => {
+  it('date filter: range constraints', () => {
     const filter: DateFilterState = {
       type: 'date', isEnabled: true, after: '2021-01-01', before: '2023-01-01',
+      domainMin: '2019-07-20', domainMax: '2024-05-30',
     }
     expect(nodePassesFilter('1', filter, index, 'joined')).toBe(true) // 2021-03-15
     expect(nodePassesFilter('2', filter, index, 'joined')).toBe(false) // 2023-11-02
@@ -259,7 +264,10 @@ describe('nodePassesFilter', () => {
   it('date filter: node without property fails', () => {
     const graph: GraphData = { version: '1', nodes: [{ id: '1' }], edges: [] }
     const idx = buildNodeValueIndex(graph)
-    const filter: DateFilterState = { type: 'date', isEnabled: true, after: '2020-01-01', before: null }
+    const filter: DateFilterState = {
+      type: 'date', isEnabled: true, after: '2020-01-01', before: '2024-05-30',
+      domainMin: '2019-07-20', domainMax: '2024-05-30',
+    }
     expect(nodePassesFilter('1', filter, idx, 'joined')).toBe(false)
   })
 })
@@ -301,7 +309,10 @@ describe('computeMatchingNodeIds', () => {
       type: 'number', isEnabled: true, min: 25, max: 35, domainMin: 27, domainMax: 45,
     })
     filters.set('active', { type: 'boolean', isEnabled: true, selected: true })
-    filters.set('joined', { type: 'date', isEnabled: true, after: '2020-01-01', before: null })
+    filters.set('joined', {
+      type: 'date', isEnabled: true, after: '2020-01-01', before: '2024-05-30',
+      domainMin: '2019-07-20', domainMax: '2024-05-30',
+    })
     const matching = computeMatchingNodeIds(sampleGraph, filters, index)
     // Alice (34, true, 2021) and Eve (27, true, 2024) pass age+active
     // But Alice joined 2021 > 2020 ✓, Eve joined 2024 > 2020 ✓

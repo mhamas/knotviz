@@ -1,12 +1,16 @@
 import type {
   BooleanFilterState,
+  DateFilterState,
   FilterState,
   NumberFilterState,
   PropertyMeta,
+  StringFilterState,
 } from '../../types'
 import { Checkbox } from '@/components/ui/checkbox'
 import { NumberFilter } from './NumberFilter'
 import { BooleanFilter } from './BooleanFilter'
+import { StringFilter } from './StringFilter'
+import { DateFilter } from './DateFilter'
 
 interface Props {
   meta: PropertyMeta
@@ -14,6 +18,8 @@ interface Props {
   onEnabledChange: (isEnabled: boolean) => void
   onNumberChange?: (min: number, max: number) => void
   onBooleanChange?: (selected: BooleanFilterState['selected']) => void
+  onStringChange?: (selectedValues: Set<string>) => void
+  onDateChange?: (after: string, before: string) => void
 }
 
 /**
@@ -29,6 +35,8 @@ export function PropertyFilterPanel({
   onEnabledChange,
   onNumberChange,
   onBooleanChange,
+  onStringChange,
+  onDateChange,
 }: Props): React.JSX.Element {
   return (
     <div data-testid={`filter-panel-${meta.key}`} className="border-b border-slate-100 pb-2">
@@ -63,11 +71,17 @@ export function PropertyFilterPanel({
             onChange={onBooleanChange}
           />
         )}
-        {filterState.type === 'string' && (
-          <p className="text-[11px] italic text-slate-400">String filter (coming soon)</p>
+        {filterState.type === 'string' && onStringChange && (
+          <StringFilter
+            state={filterState as StringFilterState}
+            onChange={onStringChange}
+          />
         )}
-        {filterState.type === 'date' && (
-          <p className="text-[11px] italic text-slate-400">Date filter (coming soon)</p>
+        {filterState.type === 'date' && onDateChange && (
+          <DateFilter
+            state={filterState as DateFilterState}
+            onChange={onDateChange}
+          />
         )}
       </div>
     </div>

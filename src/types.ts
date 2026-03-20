@@ -55,8 +55,10 @@ export interface StringFilterState {
 export interface DateFilterState {
   type: 'date'
   isEnabled: boolean
-  after: string | null
-  before: string | null
+  after: string
+  before: string
+  domainMin: string
+  domainMax: string
 }
 
 export interface BooleanFilterState {

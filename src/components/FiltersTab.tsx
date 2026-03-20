@@ -19,6 +19,8 @@ export function FiltersTab({ propertyMetas, filterHandle }: Props): React.JSX.El
     filters,
     resetKey,
     setNumberFilter,
+    setStringFilter,
+    setDateFilter,
     setBooleanFilter,
     setFilterEnabled,
     setAllFiltersEnabled,
@@ -85,6 +87,16 @@ export function FiltersTab({ propertyMetas, filterHandle }: Props): React.JSX.El
               onBooleanChange={
                 filterState.type === 'boolean'
                   ? (selected): void => setBooleanFilter(meta.key, selected)
+                  : undefined
+              }
+              onStringChange={
+                filterState.type === 'string'
+                  ? (values): void => setStringFilter(meta.key, values)
+                  : undefined
+              }
+              onDateChange={
+                filterState.type === 'date'
+                  ? (after, before): void => setDateFilter(meta.key, after, before)
                   : undefined
               }
             />

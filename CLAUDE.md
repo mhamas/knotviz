@@ -17,7 +17,8 @@ The goal is a clean, working prototype — not a production app. Prioritize corr
 | UI components | shadcn/ui v4 (Base UI primitives) |
 | Styling | Tailwind CSS v4 (PostCSS plugin) |
 | Build tool | Vite 8 |
-| Unit testing | Vitest |
+| Unit testing | Vitest (jsdom) |
+| Component testing | Vitest Browser Mode (Playwright provider) |
 | E2E testing | Playwright |
 | Linting | ESLint 9 (flat config) + Prettier |
 
@@ -43,8 +44,9 @@ grapphy/
 │   ├── drop-zone.spec.ts
 │   ├── graph-view.spec.ts
 │   ├── simulation.spec.ts
-│   ├── display-controls.spec.ts
 │   ├── filters.spec.ts
+│   ├── node-tooltip.spec.ts
+│   ├── file-management.spec.ts
 │   ├── position-loading.spec.ts
 │   └── reset-and-export.spec.ts
 ├── src/
@@ -64,6 +66,8 @@ grapphy/
 │   │   ├── buildGraph.ts, validateGraph.ts, parseJSON.ts
 │   │   ├── applyNullDefaults.ts, detectPropertyTypes.ts
 │   │   ├── graphSchema.json, utils.ts
+│   ├── components/
+│   │   ├── __tests__/   # Vitest Browser Mode component tests
 │   ├── test/            # Vitest unit tests for lib/ functions only
 │   │   ├── buildGraph.test.ts, validateGraph.test.ts
 │   │   ├── applyNullDefaults.test.ts, detectPropertyTypes.test.ts
@@ -87,7 +91,9 @@ Individual commands if needed:
 - `npm run verify` — typecheck + lint + unit tests (no E2E)
 - `npm run typecheck` — TypeScript type checking (strict mode)
 - `npm run lint` — ESLint (warnings from `src/components/ui/` are excluded)
-- `npm run test` — Vitest unit tests (`src/test/`)
+- `npm run test` — Vitest unit + component tests (all projects)
+- `npm run test:unit` — Vitest unit tests only (`src/test/`)
+- `npm run test:component` — Vitest Browser Mode component tests only (`src/components/__tests__/`)
 - `npm run test:e2e` — Playwright E2E tests (`e2e/`, Chromium + Firefox)
 - `npm run test:e2e:ui` — Playwright interactive UI runner
 - `npm run build` — Full production build (typecheck + Vite bundle)
@@ -112,8 +118,9 @@ Progress is tracked in `plan/implementation_roadmap/progress_tracking.md`. Befor
 
 1. **Write tests** — every task/feature must include appropriate tests:
    - **Unit tests** (`src/test/`) for new or changed pure functions in `lib/`.
-   - **E2E tests** (`e2e/`) for any user-facing feature, UI change, or interaction flow.
-   - Choose the test type that best covers the change. Many tasks warrant both.
+   - **Component tests** (`src/components/__tests__/`) for new or changed React components in isolation.
+   - **E2E tests** (`e2e/`) for multi-step user journeys that span the full app (load → interact → verify).
+   - Choose the test type that best covers the change. Many tasks warrant multiple types.
 2. Run `npm run test:all` — must pass with zero errors.
 3. **Do not commit if any test fails.** Fix the issue first.
 5. If the task adds UI, use Playwright MCP to visually verify the rendered output.
@@ -154,8 +161,9 @@ Import via `import { SectionHeading, LabeledSlider, ... } from '@/components/sid
 
 - **FA2 simulation** runs in a Web Worker (`graphology-layout-forceatlas2/worker`) to keep the UI thread free. Slider changes: `stop()` → update settings → `start()`. Reset: `stop()` → randomize positions → `start()`.
 - **Node color updates** apply without remounting Sigma: `graph.updateEachNodeAttributes(...)` + `sigma.refresh()`.
-- **Unit tests** (`src/test/`) cover pure functions in `lib/`. No React Testing Library component tests — E2E covers UI.
-- **E2E tests** (`e2e/`) cover all user-facing features using Playwright across Chromium and Firefox. Chromium uses SwiftShader (`--use-gl=angle --use-angle=swiftshader`) for headless WebGL support.
+- **Unit tests** (`src/test/`) cover pure functions in `lib/` and hooks/stores.
+- **Component tests** (`src/components/__tests__/`) render isolated React components in a real Chromium browser via Vitest Browser Mode. These test props, interactions, and rendered output without needing the full app.
+- **E2E tests** (`e2e/`) cover multi-step user journeys (load file → interact → verify) using Playwright. Chromium uses SwiftShader (`--use-gl=angle --use-angle=swiftshader`) for headless WebGL support.
 
 ---
 
@@ -165,16 +173,18 @@ Every task or feature **must** include tests. This is non-negotiable.
 
 | Test type | Location | Covers | Command |
 |---|---|---|---|
-| Unit (Vitest) | `src/test/*.test.ts` | Pure functions in `lib/` | `npm run test` |
-| E2E (Playwright) | `e2e/*.spec.ts` | UI features, interactions, user flows | `npm run test:e2e` |
+| Unit (Vitest) | `src/test/*.test.ts` | Pure functions in `lib/`, hooks, stores | `npm run test:unit` |
+| Component (Vitest Browser) | `src/components/__tests__/*.test.tsx` | Isolated React components with real DOM | `npm run test:component` |
+| E2E (Playwright) | `e2e/*.spec.ts` | Multi-step user journeys, full app flows | `npm run test:e2e` |
 
 **Test fixtures** live in `e2e/fixtures/` — graph JSON files for different scenarios (valid, invalid, empty, partial positions, weighted edges, etc.).
 
 ### Rules
 1. New `lib/` functions must have unit tests.
-2. New UI features or interaction changes must have E2E tests.
-3. All tests (unit + E2E) must pass before committing. No exceptions.
-4. When fixing a bug, add a regression test that would have caught it.
+2. New or changed components must have component tests (Vitest Browser Mode).
+3. New multi-step user flows must have E2E tests.
+4. All tests (unit + component + E2E) must pass before committing. No exceptions.
+5. When fixing a bug, add a regression test that would have caught it.
 
 ---
 
@@ -207,6 +217,6 @@ The app is a client-side-only prototype. These categories are out of scope:
 - **No server-side**: no routing, no backend/API calls, no auth, no database
 - **No complex analysis**: no multi-property comparison, no edge weight visualization
 - **No state history**: no undo/redo
-- **No component-level tests**: no React Testing Library — E2E covers UI
+- **No React Testing Library**: component tests use Vitest Browser Mode (real browser), not RTL/jsdom
 
 For the current feature set, see `README.md`.

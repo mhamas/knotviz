@@ -36,21 +36,4 @@ test.describe('Simulation Controls', () => {
     await page.keyboard.press('Space')
     await expect(page.getByText('Simulating…')).not.toBeVisible()
   })
-
-  test('simulation settings section is collapsible', async ({ page }) => {
-    // Settings should be collapsed by default
-    await expect(page.getByText('Gravity')).not.toBeVisible()
-
-    // Open settings
-    await page.getByText('Simulation settings').click()
-    await expect(page.getByText('Gravity')).toBeVisible()
-    await expect(page.getByText('Speed')).toBeVisible()
-    await expect(page.getByRole('button', { name: '↺ Randomize' })).toBeVisible()
-  })
-
-  test('simulation help popover shows description', async ({ page }) => {
-    // Click the ? next to SIMULATION heading
-    await page.locator('text=Simulation').locator('..').getByRole('button', { name: '?' }).click()
-    await expect(page.getByText('force-directed layout')).toBeVisible()
-  })
 })

@@ -48,16 +48,7 @@ async function emitClickNode(page: Page, nodeId: string): Promise<void> {
 }
 
 test.describe('Node Tooltip', () => {
-  test('clicking a node opens tooltip with node heading', async ({ page }) => {
-    await loadGraph(page, 'all-positions-graph.json')
-    await emitClickNode(page, '1')
-
-    const tooltip = page.getByTestId('node-tooltip')
-    await expect(tooltip).toBeVisible()
-    await expect(tooltip.getByRole('heading', { name: 'Alice' })).toBeVisible()
-  })
-
-  test('tooltip shows properties for sample graph node', async ({ page }) => {
+  test('clicking a node opens tooltip with correct content', async ({ page }) => {
     await loadGraph(page, 'sample-graph.json')
     await emitClickNode(page, '1')
 
@@ -65,36 +56,5 @@ test.describe('Node Tooltip', () => {
     await expect(tooltip).toBeVisible()
     await expect(tooltip.getByRole('heading', { name: 'Alice' })).toBeVisible()
     await expect(tooltip.getByText('id: 1')).toBeVisible()
-    // Check numeric property formatted with toFixed(2)
-    await expect(tooltip.getByText('34.00')).toBeVisible()
-    await expect(tooltip.getByText('91.50')).toBeVisible()
-  })
-
-  test('tooltip closes on Escape', async ({ page }) => {
-    await loadGraph(page, 'all-positions-graph.json')
-    await emitClickNode(page, '1')
-
-    await expect(page.getByTestId('node-tooltip')).toBeVisible()
-    await page.keyboard.press('Escape')
-    await expect(page.getByTestId('node-tooltip')).not.toBeVisible()
-  })
-
-  test('tooltip closes on close button click', async ({ page }) => {
-    await loadGraph(page, 'all-positions-graph.json')
-    await emitClickNode(page, '1')
-
-    await expect(page.getByTestId('node-tooltip')).toBeVisible()
-    await page.getByRole('button', { name: 'Close' }).click()
-    await expect(page.getByTestId('node-tooltip')).not.toBeVisible()
-  })
-
-  test('tooltip shows property keys as labels', async ({ page }) => {
-    await loadGraph(page, 'all-positions-graph.json')
-    await emitClickNode(page, '2')
-
-    const tooltip = page.getByTestId('node-tooltip')
-    await expect(tooltip).toBeVisible()
-    await expect(tooltip.getByRole('heading', { name: 'Bob' })).toBeVisible()
-    await expect(tooltip.getByText('28.00')).toBeVisible()
   })
 })

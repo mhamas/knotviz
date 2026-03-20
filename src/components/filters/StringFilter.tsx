@@ -134,7 +134,7 @@ export function StringFilter({ state, onChange }: Props): React.JSX.Element {
           className="text-[11px] text-slate-400 hover:text-slate-600"
           disabled={isAllSelected}
         >
-          All
+          Select all
         </button>
         <button
           type="button"
@@ -143,11 +143,11 @@ export function StringFilter({ state, onChange }: Props): React.JSX.Element {
           className="text-[11px] text-slate-400 hover:text-slate-600"
           disabled={state.selectedValues.size === 0}
         >
-          None
+          Clear all
         </button>
         <span className="text-[11px] text-slate-400" data-testid="string-filter-count">
           {state.selectedValues.size === 0
-            ? `showing all ${state.allValues.length}`
+            ? `${state.allValues.length}/${state.allValues.length}`
             : `${state.selectedValues.size}/${state.allValues.length}`}
         </span>
       </div>

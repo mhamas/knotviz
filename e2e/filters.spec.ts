@@ -340,18 +340,18 @@ test.describe('String Filter', () => {
     await expect(panel.getByTestId('string-filter-dropdown')).toBeHidden()
   })
 
-  test('shows "showing all N" when none selected, N/M otherwise', async ({ page }) => {
+  test('count shows N/M for all states', async ({ page }) => {
     const panel = page.getByTestId('filter-panel-status')
     await panel.getByRole('checkbox').first().click() // enable
 
-    // Default: all 3 selected → shows count
+    // Default: all 3 selected
     await expect(panel.getByTestId('string-filter-count')).toHaveText('3/3')
 
-    // Deselect all → shows "showing all"
+    // Deselect all → 3/3 (all implicitly selected)
     await panel.getByTestId('string-filter-deselect-all').click()
-    await expect(panel.getByTestId('string-filter-count')).toHaveText('showing all 3')
+    await expect(panel.getByTestId('string-filter-count')).toHaveText('3/3')
 
-    // Select one → back to N/M
+    // Select one → 1/3
     const search = panel.getByTestId('string-filter-search')
     await search.fill('ac')
     await panel.getByTestId('string-filter-option').first().click()

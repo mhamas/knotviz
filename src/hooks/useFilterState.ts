@@ -87,10 +87,7 @@ function initializeFilters(
         }
       }
       const allValues = Array.from(distinct).sort()
-      const selectedValues =
-        allValues.length === 0 || allValues.length > 50
-          ? new Set<string>()
-          : new Set(allValues)
+      const selectedValues = new Set<string>()
       filters.set(meta.key, {
         type: 'string',
         isEnabled: false,

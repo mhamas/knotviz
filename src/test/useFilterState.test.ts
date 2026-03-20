@@ -77,12 +77,12 @@ describe('initializeFilters', () => {
     expect(boolFilter.isEnabled).toBe(false)
   })
 
-  it('initializes string filter with all values pre-selected (<=50)', () => {
+  it('initializes string filter with empty selectedValues', () => {
     const filters = initializeFilters(metas, index)
     const strFilter = filters.get('status') as StringFilterState
     expect(strFilter.type).toBe('string')
     expect(strFilter.allValues).toEqual(['active', 'inactive', 'pending'])
-    expect(strFilter.selectedValues).toEqual(new Set(['active', 'inactive', 'pending']))
+    expect(strFilter.selectedValues).toEqual(new Set())
   })
 
   it('initializes date filter with domain bounds', () => {
@@ -113,30 +113,30 @@ describe('initializeFilters', () => {
     expect(f.max).toBe(5)
   })
 
-  it('string filter: exactly 50 distinct values → all pre-selected', () => {
-    const nodes = Array.from({ length: 50 }, (_, i) => ({
+  it('string filter: always starts with empty selectedValues regardless of cardinality', () => {
+    // Low cardinality (<=50)
+    const nodes50 = Array.from({ length: 50 }, (_, i) => ({
       id: String(i),
       properties: { tag: `tag_${String(i).padStart(2, '0')}` },
     }))
-    const graph: GraphData = { version: '1', nodes, edges: [] }
-    const idx = buildNodeValueIndex(graph)
-    const filters = initializeFilters([{ key: 'tag', type: 'string' }], idx)
-    const strFilter = filters.get('tag') as StringFilterState
-    expect(strFilter.selectedValues.size).toBe(50)
-    expect(strFilter.allValues.length).toBe(50)
-  })
+    const graph50: GraphData = { version: '1', nodes: nodes50, edges: [] }
+    const idx50 = buildNodeValueIndex(graph50)
+    const filters50 = initializeFilters([{ key: 'tag', type: 'string' }], idx50)
+    const strFilter50 = filters50.get('tag') as StringFilterState
+    expect(strFilter50.selectedValues.size).toBe(0)
+    expect(strFilter50.allValues.length).toBe(50)
 
-  it('string filter: >50 distinct values → empty selectedValues', () => {
-    const nodes = Array.from({ length: 51 }, (_, i) => ({
+    // High cardinality (>50)
+    const nodes51 = Array.from({ length: 51 }, (_, i) => ({
       id: String(i),
       properties: { tag: `tag_${i}` },
     }))
-    const graph: GraphData = { version: '1', nodes, edges: [] }
-    const idx = buildNodeValueIndex(graph)
-    const filters = initializeFilters([{ key: 'tag', type: 'string' }], idx)
-    const strFilter = filters.get('tag') as StringFilterState
-    expect(strFilter.selectedValues.size).toBe(0)
-    expect(strFilter.allValues.length).toBe(51)
+    const graph51: GraphData = { version: '1', nodes: nodes51, edges: [] }
+    const idx51 = buildNodeValueIndex(graph51)
+    const filters51 = initializeFilters([{ key: 'tag', type: 'string' }], idx51)
+    const strFilter51 = filters51.get('tag') as StringFilterState
+    expect(strFilter51.selectedValues.size).toBe(0)
+    expect(strFilter51.allValues.length).toBe(51)
   })
 })
 

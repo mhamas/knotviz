@@ -216,13 +216,11 @@ test.describe('String Filter', () => {
     await loadGraph(page, 'sample-graph.json')
   })
 
-  test('string filter shows checkbox list with all values', async ({ page }) => {
+  test('string filter shows search input and count', async ({ page }) => {
     const panel = page.getByTestId('filter-panel-status')
     await expect(panel.getByTestId('string-filter')).toBeVisible()
-    const list = panel.getByTestId('string-filter-list')
-    await expect(list.getByText('active', { exact: true })).toBeVisible()
-    await expect(list.getByText('inactive')).toBeVisible()
-    await expect(list.getByText('pending')).toBeVisible()
+    await expect(panel.getByTestId('string-filter-search')).toBeVisible()
+    await expect(panel.getByTestId('string-filter-count')).toHaveText('3/3')
   })
 
   test('enabling string filter with all selected keeps all nodes', async ({ page }) => {
@@ -232,55 +230,126 @@ test.describe('String Filter', () => {
     await expect(page.getByTestId('filter-match-count')).toHaveText('5 nodes match')
   })
 
-  test('deselecting a value reduces matches', async ({ page }) => {
+  test('typing shows dropdown with prefix matches', async ({ page }) => {
     const panel = page.getByTestId('filter-panel-status')
     await panel.getByRole('checkbox').first().click() // enable filter
+    const search = panel.getByTestId('string-filter-search')
 
-    // Uncheck "inactive" — only Dave has inactive
-    const list = panel.getByTestId('string-filter-list')
-    await list.getByText('inactive').click()
-    await expect(page.getByTestId('filter-match-count')).toHaveText('4 nodes match')
+    // First deselect all so all values appear as candidates
+    await panel.getByTestId('string-filter-deselect-all').click()
+
+    await search.fill('ac')
+    await expect(panel.getByTestId('string-filter-dropdown')).toBeVisible()
+    await expect(panel.getByTestId('string-filter-option')).toHaveCount(1)
+    await expect(panel.getByTestId('string-filter-option').first()).toHaveText('active')
   })
 
-  test('selecting only one value shows matching nodes', async ({ page }) => {
+  test('selecting from dropdown creates chip and clears search', async ({ page }) => {
     const panel = page.getByTestId('filter-panel-status')
     await panel.getByRole('checkbox').first().click() // enable filter
-
-    // Click "None" then select only "active"
     await panel.getByTestId('string-filter-deselect-all').click()
-    // Empty set = all pass, so select just "active"
-    const list = panel.getByTestId('string-filter-list')
-    await list.getByText('active', { exact: true }).click()
+
+    const search = panel.getByTestId('string-filter-search')
+    await search.fill('ac')
+    await panel.getByTestId('string-filter-option').first().click()
+
+    // Chip should appear, search should be cleared
+    await expect(panel.getByTestId('string-filter-chip')).toHaveCount(1)
+    await expect(search).toHaveValue('')
+  })
+
+  test('selecting a value via search filters nodes when enabled', async ({ page }) => {
+    const panel = page.getByTestId('filter-panel-status')
+    await panel.getByRole('checkbox').first().click() // enable filter
+    await panel.getByTestId('string-filter-deselect-all').click()
+
+    // Search and select "active"
+    const search = panel.getByTestId('string-filter-search')
+    await search.fill('ac')
+    await panel.getByTestId('string-filter-option').first().click()
+
     // Alice and Carol have status=active
     await expect(page.getByTestId('filter-match-count')).toHaveText('2 nodes match')
+    await expect(panel.getByTestId('string-filter-count')).toHaveText('1/3')
+  })
+
+  test('removing a chip updates filter', async ({ page }) => {
+    const panel = page.getByTestId('filter-panel-status')
+    await panel.getByRole('checkbox').first().click() // enable
+
+    // All 3 selected as chips initially. Remove one chip.
+    const chips = panel.getByTestId('string-filter-chip')
+    await expect(chips).toHaveCount(3)
+    // Remove "inactive" chip → 4 nodes match (Dave excluded)
+    await chips.filter({ hasText: 'inactive' }).getByRole('button').click()
+    await expect(page.getByTestId('filter-match-count')).toHaveText('4 nodes match')
+    await expect(panel.getByTestId('string-filter-count')).toHaveText('2/3')
+  })
+
+  test('selected values do not appear in dropdown', async ({ page }) => {
+    const panel = page.getByTestId('filter-panel-status')
+    await panel.getByRole('checkbox').first().click() // enable filter
+    // "active" is already selected (default). Search for "a" — should not show "active"
+    const search = panel.getByTestId('string-filter-search')
+    await search.fill('a')
+    // "active" is already selected, so dropdown should be empty (no prefix match on unselected)
+    await expect(panel.getByTestId('string-filter-dropdown')).toBeHidden()
   })
 
   test('none button deselects all, all button selects all', async ({ page }) => {
     const panel = page.getByTestId('filter-panel-status')
     await panel.getByRole('checkbox').first().click() // enable filter
 
-    // Deselect all — empty set means all pass
+    // Deselect all — empty set means all pass, no chips
     await panel.getByTestId('string-filter-deselect-all').click()
     await expect(page.getByTestId('filter-match-count')).toHaveText('5 nodes match')
+    await expect(panel.getByTestId('string-filter-chip')).toHaveCount(0)
 
-    // Select all — all selected means all pass
+    // Select all — all selected, all chips visible
     await panel.getByTestId('string-filter-select-all').click()
     await expect(page.getByTestId('filter-match-count')).toHaveText('5 nodes match')
+    await expect(panel.getByTestId('string-filter-chip')).toHaveCount(3)
   })
 
-  test('shows value count', async ({ page }) => {
+  test('keyboard navigation: arrow down, enter selects', async ({ page }) => {
     const panel = page.getByTestId('filter-panel-status')
-    await expect(panel.getByText('3/3')).toBeVisible()
+    await panel.getByRole('checkbox').first().click() // enable filter
+    await panel.getByTestId('string-filter-deselect-all').click()
+
+    const search = panel.getByTestId('string-filter-search')
+    await search.fill('a')
+    await expect(panel.getByTestId('string-filter-dropdown')).toBeVisible()
+
+    await search.press('ArrowDown')
+    await search.press('Enter')
+
+    // First match "active" should be selected
+    await expect(panel.getByTestId('string-filter-chip')).toHaveCount(1)
+    await expect(search).toHaveValue('')
+  })
+
+  test('escape closes dropdown', async ({ page }) => {
+    const panel = page.getByTestId('filter-panel-status')
+    await panel.getByRole('checkbox').first().click() // enable filter
+    await panel.getByTestId('string-filter-deselect-all').click()
+
+    const search = panel.getByTestId('string-filter-search')
+    await search.fill('a')
+    await expect(panel.getByTestId('string-filter-dropdown')).toBeVisible()
+
+    await search.press('Escape')
+    await expect(panel.getByTestId('string-filter-dropdown')).toBeHidden()
   })
 
   test('clear all resets string filter selections', async ({ page }) => {
     const panel = page.getByTestId('filter-panel-status')
     await panel.getByRole('checkbox').first().click() // enable
-
-    // Deselect all then select only "active"
     await panel.getByTestId('string-filter-deselect-all').click()
-    const list = panel.getByTestId('string-filter-list')
-    await list.getByText('active', { exact: true }).click()
+
+    // Search and select "active"
+    const search = panel.getByTestId('string-filter-search')
+    await search.fill('ac')
+    await panel.getByTestId('string-filter-option').first().click()
     await expect(page.getByTestId('filter-match-count')).toHaveText('2 nodes match')
 
     // Clear all resets
@@ -334,11 +403,13 @@ test.describe('String + Date Multi-Filter', () => {
   })
 
   test('string AND date filters combine with AND logic', async ({ page }) => {
-    // Enable status filter, select only "active" (Alice, Carol)
+    // Enable status filter, deselect all, then search+select "active" (Alice, Carol)
     const statusPanel = page.getByTestId('filter-panel-status')
     await statusPanel.getByRole('checkbox').first().click()
     await statusPanel.getByTestId('string-filter-deselect-all').click()
-    await statusPanel.getByTestId('string-filter-list').getByText('active', { exact: true }).click()
+    const search = statusPanel.getByTestId('string-filter-search')
+    await search.fill('ac')
+    await statusPanel.getByTestId('string-filter-option').first().click()
     await expect(page.getByTestId('filter-match-count')).toHaveText('2 nodes match')
 
     // Enable date filter (full range) → still 2 (AND with all dates)

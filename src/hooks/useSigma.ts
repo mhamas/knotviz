@@ -131,8 +131,11 @@ export function useSigma(graph: Graph): UseSigmaReturn {
 
     sigmaRef.current = sigma
 
-    // Hover: highlight node and optionally its neighbors
+    // Hover: highlight node and optionally its neighbors.
+    // Skip during camera drag to avoid expensive refresh() calls on every mouse move.
+    const mouseCaptor = sigma.getMouseCaptor()
     sigma.on('enterNode', ({ node }) => {
+      if (mouseCaptor.isMoving || mouseCaptor.isMouseDown) return
       hoveredNodeRef.current = node
       if (isHighlightNeighborsRef.current) {
         hoveredNeighborsRef.current = new Set(graph.neighbors(node))
@@ -141,6 +144,7 @@ export function useSigma(graph: Graph): UseSigmaReturn {
       sigma.refresh()
     })
     sigma.on('leaveNode', () => {
+      if (mouseCaptor.isMoving || mouseCaptor.isMouseDown) return
       hoveredNodeRef.current = null
       hoveredNeighborsRef.current = new Set()
       hoveredEdgesRef.current = new Set()

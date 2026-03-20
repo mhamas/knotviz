@@ -42,12 +42,10 @@ export function FiltersTab({ propertyMetas, filterHandle }: Props): React.JSX.El
       <div className="shrink-0 border-b border-slate-100 px-3 py-2">
         <p className="text-xs font-medium text-slate-700" aria-live="polite" data-testid="filter-match-count">
           {matchCount.toLocaleString()} {matchCount === 1 ? 'node matches' : 'nodes match'}
+          {matchCount === 0 && hasActiveFilters && (
+            <span className="ml-1.5 font-normal text-amber-600">— no match</span>
+          )}
         </p>
-        {matchCount === 0 && hasActiveFilters && (
-          <p className="mt-1 text-[11px] text-amber-600">
-            No nodes match the current filters.
-          </p>
-        )}
         <div className="mt-1.5 flex gap-2">
           <button
             type="button"
@@ -63,7 +61,7 @@ export function FiltersTab({ propertyMetas, filterHandle }: Props): React.JSX.El
             onClick={clearAllFilters}
             className="text-[11px] text-slate-400 hover:text-slate-600"
           >
-            Clear all
+            Reset all
           </button>
         </div>
       </div>

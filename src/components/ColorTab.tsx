@@ -107,7 +107,7 @@ export function ColorTab({
   const currentStops = resolveStops(state)
 
   return (
-    <div className="flex flex-col gap-4 p-3">
+    <div className="flex flex-col gap-4">
       {/* Property selector */}
       <div>
         <SectionHeading>Property</SectionHeading>

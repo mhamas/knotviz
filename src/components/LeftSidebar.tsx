@@ -163,7 +163,7 @@ export function LeftSidebar({
             }}
           />
 
-          <div className="flex justify-end">
+          <div className="mt-2 flex justify-end">
             <SidebarButton className="w-1/2" onClick={onRandomizeLayout}>
               ↺ Randomize
             </SidebarButton>

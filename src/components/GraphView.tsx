@@ -105,8 +105,6 @@ export function GraphView({
     propertyTypeMap,
   )
 
-  const isGradientActive = gradientState.propertyKey !== null
-
   const nodeIds = useMemo(() => graphData.nodes.map((n) => n.id), [graphData.nodes])
   const nodeColors = useNodeColors(nodeIds, filterHandle.matchingNodeIds, filterHandle.hasActiveFilters, gradientColors)
 
@@ -197,7 +195,6 @@ export function GraphView({
         filterHandle={filterHandle}
         gradientState={gradientState}
         onGradientChange={setGradientState}
-        isGradientActive={isGradientActive}
         graph={graph}
         matchingNodeIds={filterHandle.matchingNodeIds}
       />

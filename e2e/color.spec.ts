@@ -14,29 +14,14 @@ async function loadGraph(page: Page, name: string): Promise<void> {
   await expect(page.getByTestId('sigma-canvas')).toBeVisible()
 }
 
-async function openColorTab(page: Page): Promise<void> {
-  await page.getByRole('tab', { name: 'Color' }).click()
-}
-
 test.describe('Color Tab', () => {
   test.beforeEach(async ({ page }) => {
     await loadGraph(page, 'sample-graph.json')
-    await openColorTab(page)
   })
 
   test('shows empty state when no property selected', async ({ page }) => {
     const legend = page.getByTestId('color-legend')
     await expect(legend).toContainText('Select a property to visualise node colors.')
-  })
-
-  test('no active dot when no property selected', async ({ page }) => {
-    await expect(page.getByTestId('color-active-dot')).not.toBeVisible()
-  })
-
-  test('active dot appears when property selected', async ({ page }) => {
-    await page.getByTestId('color-property-select').click()
-    await page.getByRole('option', { name: 'age' }).click()
-    await expect(page.getByTestId('color-active-dot')).toBeVisible()
   })
 
   test('selecting number property shows gradient legend', async ({ page }) => {
@@ -63,16 +48,15 @@ test.describe('Color Tab', () => {
     await expect(legend).toContainText('pending')
   })
 
-  test('setting property to None removes gradient and active dot', async ({ page }) => {
+  test('setting property to None removes gradient', async ({ page }) => {
     // Select a property first
     await page.getByTestId('color-property-select').click()
     await page.getByRole('option', { name: 'age' }).click()
-    await expect(page.getByTestId('color-active-dot')).toBeVisible()
+    await expect(page.getByTestId('color-legend-gradient')).toBeVisible()
 
     // Set back to None
     await page.getByTestId('color-property-select').click()
     await page.getByRole('option', { name: 'None' }).click()
-    await expect(page.getByTestId('color-active-dot')).not.toBeVisible()
     await expect(page.getByTestId('color-legend')).toContainText('Select a property to visualise node colors.')
   })
 
@@ -88,17 +72,8 @@ test.describe('Color Tab', () => {
     await expect(page.getByTestId('color-legend-gradient')).toBeVisible()
   })
 
-  test('switching to Filters tab and back preserves gradient', async ({ page }) => {
-    await page.getByTestId('color-property-select').click()
-    await page.getByRole('option', { name: 'age' }).click()
-    await expect(page.getByTestId('color-legend-gradient')).toBeVisible()
-
-    // Switch to Filters tab
-    await page.getByRole('tab', { name: 'Filters' }).click()
-    // Switch back to Color tab
-    await page.getByRole('tab', { name: 'Color' }).click()
-
-    await expect(page.getByTestId('color-legend-gradient')).toBeVisible()
-    await expect(page.getByTestId('color-active-dot')).toBeVisible()
+  test('color controls and filter controls are both visible', async ({ page }) => {
+    await expect(page.getByTestId('color-property-select')).toBeVisible()
+    await expect(page.getByTestId('filter-match-count')).toBeVisible()
   })
 })

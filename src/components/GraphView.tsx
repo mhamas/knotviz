@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type Graph from 'graphology'
-import type { GraphData, PositionMode, PropertyMeta } from '../types'
+import type { ColorGradientState, GraphData, PositionMode, PropertyMeta, PropertyType } from '../types'
 import type { SimulationSettings } from '../hooks/useFA2Simulation'
 import { useFA2Simulation } from '../hooks/useFA2Simulation'
 import { useSigma } from '../hooks/useSigma'
@@ -8,6 +8,7 @@ import { useFileDrop } from '../hooks/useFileDrop'
 import { useSpacebarToggle } from '../hooks/useSpacebarToggle'
 import { useFilterState } from '../hooks/useFilterState'
 import { useNodeColors } from '../hooks/useNodeColors'
+import { useColorGradient } from '../hooks/useColorGradient'
 import { detectPropertyTypes } from '../lib/detectPropertyTypes'
 import { COLOR_DEFAULT, COLOR_GRAYED } from '../lib/colors'
 import { useGraphStore } from '@/stores/useGraphStore'
@@ -83,8 +84,31 @@ export function GraphView({
   // Filter system
   const filterHandle = useFilterState(graphData, propertyMetas)
 
+  // Color gradient
+  const [gradientState, setGradientState] = useState<ColorGradientState>({
+    propertyKey: null,
+    palette: 'Viridis',
+    isReversed: false,
+    customColors: [],
+    customPalettes: [],
+  })
+
+  const propertyTypeMap = useMemo<Map<string, PropertyType>>(
+    () => new Map(propertyMetas.map((m) => [m.key, m.type])),
+    [propertyMetas],
+  )
+
+  const gradientColors = useColorGradient(
+    graph,
+    filterHandle.matchingNodeIds,
+    gradientState,
+    propertyTypeMap,
+  )
+
+  const isGradientActive = gradientState.propertyKey !== null
+
   const nodeIds = useMemo(() => graphData.nodes.map((n) => n.id), [graphData.nodes])
-  const nodeColors = useNodeColors(nodeIds, filterHandle.matchingNodeIds, filterHandle.hasActiveFilters)
+  const nodeColors = useNodeColors(nodeIds, filterHandle.matchingNodeIds, filterHandle.hasActiveFilters, gradientColors)
 
   // Apply filter colors, z-index, and size adjustments to graph attributes
   useEffect(() => {
@@ -171,6 +195,11 @@ export function GraphView({
       <RightSidebar
         propertyMetas={propertyMetas}
         filterHandle={filterHandle}
+        gradientState={gradientState}
+        onGradientChange={setGradientState}
+        isGradientActive={isGradientActive}
+        graph={graph}
+        matchingNodeIds={filterHandle.matchingNodeIds}
       />
 
       <AlertDialog open={isConfirmOpen} onOpenChange={(isOpen): void => { if (!isOpen) handleCancel() }}>

@@ -42,9 +42,9 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 
 ## R4: Color
 
-- [ ] 26 — Color Scales Lib
-- [ ] 27 — useColorGradient
-- [ ] 28 — ColorTab
+- [x] 26 — Color Scales Lib
+- [x] 27 — useColorGradient
+- [x] 28 — ColorTab
 
 ## Deployment
 

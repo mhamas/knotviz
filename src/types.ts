@@ -95,12 +95,36 @@ export interface HistogramBucket {
 
 // ─── Color gradient ────────────────────────────────────────────────────────
 
-export type PaletteName = 'Viridis' | 'Plasma' | 'Blues' | 'Reds' | 'Rainbow' | 'RdBu'
+export type PaletteName =
+  | 'Viridis'
+  | 'Plasma'
+  | 'Magma'
+  | 'Inferno'
+  | 'Turbo'
+  | 'Blues'
+  | 'Reds'
+  | 'Greens'
+  | 'Oranges'
+  | 'Purples'
+  | 'Rainbow'
+  | 'Spectral'
+  | 'RdBu'
+  | 'RdYlGn'
+  | 'PiYG'
+
+export interface CustomPalette {
+  id: string
+  name: string
+  colors: string[]
+}
 
 export interface ColorGradientState {
   propertyKey: string | null
-  palette: PaletteName
+  /** Built-in palette name or custom palette ID. */
+  palette: string
+  isReversed: boolean
   customColors: string[]
+  customPalettes: CustomPalette[]
 }
 
 // ─── Tooltip ───────────────────────────────────────────────────────────────

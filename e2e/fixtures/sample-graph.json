@@ -1,11 +1,11 @@
 {
   "version": "1",
   "nodes": [
-    { "id": "1", "label": "Alice", "properties": { "age": 34, "score": 91.5, "joined": "2021-03-15", "active": true,  "status": "active"   } },
-    { "id": "2", "label": "Bob",   "properties": { "age": 28, "score": 74.0, "joined": "2023-11-02", "active": false, "status": "pending"  } },
-    { "id": "3", "label": "Carol", "properties": { "age": 45, "score": 55.2, "joined": "2019-07-20", "active": true,  "status": "active"   } },
-    { "id": "4", "label": "Dave",  "properties": { "age": 31, "score": 88.8, "joined": "2022-01-10", "active": false, "status": "inactive" } },
-    { "id": "5", "label": "Eve",   "properties": { "age": 27, "score": 62.1, "joined": "2024-05-30", "active": true,  "status": "pending"  } }
+    { "id": "1", "label": "Alice", "properties": { "age": 34, "score": 91.5, "joined": "2021-03-15", "active": true,  "status": "active",   "short_prop": 1, "medium_length_property": 10, "this_is_a_longer_property_name": 100, "this_is_a_really_quite_long_property_name_for_testing": 200, "this_is_an_extremely_long_property_name_that_should_definitely_overflow_and_test_the_truncation_behavior": 500 } },
+    { "id": "2", "label": "Bob",   "properties": { "age": 28, "score": 74.0, "joined": "2023-11-02", "active": false, "status": "pending",  "short_prop": 2, "medium_length_property": 20, "this_is_a_longer_property_name": 200, "this_is_a_really_quite_long_property_name_for_testing": 400, "this_is_an_extremely_long_property_name_that_should_definitely_overflow_and_test_the_truncation_behavior": 600 } },
+    { "id": "3", "label": "Carol", "properties": { "age": 45, "score": 55.2, "joined": "2019-07-20", "active": true,  "status": "active",   "short_prop": 3, "medium_length_property": 30, "this_is_a_longer_property_name": 300, "this_is_a_really_quite_long_property_name_for_testing": 600, "this_is_an_extremely_long_property_name_that_should_definitely_overflow_and_test_the_truncation_behavior": 700 } },
+    { "id": "4", "label": "Dave",  "properties": { "age": 31, "score": 88.8, "joined": "2022-01-10", "active": false, "status": "inactive", "short_prop": 4, "medium_length_property": 40, "this_is_a_longer_property_name": 400, "this_is_a_really_quite_long_property_name_for_testing": 800, "this_is_an_extremely_long_property_name_that_should_definitely_overflow_and_test_the_truncation_behavior": 800 } },
+    { "id": "5", "label": "Eve",   "properties": { "age": 27, "score": 62.1, "joined": "2024-05-30", "active": true,  "status": "pending",  "short_prop": 5, "medium_length_property": 50, "this_is_a_longer_property_name": 500, "this_is_a_really_quite_long_property_name_for_testing": 1000, "this_is_an_extremely_long_property_name_that_should_definitely_overflow_and_test_the_truncation_behavior": 900 } }
   ],
   "edges": [
     { "source": "1", "target": "2" },

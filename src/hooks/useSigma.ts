@@ -68,6 +68,11 @@ export function useSigma(graph: Graph): UseSigmaReturn {
 
   useEffect(() => {
     isHighlightNeighborsRef.current = isHighlightNeighbors
+    if (!isHighlightNeighbors) {
+      hoveredNodeRef.current = null
+      hoveredNeighborsRef.current = new Set()
+      hoveredEdgesRef.current = new Set()
+    }
     sigmaRef.current?.refresh()
   }, [isHighlightNeighbors])
 
@@ -95,8 +100,7 @@ export function useSigma(graph: Graph): UseSigmaReturn {
           result.hidden = true
           return result
         }
-        const isHovered = node === hoveredNodeRef.current
-        if (node === tooltipStateRef.current?.nodeId || isHovered) {
+        if (node === tooltipStateRef.current?.nodeId) {
           result.color = '#3b82f6'
           result.highlighted = true
         } else if (
@@ -108,7 +112,8 @@ export function useSigma(graph: Graph): UseSigmaReturn {
         } else if (
           isHighlightNeighborsRef.current &&
           hoveredNodeRef.current &&
-          !hoveredNeighborsRef.current.has(node)
+          !hoveredNeighborsRef.current.has(node) &&
+          node !== hoveredNodeRef.current
         ) {
           result.color = '#f0f3f7'
           result.size = Math.max((result.size as number) * 0.5, 1)
@@ -131,19 +136,19 @@ export function useSigma(graph: Graph): UseSigmaReturn {
 
     sigmaRef.current = sigma
 
-    // Hover: highlight node and optionally its neighbors.
+    // Hover: highlight neighbors only (Sigma handles basic node hover natively).
     // Skip during camera drag to avoid expensive refresh() calls on every mouse move.
     const mouseCaptor = sigma.getMouseCaptor()
     sigma.on('enterNode', ({ node }) => {
+      if (!isHighlightNeighborsRef.current) return
       if (mouseCaptor.isMoving || mouseCaptor.isMouseDown) return
       hoveredNodeRef.current = node
-      if (isHighlightNeighborsRef.current) {
-        hoveredNeighborsRef.current = new Set(graph.neighbors(node))
-        hoveredEdgesRef.current = new Set(graph.edges(node))
-      }
+      hoveredNeighborsRef.current = new Set(graph.neighbors(node))
+      hoveredEdgesRef.current = new Set(graph.edges(node))
       sigma.refresh()
     })
     sigma.on('leaveNode', () => {
+      if (!isHighlightNeighborsRef.current) return
       if (mouseCaptor.isMoving || mouseCaptor.isMouseDown) return
       hoveredNodeRef.current = null
       hoveredNeighborsRef.current = new Set()

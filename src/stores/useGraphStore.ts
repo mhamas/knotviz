@@ -38,8 +38,8 @@ export type GraphStore = DisplayState & SimulationState & GraphMeta & Actions
  * Used by resetStore and available to tests.
  */
 export const STORE_DEFAULTS: DisplayState & SimulationState & GraphMeta = {
-  nodeSize: 5,
-  edgeSize: 1,
+  nodeSize: 3,
+  edgeSize: 0.5,
   isEdgesVisible: true,
   isNodeLabelsVisible: false,
   isHighlightNeighbors: false,
@@ -68,7 +68,8 @@ export const useGraphStore = create<GraphStore>()((set) => ({
   setIsHighlightNeighbors: (v): void => set({ isHighlightNeighbors: v }),
   setGravity: (v): void => set({ gravity: v }),
   setSpeed: (v): void => set({ speed: v }),
-  setGraphLoaded: (nodeCount, edgeCount): void =>
-    set({ isGraphLoaded: true, nodeCount, edgeCount }),
+  setGraphLoaded: (nodeCount, edgeCount): void => {
+    set({ isGraphLoaded: true, nodeCount, edgeCount })
+  },
   resetStore: (): void => set(STORE_DEFAULTS),
 }))

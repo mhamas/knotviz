@@ -8,8 +8,8 @@ describe('useGraphStore', () => {
 
   it('starts with correct defaults', () => {
     const state = useGraphStore.getState()
-    expect(state.nodeSize).toBe(STORE_DEFAULTS.nodeSize)
-    expect(state.edgeSize).toBe(STORE_DEFAULTS.edgeSize)
+    expect(state.nodeSize).toBe(3)
+    expect(state.edgeSize).toBe(0.5)
     expect(state.isEdgesVisible).toBe(true)
     expect(state.isNodeLabelsVisible).toBe(false)
     expect(state.isHighlightNeighbors).toBe(false)
@@ -61,6 +61,8 @@ describe('useGraphStore', () => {
     expect(state.isGraphLoaded).toBe(true)
     expect(state.nodeCount).toBe(100)
     expect(state.edgeCount).toBe(200)
+    expect(state.nodeSize).toBe(STORE_DEFAULTS.nodeSize)
+    expect(state.edgeSize).toBe(STORE_DEFAULTS.edgeSize)
   })
 
   it('resetStore returns all fields to defaults', () => {

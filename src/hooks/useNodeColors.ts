@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { COLOR_DEFAULT, COLOR_GRAYED, COLOR_HIGHLIGHTED } from '../lib/colors'
+import { COLOR_DEFAULT, COLOR_GRAYED } from '../lib/colors'
 
 /**
  * Computes a color map for all nodes based on filter state and optional gradient.
@@ -23,8 +23,6 @@ export function useNodeColors(
         map.set(id, COLOR_GRAYED)
       } else if (gradientColors?.has(id)) {
         map.set(id, gradientColors.get(id)!)
-      } else if (hasActiveFilters) {
-        map.set(id, COLOR_HIGHLIGHTED)
       } else {
         map.set(id, COLOR_DEFAULT)
       }

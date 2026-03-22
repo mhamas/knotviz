@@ -295,8 +295,12 @@ function ContinuousLegend({
 
   if (type === 'number') {
     const nums = values as number[]
-    const min = Math.min(...nums)
-    const max = Math.max(...nums)
+    let min = nums[0]
+    let max = nums[0]
+    for (let i = 1; i < nums.length; i++) {
+      if (nums[i] < min) min = nums[i]
+      if (nums[i] > max) max = nums[i]
+    }
     isUniform = min === max
     minLabel = String(min)
     maxLabel = String(max)

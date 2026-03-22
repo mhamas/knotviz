@@ -63,8 +63,16 @@ function initializeFilters(
           if (typeof v === 'number') nums.push(v)
         }
       }
-      const domainMin = nums.length > 0 ? Math.min(...nums) : 0
-      const domainMax = nums.length > 0 ? Math.max(...nums) : 0
+      let domainMin = 0
+      let domainMax = 0
+      if (nums.length > 0) {
+        domainMin = nums[0]
+        domainMax = nums[0]
+        for (let i = 1; i < nums.length; i++) {
+          if (nums[i] < domainMin) domainMin = nums[i]
+          if (nums[i] > domainMax) domainMax = nums[i]
+        }
+      }
       filters.set(meta.key, {
         type: 'number',
         isEnabled: false,

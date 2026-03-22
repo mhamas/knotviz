@@ -46,17 +46,25 @@ export function computeGradientColors(
   if (entries.length === 0) return result
 
   if (propType === 'number') {
-    const nums = entries.map((e) => e.value as number)
-    const min = Math.min(...nums)
-    const max = Math.max(...nums)
+    let min = entries[0].value as number
+    let max = min
+    for (let i = 1; i < entries.length; i++) {
+      const v = entries[i].value as number
+      if (v < min) min = v
+      if (v > max) max = v
+    }
     for (const e of entries) {
       const t = min === max ? 0.5 : ((e.value as number) - min) / (max - min)
       result.set(e.id, interpolateColors(colors, t))
     }
   } else if (propType === 'date') {
     const ms = entries.map((e) => new Date(e.value as string).getTime())
-    const min = Math.min(...ms)
-    const max = Math.max(...ms)
+    let min = ms[0]
+    let max = min
+    for (let i = 1; i < ms.length; i++) {
+      if (ms[i] < min) min = ms[i]
+      if (ms[i] > max) max = ms[i]
+    }
     for (let i = 0; i < entries.length; i++) {
       const t = min === max ? 0.5 : (ms[i] - min) / (max - min)
       result.set(entries[i].id, interpolateColors(colors, t))

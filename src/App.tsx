@@ -1,6 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import type Graph from 'graphology'
-import type { GraphData, PositionMode } from './types'
+import type { CosmosGraphData, GraphData, PositionMode } from './types'
 import { useGraphStore } from '@/stores/useGraphStore'
 import { DropZone } from './components/DropZone'
 import { GraphView } from './components/GraphView'
@@ -9,7 +8,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 
 interface LoadedData {
   data: GraphData
-  graph: Graph
+  cosmosData: CosmosGraphData
   positionMode: PositionMode
   filename: string
 }
@@ -43,9 +42,9 @@ function App(): React.JSX.Element {
           <DropZone
             fileInputRef={fileInputRef}
             pendingFile={pendingFile}
-            onLoad={(data, graph, positionMode, filename): void => {
+            onLoad={(data, cosmosData, positionMode, filename): void => {
               setPendingFile(null)
-              setLoadedData({ data, graph, positionMode, filename })
+              setLoadedData({ data, cosmosData, positionMode, filename })
             }}
           />
         </div>
@@ -57,8 +56,7 @@ function App(): React.JSX.Element {
     <ErrorBoundary>
       <GraphView
         graphData={loadedData.data}
-        graph={loadedData.graph}
-        positionMode={loadedData.positionMode}
+        cosmosData={loadedData.cosmosData}
         filename={loadedData.filename}
         onLoadNewFile={handleLoadNewFile}
       />

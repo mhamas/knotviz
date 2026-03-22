@@ -32,8 +32,6 @@ test.describe('Graph View — Canvas and Controls', () => {
     await expect(page.getByRole('button', { name: 'Zoom in' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Zoom out' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Fit to view' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Rotate clockwise' })).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Rotate counter-clockwise' })).toBeVisible()
   })
 
   test('keyboard shortcuts help popover opens on click', async ({ page }) => {

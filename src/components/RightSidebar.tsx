@@ -1,5 +1,4 @@
-import type Graph from 'graphology'
-import type { ColorGradientState, PropertyMeta } from '../types'
+import type { CosmosGraphData, ColorGradientState, PropertyMeta } from '../types'
 import type { FilterStateHandle } from '../hooks/useFilterState'
 import { CollapsibleSection } from '@/components/sidebar'
 import { ColorTab } from './ColorTab'
@@ -10,7 +9,7 @@ interface Props {
   filterHandle: FilterStateHandle
   gradientState: ColorGradientState
   onGradientChange: (s: ColorGradientState) => void
-  graph: Graph | null
+  cosmosData: CosmosGraphData | null
   matchingNodeIds: Set<string>
 }
 
@@ -25,7 +24,7 @@ export function RightSidebar({
   filterHandle,
   gradientState,
   onGradientChange,
-  graph,
+  cosmosData,
   matchingNodeIds,
 }: Props): React.JSX.Element {
   return (
@@ -41,7 +40,7 @@ export function RightSidebar({
           <ColorTab
             propertyMetas={propertyMetas}
             state={gradientState}
-            graph={graph}
+            cosmosData={cosmosData}
             matchingNodeIds={matchingNodeIds}
             onChange={onGradientChange}
           />
@@ -53,7 +52,7 @@ export function RightSidebar({
           label="Filters"
           help="Enable filters to show only nodes matching certain property values. Multiple filters combine with AND logic — a node must pass all enabled filters to be visible."
         >
-          <FiltersTab propertyMetas={propertyMetas} filterHandle={filterHandle} totalNodeCount={graph?.order ?? 0} />
+          <FiltersTab propertyMetas={propertyMetas} filterHandle={filterHandle} totalNodeCount={cosmosData?.nodes.length ?? 0} />
         </CollapsibleSection>
       </div>
     </div>

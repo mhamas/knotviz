@@ -131,7 +131,7 @@ export interface ColorGradientState {
 
 export interface TooltipState {
   nodeId: string
-  /** Pixel position relative to the Sigma canvas container. */
+  /** Pixel position relative to the canvas container. */
   x: number
   y: number
   /** Canvas bounds at the time the tooltip was opened. */
@@ -148,3 +148,27 @@ export interface NullDefaultResult {
 }
 
 export type PositionMode = 'all' | 'none' | 'partial'
+
+// ─── Cosmos graph data ────────────────────────────────────────────────────
+
+/** Pre-processed graph data optimised for @cosmos.gl/graph (index-based, Float32Array). */
+export interface CosmosGraphData {
+  /** Original validated nodes (properties, labels live here). */
+  nodes: NodeInput[]
+  /** Original validated edges. */
+  edges: EdgeInput[]
+  /** Fast lookup: nodeId → index in the `nodes` array. */
+  nodeIndexMap: Map<string, number>
+  /** Initial positions as [x0,y0,x1,y1,…]. `undefined` when positions should be randomised by Cosmos. */
+  initialPositions: Float32Array | undefined
+  /** Links as [srcIdx0,tgtIdx0,srcIdx1,tgtIdx1,…] (index-based, ready for cosmos `setLinks`). */
+  linkIndices: Float32Array
+  /** Map of nodeId → Set of neighbor nodeIds (for highlight-neighbors). */
+  adjacency: Map<string, Set<string>>
+  /** Map of nodeId → Set of edge indices touching this node. */
+  nodeEdgeIndices: Map<string, Set<number>>
+  /** Position mode detected from input. */
+  positionMode: PositionMode
+  /** Map from nodeId → list of property keys that were defaulted. */
+  defaultedByNode: Map<string, string[]>
+}

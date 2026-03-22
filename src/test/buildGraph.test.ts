@@ -20,15 +20,16 @@ describe('buildGraph', () => {
       ],
       edges: [],
     })
-    const { graph, positionMode } = buildGraph(result)
-    expect(positionMode).toBe('all')
-    expect(graph.getNodeAttribute('1', 'x')).toBe(10)
-    expect(graph.getNodeAttribute('1', 'y')).toBe(20)
-    expect(graph.getNodeAttribute('2', 'x')).toBe(30)
-    expect(graph.getNodeAttribute('2', 'y')).toBe(40)
+    const cosmosData = buildGraph(result)
+    expect(cosmosData.positionMode).toBe('all')
+    expect(cosmosData.initialPositions).toBeDefined()
+    expect(cosmosData.initialPositions![0]).toBe(10)
+    expect(cosmosData.initialPositions![1]).toBe(20)
+    expect(cosmosData.initialPositions![2]).toBe(30)
+    expect(cosmosData.initialPositions![3]).toBe(40)
   })
 
-  it('returns positionMode "partial" when some nodes have x+y, all positions randomised', () => {
+  it('returns positionMode "partial" when some nodes have x+y, positions undefined', () => {
     const result = makeResult({
       version: '1',
       nodes: [
@@ -37,29 +38,24 @@ describe('buildGraph', () => {
       ],
       edges: [],
     })
-    const { graph, positionMode } = buildGraph(result)
-    expect(positionMode).toBe('partial')
-    // Positions should NOT be the original input values
-    const x1 = graph.getNodeAttribute('1', 'x') as number
-    const y1 = graph.getNodeAttribute('1', 'y') as number
-    // Random positions are in [-0.5, 0.5] range, not 10/20
-    expect(x1).not.toBe(10)
-    expect(y1).not.toBe(20)
+    const cosmosData = buildGraph(result)
+    expect(cosmosData.positionMode).toBe('partial')
+    // Cosmos will randomize positions itself when initialPositions is undefined
+    expect(cosmosData.initialPositions).toBeUndefined()
   })
 
-  it('returns positionMode "none" when no nodes have x+y, all positions randomised', () => {
+  it('returns positionMode "none" when no nodes have x+y', () => {
     const result = makeResult({
       version: '1',
       nodes: [{ id: '1' }, { id: '2' }],
       edges: [],
     })
-    const { graph, positionMode } = buildGraph(result)
-    expect(positionMode).toBe('none')
-    expect(typeof graph.getNodeAttribute('1', 'x')).toBe('number')
-    expect(typeof graph.getNodeAttribute('1', 'y')).toBe('number')
+    const cosmosData = buildGraph(result)
+    expect(cosmosData.positionMode).toBe('none')
+    expect(cosmosData.initialPositions).toBeUndefined()
   })
 
-  it('returns correct node and edge counts', () => {
+  it('returns correct node count and link indices', () => {
     const result = makeResult({
       version: '1',
       nodes: [{ id: '1' }, { id: '2' }, { id: '3' }],
@@ -68,9 +64,13 @@ describe('buildGraph', () => {
         { source: '2', target: '3' },
       ],
     })
-    const { graph } = buildGraph(result)
-    expect(graph.order).toBe(3)
-    expect(graph.size).toBe(2)
+    const cosmosData = buildGraph(result)
+    expect(cosmosData.nodes.length).toBe(3)
+    expect(cosmosData.linkIndices.length).toBe(4) // 2 edges × 2
+    expect(cosmosData.linkIndices[0]).toBe(0) // node '1' index
+    expect(cosmosData.linkIndices[1]).toBe(1) // node '2' index
+    expect(cosmosData.linkIndices[2]).toBe(1) // node '2' index
+    expect(cosmosData.linkIndices[3]).toBe(2) // node '3' index
   })
 
   it('skips edge to unknown node with console.warn', () => {
@@ -80,44 +80,34 @@ describe('buildGraph', () => {
       nodes: [{ id: '1' }],
       edges: [{ source: '1', target: '999' }],
     })
-    const { graph } = buildGraph(result)
-    expect(graph.size).toBe(0)
+    const cosmosData = buildGraph(result)
+    expect(cosmosData.linkIndices.length).toBe(0)
     expect(warn).toHaveBeenCalled()
     warn.mockRestore()
   })
 
-  it('stores node label as Graphology attribute', () => {
+  it('preserves node labels on original node objects', () => {
     const result = makeResult({
       version: '1',
       nodes: [{ id: '1', label: 'Alice' }],
       edges: [],
     })
-    const { graph } = buildGraph(result)
-    expect(graph.getNodeAttribute('1', 'label')).toBe('Alice')
+    const cosmosData = buildGraph(result)
+    expect(cosmosData.nodes[0].label).toBe('Alice')
   })
 
-  it('falls back to id when label is missing', () => {
-    const result = makeResult({
-      version: '1',
-      nodes: [{ id: '1' }],
-      edges: [],
-    })
-    const { graph } = buildGraph(result)
-    expect(graph.getNodeAttribute('1', 'label')).toBe('1')
-  })
-
-  it('stores node properties as Graphology attributes', () => {
+  it('preserves node properties on original node objects', () => {
     const result = makeResult({
       version: '1',
       nodes: [{ id: '1', properties: { age: 34, name: 'Alice' } }],
       edges: [],
     })
-    const { graph } = buildGraph(result)
-    expect(graph.getNodeAttribute('1', 'age')).toBe(34)
-    expect(graph.getNodeAttribute('1', 'name')).toBe('Alice')
+    const cosmosData = buildGraph(result)
+    expect(cosmosData.nodes[0].properties?.age).toBe(34)
+    expect(cosmosData.nodes[0].properties?.name).toBe('Alice')
   })
 
-  it('sets _defaultedProperties from defaultedByNode', () => {
+  it('stores defaultedByNode from input', () => {
     const defaultedByNode = new Map([['1', ['age', 'name']]])
     const result = makeResult(
       {
@@ -127,51 +117,55 @@ describe('buildGraph', () => {
       },
       defaultedByNode
     )
-    const { graph } = buildGraph(result)
-    expect(graph.getNodeAttribute('1', '_defaultedProperties')).toEqual(['age', 'name'])
+    const cosmosData = buildGraph(result)
+    expect(cosmosData.defaultedByNode.get('1')).toEqual(['age', 'name'])
   })
 
-  it('sets _defaultedProperties to empty array for non-defaulted nodes', () => {
+  it('builds nodeIndexMap correctly', () => {
     const result = makeResult({
       version: '1',
-      nodes: [{ id: '1', properties: { age: 34 } }],
+      nodes: [{ id: 'a' }, { id: 'b' }, { id: 'c' }],
       edges: [],
     })
-    const { graph } = buildGraph(result)
-    expect(graph.getNodeAttribute('1', '_defaultedProperties')).toEqual([])
+    const cosmosData = buildGraph(result)
+    expect(cosmosData.nodeIndexMap.get('a')).toBe(0)
+    expect(cosmosData.nodeIndexMap.get('b')).toBe(1)
+    expect(cosmosData.nodeIndexMap.get('c')).toBe(2)
   })
 
-  it('stores edge weight as Graphology attribute', () => {
+  it('builds adjacency index correctly', () => {
+    const result = makeResult({
+      version: '1',
+      nodes: [{ id: '1' }, { id: '2' }, { id: '3' }],
+      edges: [
+        { source: '1', target: '2' },
+        { source: '2', target: '3' },
+      ],
+    })
+    const cosmosData = buildGraph(result)
+    expect(cosmosData.adjacency.get('1')).toEqual(new Set(['2']))
+    expect(cosmosData.adjacency.get('2')).toEqual(new Set(['1', '3']))
+    expect(cosmosData.adjacency.get('3')).toEqual(new Set(['2']))
+  })
+
+  it('preserves edge weight on original edge objects', () => {
     const result = makeResult({
       version: '1',
       nodes: [{ id: '1' }, { id: '2' }],
       edges: [{ source: '1', target: '2', weight: 0.8 }],
     })
-    const { graph } = buildGraph(result)
-    const edgeKey = graph.edges('1', '2')[0]
-    expect(graph.getEdgeAttribute(edgeKey, 'weight')).toBe(0.8)
+    const cosmosData = buildGraph(result)
+    expect(cosmosData.edges[0].weight).toBe(0.8)
   })
 
-  it('omits weight attribute when edge has no weight', () => {
-    const result = makeResult({
-      version: '1',
-      nodes: [{ id: '1' }, { id: '2' }],
-      edges: [{ source: '1', target: '2' }],
-    })
-    const { graph } = buildGraph(result)
-    const edgeKey = graph.edges('1', '2')[0]
-    expect(graph.getEdgeAttribute(edgeKey, 'weight')).toBeUndefined()
-  })
-
-  it('stores edge label as Graphology attribute', () => {
+  it('preserves edge label on original edge objects', () => {
     const result = makeResult({
       version: '1',
       nodes: [{ id: '1' }, { id: '2' }],
       edges: [{ source: '1', target: '2', label: 'knows', weight: 1.5 }],
     })
-    const { graph } = buildGraph(result)
-    const edgeKey = graph.edges('1', '2')[0]
-    expect(graph.getEdgeAttribute(edgeKey, 'label')).toBe('knows')
-    expect(graph.getEdgeAttribute(edgeKey, 'weight')).toBe(1.5)
+    const cosmosData = buildGraph(result)
+    expect(cosmosData.edges[0].label).toBe('knows')
+    expect(cosmosData.edges[0].weight).toBe(1.5)
   })
 })

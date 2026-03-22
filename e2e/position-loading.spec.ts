@@ -20,7 +20,8 @@ test.describe('Position-Aware Loading', () => {
     await expect(page.getByText('positions were randomized')).not.toBeVisible()
   })
 
-  test('preserves input positions when all nodes have x/y', async ({ page }) => {
+  // Reading positions back requires Cosmos GPU pipeline (not available in SwiftShader)
+  test.skip('preserves input positions when all nodes have x/y', async ({ page }) => {
     await loadGraph(page, 'all-positions-graph.json')
 
     const positions = await page.evaluate(() => {

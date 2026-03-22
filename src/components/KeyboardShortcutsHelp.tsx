@@ -9,7 +9,6 @@ const shortcuts: ShortcutRow[] = [
   { keys: 'Space', description: 'Start / stop simulation' },
   { keys: 'Scroll', description: 'Zoom in / out' },
   { keys: 'Click + drag', description: 'Pan the canvas' },
-  { keys: 'Shift + scroll', description: 'Rotate canvas' },
   { keys: 'Hover node', description: 'Show label (always)' },
 ]
 

@@ -5,8 +5,6 @@ interface Props {
   onZoomIn: () => void
   onZoomOut: () => void
   onFit: () => void
-  onRotateCW: () => void
-  onRotateCCW: () => void
 }
 
 /**
@@ -15,7 +13,7 @@ interface Props {
  * @param props - Zoom and fit callbacks.
  * @returns Canvas controls element.
  */
-export function CanvasControls({ onZoomIn, onZoomOut, onFit, onRotateCW, onRotateCCW }: Props): React.JSX.Element {
+export function CanvasControls({ onZoomIn, onZoomOut, onFit }: Props): React.JSX.Element {
   return (
     <div className="absolute bottom-3 right-3 z-10 flex flex-col gap-1">
       <Button
@@ -44,25 +42,6 @@ export function CanvasControls({ onZoomIn, onZoomOut, onFit, onRotateCW, onRotat
         aria-label="Fit to view"
       >
         ⊡
-      </Button>
-      <div className="my-0.5" />
-      <Button
-        variant="outline"
-        size="icon"
-        className="h-8 w-8 cursor-pointer hover:bg-slate-50 active:bg-slate-100"
-        onClick={onRotateCCW}
-        aria-label="Rotate counter-clockwise"
-      >
-        ↺
-      </Button>
-      <Button
-        variant="outline"
-        size="icon"
-        className="h-8 w-8 cursor-pointer hover:bg-slate-50 active:bg-slate-100"
-        onClick={onRotateCW}
-        aria-label="Rotate clockwise"
-      >
-        ↻
       </Button>
       <div className="my-0.5" />
       <KeyboardShortcutsHelp />

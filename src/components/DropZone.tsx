@@ -1,6 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import type Graph from 'graphology'
-import type { GraphData, PositionMode, NullDefaultResult } from '../types'
+import type { CosmosGraphData, GraphData, PositionMode, NullDefaultResult } from '../types'
 import { parseJSON } from '../lib/parseJSON'
 import { validateGraph } from '../lib/validateGraph'
 import { applyNullDefaults } from '../lib/applyNullDefaults'
@@ -18,7 +17,7 @@ import {
 } from '@/components/ui/alert-dialog'
 
 interface Props {
-  onLoad: (data: GraphData, graph: Graph, positionMode: PositionMode, filename: string) => void
+  onLoad: (data: GraphData, cosmosData: CosmosGraphData, positionMode: PositionMode, filename: string) => void
   fileInputRef?: React.RefObject<HTMLInputElement | null>
   /** If set, this file will be auto-processed on mount (e.g. from a drag-drop on loaded graph). */
   pendingFile?: File | null
@@ -39,7 +38,7 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
   const [isSchemaOpen, setIsSchemaOpen] = useState(false)
   const [pendingLoad, setPendingLoad] = useState<{
     data: GraphData
-    graph: Graph
+    cosmosData: CosmosGraphData
     positionMode: PositionMode
     filename: string
     replacementCount: number
@@ -60,19 +59,19 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
           const raw = parseJSON(text)
           const validated = validateGraph(raw)
           const nullResult: NullDefaultResult = applyNullDefaults(validated)
-          const { graph, positionMode } = buildGraph(nullResult)
+          const cosmosData = buildGraph(nullResult)
 
           if (nullResult.replacementCount > 0) {
             setPendingLoad({
               data: nullResult.data,
-              graph,
-              positionMode,
+              cosmosData,
+              positionMode: cosmosData.positionMode,
               filename: file.name,
               replacementCount: nullResult.replacementCount,
             })
             setIsLoading(false)
           } else {
-            onLoad(nullResult.data, graph, positionMode, file.name)
+            onLoad(nullResult.data, cosmosData, cosmosData.positionMode, file.name)
           }
         } catch (err) {
           setError(err instanceof Error ? err.message : 'Unknown error')
@@ -133,7 +132,7 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
 
   const handleConfirmLoad = useCallback((): void => {
     if (pendingLoad) {
-      onLoad(pendingLoad.data, pendingLoad.graph, pendingLoad.positionMode, pendingLoad.filename)
+      onLoad(pendingLoad.data, pendingLoad.cosmosData, pendingLoad.positionMode, pendingLoad.filename)
       setPendingLoad(null)
     }
   }, [pendingLoad, onLoad])

@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import type Graph from 'graphology'
-import type { ColorGradientState, CustomPalette, PropertyMeta, PropertyType } from '@/types'
+import type { CosmosGraphData, ColorGradientState, CustomPalette, PropertyMeta, PropertyType } from '@/types'
 import {
   PALETTE_NAMES,
   interpolateColors,
@@ -20,7 +19,7 @@ import { CreatePaletteModal } from './CreatePaletteModal'
 interface Props {
   propertyMetas: PropertyMeta[]
   state: ColorGradientState
-  graph: Graph | null
+  cosmosData: CosmosGraphData | null
   matchingNodeIds: Set<string>
   onChange: (s: ColorGradientState) => void
 }
@@ -52,13 +51,13 @@ function paletteName(state: ColorGradientState): string {
  * Color tab: property selector, palette selector with custom palette creation,
  * and a live gradient legend.
  *
- * @param props - Property metas, gradient state, graph, matching nodes, and change handler.
+ * @param props - Property metas, gradient state, cosmos data, matching nodes, and change handler.
  * @returns Color tab content element.
  */
 export function ColorTab({
   propertyMetas,
   state,
-  graph,
+  cosmosData,
   matchingNodeIds,
   onChange,
 }: Props): React.JSX.Element {
@@ -207,7 +206,7 @@ export function ColorTab({
           <ColorLegend
             state={state}
             selectedType={selectedType ?? null}
-            graph={graph}
+            cosmosData={cosmosData}
             matchingNodeIds={matchingNodeIds}
             stops={currentStops}
           />
@@ -237,25 +236,27 @@ function GradientSwatch({ stops }: { stops: string[] }): React.JSX.Element {
 interface LegendProps {
   state: ColorGradientState
   selectedType: PropertyType | null
-  graph: Graph | null
+  cosmosData: CosmosGraphData | null
   matchingNodeIds: Set<string>
   stops: string[]
 }
 
 /** Live legend showing the color mapping for the selected property. */
-function ColorLegend({ state, selectedType, graph, matchingNodeIds, stops }: LegendProps): React.JSX.Element {
+function ColorLegend({ state, selectedType, cosmosData, matchingNodeIds, stops }: LegendProps): React.JSX.Element {
   if (state.propertyKey === null) {
     return <p className="text-xs italic text-slate-400">Select a property to visualise node colors.</p>
   }
 
-  if (!graph || !selectedType) {
+  if (!cosmosData || !selectedType) {
     return <p className="text-xs italic text-slate-400">No data for selected property.</p>
   }
 
-  // Collect active node values (properties are stored as flat attributes)
+  // Collect active node values (properties are on the original NodeInput objects)
   const values: unknown[] = []
   for (const id of matchingNodeIds) {
-    const value = graph.getNodeAttribute(id, state.propertyKey) as unknown
+    const idx = cosmosData.nodeIndexMap.get(id)
+    if (idx === undefined) continue
+    const value = cosmosData.nodes[idx].properties?.[state.propertyKey]
     if (value !== undefined) {
       values.push(value)
     }

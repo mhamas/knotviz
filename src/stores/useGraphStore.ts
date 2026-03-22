@@ -9,8 +9,11 @@ interface DisplayState {
 }
 
 interface SimulationState {
+  repulsion: number
   gravity: number
-  speed: number
+  friction: number
+  linkSpring: number
+  decay: number
 }
 
 interface GraphMeta {
@@ -25,8 +28,11 @@ interface Actions {
   setIsEdgesVisible: (v: boolean) => void
   setIsNodeLabelsVisible: (v: boolean) => void
   setIsHighlightNeighbors: (v: boolean) => void
+  setRepulsion: (v: number) => void
   setGravity: (v: number) => void
-  setSpeed: (v: number) => void
+  setFriction: (v: number) => void
+  setLinkSpring: (v: number) => void
+  setDecay: (v: number) => void
   setGraphLoaded: (nodeCount: number, edgeCount: number) => void
   resetStore: () => void
 }
@@ -43,8 +49,11 @@ export const STORE_DEFAULTS: DisplayState & SimulationState & GraphMeta = {
   isEdgesVisible: true,
   isNodeLabelsVisible: false,
   isHighlightNeighbors: false,
-  gravity: 1,
-  speed: 1,
+  repulsion: 1.0,
+  gravity: 0.25,
+  friction: 0.85,
+  linkSpring: 1.0,
+  decay: 5000,
   isGraphLoaded: false,
   nodeCount: 0,
   edgeCount: 0,
@@ -66,8 +75,11 @@ export const useGraphStore = create<GraphStore>()((set) => ({
   setIsEdgesVisible: (v): void => set({ isEdgesVisible: v }),
   setIsNodeLabelsVisible: (v): void => set({ isNodeLabelsVisible: v }),
   setIsHighlightNeighbors: (v): void => set({ isHighlightNeighbors: v }),
+  setRepulsion: (v): void => set({ repulsion: v }),
   setGravity: (v): void => set({ gravity: v }),
-  setSpeed: (v): void => set({ speed: v }),
+  setFriction: (v): void => set({ friction: v }),
+  setLinkSpring: (v): void => set({ linkSpring: v }),
+  setDecay: (v): void => set({ decay: v }),
   setGraphLoaded: (nodeCount, edgeCount): void => {
     set({ isGraphLoaded: true, nodeCount, edgeCount })
   },

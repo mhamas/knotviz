@@ -1,17 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import type Graph from 'graphology'
-import type { ColorGradientState, GraphData, PositionMode, PropertyMeta, PropertyType } from '../types'
-import type { SimulationSettings } from '../hooks/useFA2Simulation'
-import { useFA2Simulation } from '../hooks/useFA2Simulation'
-import { useSigma } from '../hooks/useSigma'
+import { useCallback, useMemo, useState } from 'react'
+import type { CosmosGraphData, ColorGradientState, GraphData, PropertyMeta, PropertyType } from '../types'
+import { useCosmos } from '../hooks/useCosmos'
 import { useFileDrop } from '../hooks/useFileDrop'
 import { useSpacebarToggle } from '../hooks/useSpacebarToggle'
 import { useFilterState } from '../hooks/useFilterState'
 import { useNodeColors } from '../hooks/useNodeColors'
 import { useColorGradient } from '../hooks/useColorGradient'
 import { detectPropertyTypes } from '../lib/detectPropertyTypes'
-import { COLOR_DEFAULT, COLOR_GRAYED } from '../lib/colors'
-import { useGraphStore } from '@/stores/useGraphStore'
 import { FilenameLabel } from './FilenameLabel'
 import { CanvasControls } from './CanvasControls'
 import { LeftSidebar } from './LeftSidebar'
@@ -31,51 +26,24 @@ import {
 
 interface Props {
   graphData: GraphData
-  graph: Graph
-  positionMode: PositionMode
+  cosmosData: CosmosGraphData
   filename: string
   onLoadNewFile: (file?: File) => void
 }
 
 /**
- * Main view after graph is loaded. Composes Sigma rendering, simulation,
- * file drop, and keyboard shortcut hooks into a single layout.
+ * Main view after graph is loaded. Composes Cosmos rendering, simulation,
+ * file drop, filtering, coloring, and keyboard shortcut hooks into a single layout.
  *
  * @param props - Component props with graph data and callbacks.
  * @returns Graph canvas view element.
  */
 export function GraphView({
   graphData,
-  graph,
-  positionMode,
+  cosmosData,
   filename,
   onLoadNewFile,
 }: Props): React.JSX.Element {
-  const gravity = useGraphStore((s) => s.gravity)
-  const speed = useGraphStore((s) => s.speed)
-
-  const simulationSettings = useMemo<SimulationSettings>(
-    () => ({ gravity, speed }),
-    [gravity, speed],
-  )
-  const simulation = useFA2Simulation(graph, simulationSettings)
-
-  const {
-    containerRef,
-    tooltipState,
-    setTooltipState,
-    handleZoomIn,
-    handleZoomOut,
-    handleFit,
-    handleRotateCW,
-    handleRotateCCW,
-    refresh: refreshSigma,
-  } = useSigma(graph)
-
-  const { isDragOver, isConfirmOpen, handleConfirm, handleCancel } = useFileDrop(onLoadNewFile)
-
-  useSpacebarToggle(simulation.isRunning, simulation.start, simulation.stop)
-
   const propertyMetas: PropertyMeta[] = useMemo(() => {
     const typeMap = detectPropertyTypes(graphData.nodes)
     return Array.from(typeMap.entries()).map(([key, type]) => ({ key, type }))
@@ -99,7 +67,7 @@ export function GraphView({
   )
 
   const gradientColors = useColorGradient(
-    graph,
+    cosmosData,
     filterHandle.matchingNodeIds,
     gradientState,
     propertyTypeMap,
@@ -108,32 +76,35 @@ export function GraphView({
   const nodeIds = useMemo(() => graphData.nodes.map((n) => n.id), [graphData.nodes])
   const nodeColors = useNodeColors(nodeIds, filterHandle.matchingNodeIds, filterHandle.hasActiveFilters, gradientColors)
 
-  // Apply filter colors, z-index, and size adjustments to graph attributes
-  useEffect(() => {
-    graph.updateEachNodeAttributes((node, attrs) => {
-      const isHidden = filterHandle.hasActiveFilters && !filterHandle.matchingNodeIds.has(node)
-      return {
-        ...attrs,
-        color: nodeColors.get(node) ?? COLOR_DEFAULT,
-        hidden: isHidden,
-      }
-    })
-    graph.updateEachEdgeAttributes((_edge, attrs, source, target) => {
-      const isHidden =
-        filterHandle.hasActiveFilters &&
-        (!filterHandle.matchingNodeIds.has(source) || !filterHandle.matchingNodeIds.has(target))
-      return { ...attrs, color: isHidden ? COLOR_GRAYED : COLOR_DEFAULT, hidden: isHidden }
-    })
-    refreshSigma()
-  }, [graph, nodeColors, filterHandle.hasActiveFilters, filterHandle.matchingNodeIds, refreshSigma])
+  // Cosmos rendering
+  const {
+    containerRef,
+    tooltipState,
+    setTooltipState,
+    handleZoomIn,
+    handleZoomOut,
+    handleFit,
+    isSimulationRunning,
+    startSimulation,
+    stopSimulation,
+    randomizePositions,
+    cosmosRef,
+  } = useCosmos(cosmosData, nodeColors)
+
+  const { isDragOver, isConfirmOpen, handleConfirm, handleCancel } = useFileDrop(onLoadNewFile)
+
+  useSpacebarToggle(isSimulationRunning, startSimulation, stopSimulation)
 
   const handleDownload = useCallback((): void => {
+    const cosmos = cosmosRef.current
+    if (!cosmos) return
+    const positions = cosmos.getPointPositions()
     const exported: GraphData = {
       version: '1',
-      nodes: graphData.nodes.map((n) => ({
+      nodes: graphData.nodes.map((n, i) => ({
         ...n,
-        x: graph.getNodeAttribute(n.id, 'x') as number,
-        y: graph.getNodeAttribute(n.id, 'y') as number,
+        x: positions[i * 2] ?? 0,
+        y: positions[i * 2 + 1] ?? 0,
       })),
       edges: graphData.edges,
     }
@@ -144,16 +115,15 @@ export function GraphView({
     a.download = filename
     a.click()
     URL.revokeObjectURL(url)
-  }, [graph, graphData, filename])
+  }, [cosmosRef, graphData, filename])
 
   return (
     <div className="flex h-screen w-screen">
       <LeftSidebar
-        isRunning={simulation.isRunning}
-        simulationError={simulation.errorMessage}
-        onRun={simulation.start}
-        onStop={simulation.stop}
-        onRandomizeLayout={simulation.randomizeLayout}
+        isRunning={isSimulationRunning}
+        onRun={startSimulation}
+        onStop={stopSimulation}
+        onRandomizeLayout={randomizePositions}
         onDownload={handleDownload}
         onReset={onLoadNewFile}
       />
@@ -162,9 +132,8 @@ export function GraphView({
           ref={containerRef}
           data-testid="sigma-canvas"
           className="h-full w-full"
-          style={{ backgroundColor: '#f8fafc' }}
         />
-        {positionMode === 'partial' && (
+        {cosmosData.positionMode === 'partial' && (
           <div className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded border border-yellow-300 bg-yellow-50 px-3 py-2 text-xs text-yellow-900">
             Some nodes have positions and some do not — positions were randomized.
             Run the simulation to generate a layout.
@@ -186,8 +155,6 @@ export function GraphView({
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
           onFit={handleFit}
-          onRotateCW={handleRotateCW}
-          onRotateCCW={handleRotateCCW}
         />
       </div>
       <RightSidebar
@@ -195,7 +162,7 @@ export function GraphView({
         filterHandle={filterHandle}
         gradientState={gradientState}
         onGradientChange={setGradientState}
-        graph={graph}
+        cosmosData={cosmosData}
         matchingNodeIds={filterHandle.matchingNodeIds}
       />
 

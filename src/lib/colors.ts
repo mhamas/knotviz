@@ -1,5 +1,8 @@
-/** Default node/edge color (slate-400). */
-export const COLOR_DEFAULT = '#94a3b8'
+/** Default node color (slate-500 — darker gray). */
+export const COLOR_DEFAULT = '#64748b'
+
+/** Default edge/link color (slate-300 — lighter gray). */
+export const COLOR_EDGE_DEFAULT = '#cbd5e1'
 
 /** Highlighted node color when matching filters (blue-300). */
 export const COLOR_HIGHLIGHTED = '#93c5fd'

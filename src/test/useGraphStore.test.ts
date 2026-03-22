@@ -13,8 +13,11 @@ describe('useGraphStore', () => {
     expect(state.isEdgesVisible).toBe(true)
     expect(state.isNodeLabelsVisible).toBe(false)
     expect(state.isHighlightNeighbors).toBe(false)
-    expect(state.gravity).toBe(1)
-    expect(state.speed).toBe(1)
+    expect(state.repulsion).toBe(1.0)
+    expect(state.gravity).toBe(0.25)
+    expect(state.friction).toBe(0.85)
+    expect(state.linkSpring).toBe(1.0)
+    expect(state.decay).toBe(5000)
     expect(state.isGraphLoaded).toBe(false)
     expect(state.nodeCount).toBe(0)
     expect(state.edgeCount).toBe(0)
@@ -45,14 +48,14 @@ describe('useGraphStore', () => {
     expect(useGraphStore.getState().isHighlightNeighbors).toBe(true)
   })
 
-  it('setGravity updates gravity', () => {
-    useGraphStore.getState().setGravity(3.5)
-    expect(useGraphStore.getState().gravity).toBe(3.5)
+  it('setRepulsion updates repulsion', () => {
+    useGraphStore.getState().setRepulsion(2.0)
+    expect(useGraphStore.getState().repulsion).toBe(2.0)
   })
 
-  it('setSpeed updates speed', () => {
-    useGraphStore.getState().setSpeed(2.0)
-    expect(useGraphStore.getState().speed).toBe(2.0)
+  it('setGravity updates gravity', () => {
+    useGraphStore.getState().setGravity(0.5)
+    expect(useGraphStore.getState().gravity).toBe(0.5)
   })
 
   it('setGraphLoaded sets isGraphLoaded and counts', () => {
@@ -73,8 +76,11 @@ describe('useGraphStore', () => {
     s.setIsEdgesVisible(false)
     s.setIsNodeLabelsVisible(true)
     s.setIsHighlightNeighbors(true)
-    s.setGravity(5)
-    s.setSpeed(5)
+    s.setRepulsion(5)
+    s.setGravity(0.8)
+    s.setFriction(0.5)
+    s.setLinkSpring(2)
+    s.setDecay(10000)
     s.setGraphLoaded(50, 100)
 
     // Reset
@@ -86,8 +92,9 @@ describe('useGraphStore', () => {
     expect(reset.isEdgesVisible).toBe(STORE_DEFAULTS.isEdgesVisible)
     expect(reset.isNodeLabelsVisible).toBe(STORE_DEFAULTS.isNodeLabelsVisible)
     expect(reset.isHighlightNeighbors).toBe(STORE_DEFAULTS.isHighlightNeighbors)
+    expect(reset.repulsion).toBe(STORE_DEFAULTS.repulsion)
     expect(reset.gravity).toBe(STORE_DEFAULTS.gravity)
-    expect(reset.speed).toBe(STORE_DEFAULTS.speed)
+    expect(reset.friction).toBe(STORE_DEFAULTS.friction)
     expect(reset.isGraphLoaded).toBe(false)
     expect(reset.nodeCount).toBe(0)
     expect(reset.edgeCount).toBe(0)

@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
-import type Graph from 'graphology'
-import type { ColorGradientState, CustomPalette, PropertyType } from '@/types'
+import type { CosmosGraphData, ColorGradientState, CustomPalette, PropertyType } from '@/types'
 import { interpolateColors, isBuiltinPalette, getPaletteColors } from '@/lib/colorScales'
 
 /** Entry pairing a node ID with its raw property value. */
@@ -83,33 +82,35 @@ export function computeGradientColors(
  * Derives a per-node hex color from the selected property and palette,
  * applied only to active (matching) nodes.
  *
- * @param graph - The graphology instance (used to read node properties).
+ * @param data - The CosmosGraphData (used to read node properties).
  * @param matchingNodeIds - Set of node IDs that pass all active filters.
  * @param state - Current color gradient UI state (property, palette, custom colors).
  * @param propertyTypes - Map of property key to detected type.
  * @returns `null` when no property is selected; a `Map<nodeId, hexColor>` otherwise.
  */
 export function useColorGradient(
-  graph: Graph | null,
+  data: CosmosGraphData | null,
   matchingNodeIds: Set<string>,
   state: ColorGradientState,
   propertyTypes: Map<string, PropertyType>,
 ): Map<string, string> | null {
   return useMemo(() => {
-    if (state.propertyKey === null || !graph) return null
+    if (state.propertyKey === null || !data) return null
 
     const propType = propertyTypes.get(state.propertyKey)
     if (!propType) return new Map<string, string>()
 
-    // Collect values for active nodes (properties are stored as flat attributes)
+    // Collect values for active nodes (properties are on the original NodeInput objects)
     const entries: NodeValueEntry[] = []
     for (const id of matchingNodeIds) {
-      const value = graph.getNodeAttribute(id, state.propertyKey) as unknown
+      const idx = data.nodeIndexMap.get(id)
+      if (idx === undefined) continue
+      const value = data.nodes[idx].properties?.[state.propertyKey]
       if (value !== undefined) {
         entries.push({ id, value })
       }
     }
 
     return computeGradientColors(entries, propType, state)
-  }, [graph, matchingNodeIds, state, propertyTypes])
+  }, [data, matchingNodeIds, state, propertyTypes])
 }

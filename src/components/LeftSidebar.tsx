@@ -30,19 +30,6 @@ interface Props {
   onReset?: () => void
 }
 
-// Log scale: slider [0, 100] → value [0.1, 10.0]
-const LOG_MIN = Math.log(0.1)
-const LOG_MAX = Math.log(10)
-
-function sliderToValue(s: number): number {
-  const v = Math.exp(LOG_MIN + (s / 100) * (LOG_MAX - LOG_MIN))
-  return Math.round(v * 100) / 100
-}
-
-function valueToSlider(v: number): number {
-  return ((Math.log(v) - LOG_MIN) / (LOG_MAX - LOG_MIN)) * 100
-}
-
 /**
  * Left sidebar with simulation controls, graph info, and file management.
  * Reads display/simulation settings from Zustand store; receives only
@@ -64,8 +51,10 @@ export function LeftSidebar({
 }: Props): React.JSX.Element {
   // Store state
   const isGraphLoaded = useGraphStore((s) => s.isGraphLoaded)
+  const repulsion = useGraphStore((s) => s.repulsion)
   const gravity = useGraphStore((s) => s.gravity)
-  const speed = useGraphStore((s) => s.speed)
+  const friction = useGraphStore((s) => s.friction)
+  const linkSpring = useGraphStore((s) => s.linkSpring)
   const nodeSize = useGraphStore((s) => s.nodeSize)
   const edgeSize = useGraphStore((s) => s.edgeSize)
   const isEdgesVisible = useGraphStore((s) => s.isEdgesVisible)
@@ -75,8 +64,10 @@ export function LeftSidebar({
   const edgeCount = useGraphStore((s) => s.edgeCount)
 
   // Store actions
+  const setRepulsion = useGraphStore((s) => s.setRepulsion)
   const setGravity = useGraphStore((s) => s.setGravity)
-  const setSpeed = useGraphStore((s) => s.setSpeed)
+  const setFriction = useGraphStore((s) => s.setFriction)
+  const setLinkSpring = useGraphStore((s) => s.setLinkSpring)
   const setNodeSize = useGraphStore((s) => s.setNodeSize)
   const setEdgeSize = useGraphStore((s) => s.setEdgeSize)
   const setIsEdgesVisible = useGraphStore((s) => s.setIsEdgesVisible)
@@ -85,8 +76,10 @@ export function LeftSidebar({
 
   const isDisabled = !isGraphLoaded
 
+  const debouncedRepulsionChange = useDebounce(setRepulsion, 150)
   const debouncedGravityChange = useDebounce(setGravity, 150)
-  const debouncedSpeedChange = useDebounce(setSpeed, 150)
+  const debouncedFrictionChange = useDebounce(setFriction, 150)
+  const debouncedLinkSpringChange = useDebounce(setLinkSpring, 150)
   const debouncedNodeSizeChange = useDebounce(setNodeSize, 150)
   const debouncedEdgeSizeChange = useDebounce(setEdgeSize, 150)
 
@@ -95,7 +88,7 @@ export function LeftSidebar({
       <div className={isDisabled ? 'pointer-events-none opacity-40' : ''}>
       {/* Simulation */}
       <div className="mt-2 space-y-3">
-        <SectionHeading help="Runs a force-directed layout that pushes connected nodes closer together and unconnected nodes apart, making clusters and relationships easier to see.">
+        <SectionHeading help="Runs a GPU-accelerated force-directed layout that pushes connected nodes closer together and unconnected nodes apart, making clusters and relationships easier to see.">
           Simulation
         </SectionHeading>
 
@@ -134,32 +127,62 @@ export function LeftSidebar({
 
         <CollapsibleSection label="Simulation settings">
           <LabeledSlider
-            label="Gravity"
-            value={gravity}
+            label="Repulsion"
+            value={repulsion}
             formatValue={(v): string => v.toFixed(2)}
-            help="Controls how strongly nodes are pulled toward the center. Higher values produce a tighter, more compact layout."
+            help="A force between ALL pairs of nodes that pushes them apart, like magnets with the same pole. This is the main force that prevents nodes from overlapping and creates space in the layout. Unlike Link Spring (which only acts between connected nodes), Repulsion acts between every node — even nodes with no edges between them. Higher values spread the entire graph out; lower values let it collapse tighter. If you raise Repulsion without raising Link Spring, clusters will break apart. If you lower it too much, unconnected groups will overlap."
             min={0}
-            max={100}
+            max={200}
             step={1}
-            defaultValue={[valueToSlider(gravity)]}
+            defaultValue={[repulsion * 100]}
             onValueChange={(value): void => {
               const v = Array.isArray(value) ? value[0] : value
-              debouncedGravityChange(sliderToValue(v))
+              debouncedRepulsionChange(v / 100)
             }}
           />
 
           <LabeledSlider
-            label="Speed"
-            value={speed}
+            label="Gravity"
+            value={gravity}
             formatValue={(v): string => v.toFixed(2)}
-            help="Controls how fast the simulation converges. Higher values make nodes move faster each step, lower values give a smoother, more gradual layout."
+            help="Pulls every node toward the center of the layout. This prevents isolated nodes (with few or no edges) from drifting off to infinity. Higher values produce a tighter, more compact layout; zero lets disconnected components float freely. Gravity acts on all nodes equally regardless of connections — it is a global centering force, not a connection-based force like Link Spring."
             min={0}
             max={100}
             step={1}
-            defaultValue={[valueToSlider(speed)]}
+            defaultValue={[gravity * 100]}
             onValueChange={(value): void => {
               const v = Array.isArray(value) ? value[0] : value
-              debouncedSpeedChange(sliderToValue(v))
+              debouncedGravityChange(v / 100)
+            }}
+          />
+
+          <LabeledSlider
+            label="Friction"
+            value={friction}
+            formatValue={(v): string => v.toFixed(2)}
+            help="Controls how quickly nodes lose their momentum and come to rest. Think of it like air resistance. Low friction (close to 0) means nodes stop almost immediately after forces are applied — the layout converges fast but may look rigid. High friction (close to 1) means nodes keep sliding for a long time — the layout is smoother and more organic but takes longer to settle. If the simulation feels jittery, raise friction slightly; if it never stabilizes, lower it."
+            min={0}
+            max={100}
+            step={1}
+            defaultValue={[friction * 100]}
+            onValueChange={(value): void => {
+              const v = Array.isArray(value) ? value[0] : value
+              debouncedFrictionChange(v / 100)
+            }}
+          />
+
+          <LabeledSlider
+            label="Link Spring"
+            value={linkSpring}
+            formatValue={(v): string => v.toFixed(2)}
+            help="A spring force that acts ONLY between nodes connected by an edge, pulling them closer together — like a rubber band on each link. This is what makes clusters visible: densely connected groups of nodes get pulled into tight neighborhoods. Unlike Repulsion (which pushes ALL nodes apart), Link Spring only affects connected pairs. The interplay between these two forces defines the layout: Repulsion spreads everything out, Link Spring pulls connected nodes back in. Higher values make connected nodes snap tighter together; lower values let them drift apart even if connected."
+            min={0}
+            max={200}
+            step={1}
+            defaultValue={[linkSpring * 100]}
+            onValueChange={(value): void => {
+              const v = Array.isArray(value) ? value[0] : value
+              debouncedLinkSpringChange(v / 100)
             }}
           />
 

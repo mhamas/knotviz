@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Graph as CosmosGraph } from '@cosmos.gl/graph'
 import type { GraphConfigInterface } from '@cosmos.gl/graph'
-import type { CosmosGraphData, TooltipState } from '../types'
+import type { CosmosGraphData, FilterMap, TooltipState } from '../types'
 import { useGraphStore } from '@/stores/useGraphStore'
 import { COLOR_DEFAULT, COLOR_EDGE_DEFAULT } from '@/lib/colors'
 import AppearanceWorker from '@/workers/appearanceWorker?worker'
@@ -68,6 +68,8 @@ export function useCosmos(
   nodeColors: Map<string, string>,
   matchingNodeIds: Set<string>,
   hasActiveFilters: boolean,
+  filters: FilterMap,
+  gradientColors: Map<string, string> | null,
 ): UseCosmosReturn {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const labelsRef = useRef<HTMLDivElement | null>(null)
@@ -448,6 +450,28 @@ export function useCosmos(
     cosmosRef.current?.setConfig({ linkWidthScale: edgeSize })
   }, [edgeSize])
 
+  // ── Precompute property columns once per graph (for worker) ──
+  const propertyColumnsRef = useRef<Record<string, (number | string | boolean | undefined)[]>>({})
+  useEffect(() => {
+    if (!data) return
+    const columns: Record<string, (number | string | boolean | undefined)[]> = {}
+    // Discover all property keys from first few nodes, then build columns
+    const keys = new Set<string>()
+    for (let i = 0; i < data.nodes.length; i++) {
+      const props = data.nodes[i].properties
+      if (props) for (const k of Object.keys(props)) keys.add(k)
+      if (keys.size > 0 && i > 100) break // sample first 100 to discover keys
+    }
+    for (const key of keys) {
+      const col: (number | string | boolean | undefined)[] = new Array(data.nodes.length)
+      for (let i = 0; i < data.nodes.length; i++) {
+        col[i] = data.nodes[i].properties?.[key] as number | string | boolean | undefined
+      }
+      columns[key] = col
+    }
+    propertyColumnsRef.current = columns
+  }, [data])
+
   // ── Sync node colors + filter visibility (via Web Worker) ──
   const workerRef = useRef<Worker | null>(null)
   useEffect(() => {
@@ -462,33 +486,29 @@ export function useCosmos(
     const worker = workerRef.current
     if (!cosmos || !worker) return
 
-    const n = data.nodes.length
-    const defaultRgba = hexToRgba(COLOR_DEFAULT)
-
-    // Build visibility bitmask (fast: 1M Set.has calls)
-    let visible: Uint8Array | null = null
-    if (hasActiveFilters) {
-      visible = new Uint8Array(n)
-      for (let i = 0; i < n; i++) {
-        visible[i] = matchingNodeIds.has(data.nodes[i].id) ? 1 : 0
+    // Serialize filters for worker (convert Sets to arrays)
+    const serializedFilters: Record<string, unknown> = {}
+    for (const [key, f] of filters) {
+      if (f.type === 'string') {
+        serializedFilters[key] = { ...f, selectedValues: Array.from(f.selectedValues) }
+      } else {
+        serializedFilters[key] = { ...f }
       }
     }
 
-    // Build per-node RGBA on main thread (fast: sparse map lookup + cached hexToRgba)
-    const nodeRgba = new Float32Array(n * 4)
-    for (let i = 0; i < n; i++) {
-      if (visible && !visible[i]) continue // leave as 0,0,0,0
-      const hex = nodeColors.get(data.nodes[i].id)
-      const rgba = hex ? hexToRgba(hex) : defaultRgba
-      const off = i * 4
-      nodeRgba[off] = rgba[0]
-      nodeRgba[off + 1] = rgba[1]
-      nodeRgba[off + 2] = rgba[2]
-      nodeRgba[off + 3] = rgba[3]
+    // Build gradient entries as sparse Float32Array: [index, r, g, b, a, ...]
+    let gradientEntries = new Float32Array(0)
+    if (gradientColors && gradientColors.size > 0) {
+      const entries: number[] = []
+      for (const [id, hex] of gradientColors) {
+        const idx = data.nodeIndexMap.get(id)
+        if (idx === undefined) continue
+        const rgba = hexToRgba(hex)
+        entries.push(idx, rgba[0], rgba[1], rgba[2], rgba[3])
+      }
+      gradientEntries = new Float32Array(entries)
     }
 
-    // Send to worker for heavy edge processing (transferred, zero-copy)
-    const edgeRgba = hexToRgba(COLOR_EDGE_DEFAULT)
     worker.onmessage = (e: MessageEvent): void => {
       const { pointColors, pointSizes, linkColors } = e.data as {
         pointColors: Float32Array
@@ -502,11 +522,18 @@ export function useCosmos(
       c.setLinkColors(linkColors)
       c.render(0)
     }
-    worker.postMessage(
-      { nodeRgba, visible, linkIndices: data.linkIndices, edgeRgba, hasActiveFilters },
-      [nodeRgba.buffer, ...(visible ? [visible.buffer] : [])],
-    )
-  }, [data, nodeColors, matchingNodeIds, hasActiveFilters])
+
+    const msg = {
+      nodeCount: data.nodes.length,
+      propertyColumns: propertyColumnsRef.current,
+      filters: serializedFilters,
+      gradientEntries,
+      defaultRgba: hexToRgba(COLOR_DEFAULT),
+      edgeRgba: hexToRgba(COLOR_EDGE_DEFAULT),
+      linkIndices: data.linkIndices,
+    }
+    worker.postMessage(msg)
+  }, [data, filters, gradientColors, nodeColors, matchingNodeIds, hasActiveFilters])
 
   // ── Sync highlight neighbors ──
   useEffect(() => {

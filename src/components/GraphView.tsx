@@ -95,7 +95,14 @@ export function GraphView({
     stopSimulation,
     randomizePositions,
     cosmosRef,
-  } = useCosmos(cosmosData, nodeColors, filterHandle.matchingNodeIds, filterHandle.hasActiveFilters)
+  } = useCosmos(
+    cosmosData,
+    nodeColors,
+    filterHandle.matchingNodeIds,
+    filterHandle.hasActiveFilters,
+    filterHandle.filters,
+    gradientColors,
+  )
 
   const { isDragOver, isConfirmOpen, handleConfirm, handleCancel } = useFileDrop(onLoadNewFile)
 

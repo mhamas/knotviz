@@ -1,41 +1,102 @@
 /**
- * Web Worker that builds Float32Arrays for node colors, sizes, and link colors.
- * Runs off the main thread so filtering/coloring doesn't freeze the UI.
- *
- * Input message: { nodeRgba, visible, linkIndices, edgeRgba, hasActiveFilters }
- * Output message: { pointColors, pointSizes, linkColors } (transferred, zero-copy)
+ * Web Worker: computes filter matching + node colors + sizes + link colors.
+ * Runs the entire heavy pipeline off the main thread.
  */
 
+/** Serializable filter state (Sets converted to arrays for transfer). */
+interface SerializableFilter {
+  type: 'number' | 'boolean' | 'string' | 'date'
+  isEnabled: boolean
+  // number
+  min?: number
+  max?: number
+  // boolean
+  selected?: boolean
+  // string
+  selectedValues?: string[]
+  // date
+  after?: string
+  before?: string
+}
+
 interface WorkerInput {
-  /** Pre-built RGBA for each node [r,g,b,a, r,g,b,a, ...] (n*4). Visible nodes have their color, hidden nodes have 0,0,0,0. */
-  nodeRgba: Float32Array
-  /** 1 = visible, 0 = hidden. Length = nodeCount. null if no filters active. */
-  visible: Uint8Array | null
-  /** Link source/target index pairs [src,tgt, src,tgt, ...] */
-  linkIndices: Float32Array
-  /** Default edge RGBA [r,g,b,a] */
+  /** Number of nodes */
+  nodeCount: number
+  /** Per-property columnar values: { key: values[nodeIndex] }. Values are number|string|boolean|undefined. */
+  propertyColumns: Record<string, (number | string | boolean | undefined)[]>
+  /** Filter state per property key */
+  filters: Record<string, SerializableFilter>
+  /** Sparse node colors: [nodeIndex, r, g, b, a, nodeIndex, r, g, b, a, ...] */
+  gradientEntries: Float32Array
+  /** Default RGBA for visible nodes with no gradient */
+  defaultRgba: [number, number, number, number]
+  /** Edge default RGBA */
   edgeRgba: [number, number, number, number]
-  /** Whether any filter is active */
-  hasActiveFilters: boolean
+  /** Link indices (source/target pairs by node index) */
+  linkIndices: Float32Array
 }
 
 self.onmessage = (e: MessageEvent<WorkerInput>): void => {
-  const { nodeRgba, visible, linkIndices, edgeRgba, hasActiveFilters } = e.data
-  const nodeCount = nodeRgba.length / 4
+  const { nodeCount, propertyColumns, filters, gradientEntries, defaultRgba, edgeRgba, linkIndices } = e.data
 
-  // Point sizes: 4 for visible, 0 for hidden
-  const pointSizes = new Float32Array(nodeCount)
-  if (visible) {
-    for (let i = 0; i < nodeCount; i++) {
-      pointSizes[i] = visible[i] ? 4 : 0
-    }
-  } else {
-    pointSizes.fill(4)
+  // Step 1: Compute matching bitmask
+  const enabledFilters: [string, SerializableFilter][] = []
+  for (const [key, f] of Object.entries(filters)) {
+    if (f.isEnabled) enabledFilters.push([key, f])
   }
 
-  // Link colors: visible edges get edgeRgba, hidden edges stay 0,0,0,0
+  const hasActiveFilters = enabledFilters.length > 0
+  const visible = new Uint8Array(nodeCount)
+
+  if (!hasActiveFilters) {
+    visible.fill(1)
+  } else {
+    // Pre-resolve column arrays for enabled filters
+    const columns = enabledFilters.map(([key]) => propertyColumns[key])
+    for (let i = 0; i < nodeCount; i++) {
+      let isPass = true
+      for (let f = 0; f < enabledFilters.length; f++) {
+        const filter = enabledFilters[f][1]
+        const value = columns[f]?.[i]
+        if (!passesFilter(value, filter)) {
+          isPass = false
+          break
+        }
+      }
+      visible[i] = isPass ? 1 : 0
+    }
+  }
+
+  // Step 2: Build per-node RGBA + sizes
+  const pointColors = new Float32Array(nodeCount * 4)
+  const pointSizes = new Float32Array(nodeCount)
+
+  // Apply default colors for all visible nodes
+  const [dr, dg, db, da] = defaultRgba
+  for (let i = 0; i < nodeCount; i++) {
+    if (!visible[i]) continue
+    const off = i * 4
+    pointColors[off] = dr
+    pointColors[off + 1] = dg
+    pointColors[off + 2] = db
+    pointColors[off + 3] = da
+    pointSizes[i] = 4
+  }
+
+  // Override with gradient colors (sparse entries: [index, r, g, b, a, ...])
+  for (let i = 0; i < gradientEntries.length; i += 5) {
+    const idx = gradientEntries[i]
+    if (!visible[idx]) continue
+    const off = idx * 4
+    pointColors[off] = gradientEntries[i + 1]
+    pointColors[off + 1] = gradientEntries[i + 2]
+    pointColors[off + 2] = gradientEntries[i + 3]
+    pointColors[off + 3] = gradientEntries[i + 4]
+  }
+
+  // Step 3: Link colors
   let linkColors: Float32Array
-  if (hasActiveFilters && visible) {
+  if (hasActiveFilters) {
     const linkCount = linkIndices.length / 2
     linkColors = new Float32Array(linkCount * 4)
     const [er0, er1, er2, er3] = edgeRgba
@@ -52,9 +113,29 @@ self.onmessage = (e: MessageEvent<WorkerInput>): void => {
     linkColors = new Float32Array(0)
   }
 
-  // Transfer ownership (zero-copy)
-  const msg = { pointColors: nodeRgba, pointSizes, linkColors }
-  const transfer = [msg.pointColors.buffer, msg.pointSizes.buffer, msg.linkColors.buffer]
+  // Step 4: Count matching nodes
+  let matchingCount = 0
+  for (let i = 0; i < nodeCount; i++) {
+    if (visible[i]) matchingCount++
+  }
+
+  const msg = { pointColors, pointSizes, linkColors, visible, matchingCount, hasActiveFilters }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(self.postMessage as any)(msg, transfer)
+  ;(self.postMessage as any)(msg, [
+    pointColors.buffer, pointSizes.buffer, linkColors.buffer, visible.buffer,
+  ])
+}
+
+function passesFilter(value: unknown, filter: SerializableFilter): boolean {
+  switch (filter.type) {
+    case 'number':
+      return typeof value === 'number' && value >= filter.min! && value <= filter.max!
+    case 'boolean':
+      return value === filter.selected
+    case 'string':
+      return !filter.selectedValues || filter.selectedValues.length === 0 ||
+        (typeof value === 'string' && filter.selectedValues.includes(value))
+    case 'date':
+      return typeof value === 'string' && value >= filter.after! && value <= filter.before!
+  }
 }

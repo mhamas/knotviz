@@ -19,7 +19,7 @@ test.describe('Graph View — Canvas and Controls', () => {
     await loadGraph(page, 'sample-graph.json')
   })
 
-  test('renders sigma canvas with correct node and edge counts', async ({ page }) => {
+  test('renders graph canvas with correct node and edge counts', async ({ page }) => {
     await expect(page.getByTestId('stat-nodes').getByText('5')).toBeVisible()
     await expect(page.getByTestId('stat-edges').getByText('6')).toBeVisible()
   })
@@ -32,6 +32,8 @@ test.describe('Graph View — Canvas and Controls', () => {
     await expect(page.getByRole('button', { name: 'Zoom in' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Zoom out' })).toBeVisible()
     await expect(page.getByRole('button', { name: 'Fit to view' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Rotate clockwise' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Rotate counter-clockwise' })).toBeVisible()
   })
 
   test('keyboard shortcuts help popover opens on click', async ({ page }) => {

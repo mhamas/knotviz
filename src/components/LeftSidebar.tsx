@@ -52,7 +52,6 @@ export function LeftSidebar({
   // Store state
   const isGraphLoaded = useGraphStore((s) => s.isGraphLoaded)
   const repulsion = useGraphStore((s) => s.repulsion)
-  const gravity = useGraphStore((s) => s.gravity)
   const friction = useGraphStore((s) => s.friction)
   const linkSpring = useGraphStore((s) => s.linkSpring)
   const nodeSize = useGraphStore((s) => s.nodeSize)
@@ -65,7 +64,6 @@ export function LeftSidebar({
 
   // Store actions
   const setRepulsion = useGraphStore((s) => s.setRepulsion)
-  const setGravity = useGraphStore((s) => s.setGravity)
   const setFriction = useGraphStore((s) => s.setFriction)
   const setLinkSpring = useGraphStore((s) => s.setLinkSpring)
   const setNodeSize = useGraphStore((s) => s.setNodeSize)
@@ -77,7 +75,6 @@ export function LeftSidebar({
   const isDisabled = !isGraphLoaded
 
   const debouncedRepulsionChange = useDebounce(setRepulsion, 150)
-  const debouncedGravityChange = useDebounce(setGravity, 150)
   const debouncedFrictionChange = useDebounce(setFriction, 150)
   const debouncedLinkSpringChange = useDebounce(setLinkSpring, 150)
   const debouncedNodeSizeChange = useDebounce(setNodeSize, 150)
@@ -138,21 +135,6 @@ export function LeftSidebar({
             onValueChange={(value): void => {
               const v = Array.isArray(value) ? value[0] : value
               debouncedRepulsionChange(v / 100)
-            }}
-          />
-
-          <LabeledSlider
-            label="Gravity"
-            value={gravity}
-            formatValue={(v): string => v.toFixed(2)}
-            help="Pulls every node toward the center of the layout. This prevents isolated nodes (with few or no edges) from drifting off to infinity. Higher values produce a tighter, more compact layout; zero lets disconnected components float freely. Gravity acts on all nodes equally regardless of connections — it is a global centering force, not a connection-based force like Link Spring."
-            min={0}
-            max={100}
-            step={1}
-            defaultValue={[gravity * 100]}
-            onValueChange={(value): void => {
-              const v = Array.isArray(value) ? value[0] : value
-              debouncedGravityChange(v / 100)
             }}
           />
 

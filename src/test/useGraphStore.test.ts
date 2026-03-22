@@ -14,7 +14,6 @@ describe('useGraphStore', () => {
     expect(state.isNodeLabelsVisible).toBe(false)
     expect(state.isHighlightNeighbors).toBe(false)
     expect(state.repulsion).toBe(1.0)
-    expect(state.gravity).toBe(0.25)
     expect(state.friction).toBe(0.85)
     expect(state.linkSpring).toBe(1.0)
     expect(state.decay).toBe(5000)
@@ -53,11 +52,6 @@ describe('useGraphStore', () => {
     expect(useGraphStore.getState().repulsion).toBe(2.0)
   })
 
-  it('setGravity updates gravity', () => {
-    useGraphStore.getState().setGravity(0.5)
-    expect(useGraphStore.getState().gravity).toBe(0.5)
-  })
-
   it('setGraphLoaded sets isGraphLoaded and counts', () => {
     useGraphStore.getState().setGraphLoaded(100, 200)
     const state = useGraphStore.getState()
@@ -77,7 +71,6 @@ describe('useGraphStore', () => {
     s.setIsNodeLabelsVisible(true)
     s.setIsHighlightNeighbors(true)
     s.setRepulsion(5)
-    s.setGravity(0.8)
     s.setFriction(0.5)
     s.setLinkSpring(2)
     s.setDecay(10000)
@@ -93,7 +86,6 @@ describe('useGraphStore', () => {
     expect(reset.isNodeLabelsVisible).toBe(STORE_DEFAULTS.isNodeLabelsVisible)
     expect(reset.isHighlightNeighbors).toBe(STORE_DEFAULTS.isHighlightNeighbors)
     expect(reset.repulsion).toBe(STORE_DEFAULTS.repulsion)
-    expect(reset.gravity).toBe(STORE_DEFAULTS.gravity)
     expect(reset.friction).toBe(STORE_DEFAULTS.friction)
     expect(reset.isGraphLoaded).toBe(false)
     expect(reset.nodeCount).toBe(0)

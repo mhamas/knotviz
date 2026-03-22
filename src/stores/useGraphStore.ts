@@ -10,7 +10,6 @@ interface DisplayState {
 
 interface SimulationState {
   repulsion: number
-  gravity: number
   friction: number
   linkSpring: number
   decay: number
@@ -29,7 +28,6 @@ interface Actions {
   setIsNodeLabelsVisible: (v: boolean) => void
   setIsHighlightNeighbors: (v: boolean) => void
   setRepulsion: (v: number) => void
-  setGravity: (v: number) => void
   setFriction: (v: number) => void
   setLinkSpring: (v: number) => void
   setDecay: (v: number) => void
@@ -50,7 +48,6 @@ export const STORE_DEFAULTS: DisplayState & SimulationState & GraphMeta = {
   isNodeLabelsVisible: false,
   isHighlightNeighbors: false,
   repulsion: 1.0,
-  gravity: 0.25,
   friction: 0.85,
   linkSpring: 1.0,
   decay: 5000,
@@ -76,7 +73,6 @@ export const useGraphStore = create<GraphStore>()((set) => ({
   setIsNodeLabelsVisible: (v): void => set({ isNodeLabelsVisible: v }),
   setIsHighlightNeighbors: (v): void => set({ isHighlightNeighbors: v }),
   setRepulsion: (v): void => set({ repulsion: v }),
-  setGravity: (v): void => set({ gravity: v }),
   setFriction: (v): void => set({ friction: v }),
   setLinkSpring: (v): void => set({ linkSpring: v }),
   setDecay: (v): void => set({ decay: v }),

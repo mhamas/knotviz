@@ -73,7 +73,6 @@ export function useCosmos(
   const isNodeLabelsVisible = useGraphStore((s) => s.isNodeLabelsVisible)
   const isHighlightNeighbors = useGraphStore((s) => s.isHighlightNeighbors)
   const repulsion = useGraphStore((s) => s.repulsion)
-  const gravity = useGraphStore((s) => s.gravity)
   const friction = useGraphStore((s) => s.friction)
   const linkSpring = useGraphStore((s) => s.linkSpring)
   const decay = useGraphStore((s) => s.decay)
@@ -189,7 +188,7 @@ export function useCosmos(
       // Simulation is enabled but we don't call start() — user must click Run.
       enableSimulation: true,
       simulationRepulsion: repulsion,
-      simulationGravity: gravity,
+      simulationGravity: 0.25,
       simulationCenter: 1,
       simulationFriction: friction,
       simulationLinkSpring: linkSpring,
@@ -199,7 +198,6 @@ export function useCosmos(
       attribution: '',
       onSimulationStart: () => setIsSimulationRunning(true),
       onSimulationTick: () => {
-        // Keep camera tracking the graph as it moves during simulation
         cosmosRef.current?.fitView(0)
         updateLabels()
       },
@@ -335,13 +333,13 @@ export function useCosmos(
   useEffect(() => {
     cosmosRef.current?.setConfig({
       simulationRepulsion: repulsion,
-      simulationGravity: gravity,
+      simulationGravity: 0.25,
       simulationCenter: 1,
       simulationFriction: friction,
       simulationLinkSpring: linkSpring,
       simulationDecay: decay,
     })
-  }, [repulsion, gravity, friction, linkSpring, decay])
+  }, [repulsion, friction, linkSpring, decay])
 
   // ── Sync display settings ──
   useEffect(() => {

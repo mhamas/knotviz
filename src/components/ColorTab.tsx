@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import type { CosmosGraphData, ColorGradientState, CustomPalette, PropertyMeta, PropertyType } from '@/types'
+import type { ColorGradientState, CustomPalette, PropertyMeta, PropertyType } from '@/types'
+import type { PropertyColumns } from '@/hooks/useFilterState'
 import {
   PALETTE_NAMES,
   interpolateColors,
@@ -19,8 +20,7 @@ import { CreatePaletteModal } from './CreatePaletteModal'
 interface Props {
   propertyMetas: PropertyMeta[]
   state: ColorGradientState
-  cosmosData: CosmosGraphData | null
-  matchingNodeIds: Set<string>
+  propertyColumns: PropertyColumns
   onChange: (s: ColorGradientState) => void
 }
 
@@ -57,8 +57,7 @@ function paletteName(state: ColorGradientState): string {
 export function ColorTab({
   propertyMetas,
   state,
-  cosmosData,
-  matchingNodeIds,
+  propertyColumns,
   onChange,
 }: Props): React.JSX.Element {
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -206,8 +205,7 @@ export function ColorTab({
           <ColorLegend
             state={state}
             selectedType={selectedType ?? null}
-            cosmosData={cosmosData}
-            matchingNodeIds={matchingNodeIds}
+            propertyColumns={propertyColumns}
             stops={currentStops}
           />
         </div>
@@ -236,37 +234,33 @@ function GradientSwatch({ stops }: { stops: string[] }): React.JSX.Element {
 interface LegendProps {
   state: ColorGradientState
   selectedType: PropertyType | null
-  cosmosData: CosmosGraphData | null
-  matchingNodeIds: Set<string>
+  propertyColumns: PropertyColumns
   stops: string[]
 }
 
 /** Live legend showing the color mapping for the selected property. */
-function ColorLegend({ state, selectedType, cosmosData, matchingNodeIds, stops }: LegendProps): React.JSX.Element {
+function ColorLegend({ state, selectedType, propertyColumns, stops }: LegendProps): React.JSX.Element {
   if (state.propertyKey === null) {
     return <p className="text-xs italic text-slate-400">Select a property to visualise node colors.</p>
   }
 
-  if (!cosmosData || !selectedType) {
+  if (!selectedType) {
     return <p className="text-xs italic text-slate-400">No data for selected property.</p>
   }
 
-  // Collect active node values (properties are on the original NodeInput objects)
-  const values: unknown[] = []
-  for (const id of matchingNodeIds) {
-    const idx = cosmosData.nodeIndexMap.get(id)
-    if (idx === undefined) continue
-    const value = cosmosData.nodes[idx].properties?.[state.propertyKey]
-    if (value !== undefined) {
-      values.push(value)
-    }
-  }
-
-  if (values.length === 0) {
+  const col = propertyColumns[state.propertyKey]
+  if (!col || col.length === 0) {
     return <p className="text-xs italic text-slate-400">No data for selected property.</p>
   }
 
   if (selectedType === 'number' || selectedType === 'date') {
+    // Collect values (sample for legend only)
+    const values: unknown[] = []
+    for (let i = 0; i < col.length; i++) {
+      if (col[i] !== undefined) values.push(col[i])
+      if (values.length >= 100_000) break // cap for legend perf
+    }
+    if (values.length === 0) return <p className="text-xs italic text-slate-400">No data for selected property.</p>
     return <ContinuousLegend values={values} type={selectedType} stops={stops} />
   }
 
@@ -274,9 +268,12 @@ function ColorLegend({ state, selectedType, cosmosData, matchingNodeIds, stops }
     return <DiscreteLegend labels={['false', 'true']} stops={[stops[0], stops[stops.length - 1]]} />
   }
 
-  // string
-  const distinct = Array.from(new Set(values as string[])).sort()
-  return <DiscreteLegend labels={distinct} stops={stops} />
+  // string: collect distinct values
+  const distinct = new Set<string>()
+  for (let i = 0; i < col.length; i++) {
+    if (typeof col[i] === 'string') distinct.add(col[i] as string)
+  }
+  return <DiscreteLegend labels={Array.from(distinct).sort()} stops={stops} />
 }
 
 /** Continuous gradient bar with min/max labels (for number/date). */

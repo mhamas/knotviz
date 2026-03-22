@@ -5,6 +5,7 @@ import { PropertyFilterPanel } from './filters/PropertyFilterPanel'
 interface Props {
   propertyMetas: PropertyMeta[]
   filterHandle: FilterStateHandle
+  matchingCount: number
   totalNodeCount: number
 }
 
@@ -15,7 +16,7 @@ interface Props {
  * @param props - Property metadata and filter state handle.
  * @returns Filters tab element.
  */
-export function FiltersTab({ propertyMetas, filterHandle, totalNodeCount }: Props): React.JSX.Element {
+export function FiltersTab({ propertyMetas, filterHandle, matchingCount, totalNodeCount }: Props): React.JSX.Element {
   const {
     filters,
     resetKey,
@@ -26,11 +27,10 @@ export function FiltersTab({ propertyMetas, filterHandle, totalNodeCount }: Prop
     setFilterEnabled,
     setAllFiltersEnabled,
     clearAllFilters,
-    matchingNodeIds,
     hasActiveFilters,
   } = filterHandle
 
-  const matchCount = matchingNodeIds.size
+  const matchCount = matchingCount
   const sortedMetas = [...propertyMetas].sort((a, b) => a.key.localeCompare(b.key))
 
   if (propertyMetas.length === 0) {

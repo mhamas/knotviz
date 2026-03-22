@@ -1,41 +1,24 @@
 /**
- * Web Worker: computes filter matching + node colors + sizes + link colors.
- * Runs the entire heavy pipeline off the main thread.
+ * Web Worker: computes filter matching + gradient colors + node sizes + link colors.
+ * Runs the entire heavy appearance pipeline off the main thread.
  */
 
-/** Serializable filter state (Sets converted to arrays for transfer). */
 interface SerializableFilter {
   type: 'number' | 'boolean' | 'string' | 'date'
   isEnabled: boolean
-  // number
   min?: number
   max?: number
-  // boolean
   selected?: boolean
-  // string
   selectedValues?: string[]
-  // date
   after?: string
   before?: string
-  // runtime: Set built from selectedValues array for O(1) lookup
   _selectedSet?: Set<string>
 }
 
-interface WorkerInput {
-  /** Number of nodes */
-  nodeCount: number
-  /** Per-property columnar values: { key: values[nodeIndex] }. Values are number|string|boolean|undefined. */
-  propertyColumns: Record<string, (number | string | boolean | undefined)[]>
-  /** Filter state per property key */
-  filters: Record<string, SerializableFilter>
-  /** Sparse node colors: [nodeIndex, r, g, b, a, nodeIndex, r, g, b, a, ...] */
-  gradientEntries: Float32Array
-  /** Default RGBA for visible nodes with no gradient */
-  defaultRgba: [number, number, number, number]
-  /** Edge default RGBA */
-  edgeRgba: [number, number, number, number]
-  /** Link indices (source/target pairs by node index) */
-  linkIndices: Float32Array
+interface GradientConfig {
+  propertyKey: string | null
+  paletteStops: string[]
+  propType: string | null
 }
 
 // Persistent state: columns sent once on graph load, reused across messages
@@ -52,30 +35,22 @@ interface UpdateMessage {
   type: 'update'
   nodeCount: number
   filters: Record<string, SerializableFilter>
-  gradientEntries: Float32Array
+  gradientConfig: GradientConfig
   defaultRgba: [number, number, number, number]
   edgeRgba: [number, number, number, number]
 }
 
-self.onmessage = (e: MessageEvent<InitMessage | UpdateMessage | WorkerInput>): void => {
+self.onmessage = (e: MessageEvent<InitMessage | UpdateMessage>): void => {
   const input = e.data
 
-  // Handle init message: store columns + link indices for reuse
-  if ('type' in input && input.type === 'init') {
+  if (input.type === 'init') {
     storedColumns = input.propertyColumns
     storedLinkIndices = input.linkIndices
     return
   }
 
-  // Handle update message (or legacy full message)
-  const isUpdate = 'type' in input && input.type === 'update'
-  const nodeCount = isUpdate ? (input as UpdateMessage).nodeCount : (input as WorkerInput).nodeCount
-  const propertyColumns = isUpdate ? storedColumns : (input as WorkerInput).propertyColumns
-  const filters = isUpdate ? (input as UpdateMessage).filters : (input as WorkerInput).filters
-  const gradientEntries = isUpdate ? (input as UpdateMessage).gradientEntries : (input as WorkerInput).gradientEntries
-  const defaultRgba = isUpdate ? (input as UpdateMessage).defaultRgba : (input as WorkerInput).defaultRgba
-  const edgeRgba = isUpdate ? (input as UpdateMessage).edgeRgba : (input as WorkerInput).edgeRgba
-  const linkIndices = isUpdate ? storedLinkIndices : (input as WorkerInput).linkIndices
+  const { nodeCount, filters, gradientConfig, defaultRgba, edgeRgba } = input
+  const linkIndices = storedLinkIndices
 
   // Step 1: Compute matching bitmask
   const enabledFilters: [string, SerializableFilter][] = []
@@ -96,8 +71,7 @@ self.onmessage = (e: MessageEvent<InitMessage | UpdateMessage | WorkerInput>): v
   if (!hasActiveFilters) {
     visible.fill(1)
   } else {
-    // Pre-resolve column arrays for enabled filters
-    const columns = enabledFilters.map(([key]) => propertyColumns[key])
+    const columns = enabledFilters.map(([key]) => storedColumns[key])
     for (let i = 0; i < nodeCount; i++) {
       let isPass = true
       for (let f = 0; f < enabledFilters.length; f++) {
@@ -116,7 +90,6 @@ self.onmessage = (e: MessageEvent<InitMessage | UpdateMessage | WorkerInput>): v
   const pointColors = new Float32Array(nodeCount * 4)
   const pointSizes = new Float32Array(nodeCount)
 
-  // Apply default colors for all visible nodes
   const [dr, dg, db, da] = defaultRgba
   for (let i = 0; i < nodeCount; i++) {
     if (!visible[i]) continue
@@ -128,18 +101,16 @@ self.onmessage = (e: MessageEvent<InitMessage | UpdateMessage | WorkerInput>): v
     pointSizes[i] = 4
   }
 
-  // Override with gradient colors (sparse entries: [index, r, g, b, a, ...])
-  for (let i = 0; i < gradientEntries.length; i += 5) {
-    const idx = gradientEntries[i]
-    if (!visible[idx]) continue
-    const off = idx * 4
-    pointColors[off] = gradientEntries[i + 1]
-    pointColors[off + 1] = gradientEntries[i + 2]
-    pointColors[off + 2] = gradientEntries[i + 3]
-    pointColors[off + 3] = gradientEntries[i + 4]
+  // Step 3: Gradient coloring (computed here, no hex intermediary)
+  if (gradientConfig.propertyKey && gradientConfig.paletteStops.length > 0 && gradientConfig.propType) {
+    const col = storedColumns[gradientConfig.propertyKey]
+    if (col) {
+      const stops = gradientConfig.paletteStops.map(hexToRgbNorm)
+      applyGradient(pointColors, visible, col, gradientConfig.propType, stops, nodeCount)
+    }
   }
 
-  // Step 3: Link colors
+  // Step 4: Link colors
   let linkColors: Float32Array
   if (hasActiveFilters) {
     const linkCount = linkIndices.length / 2
@@ -158,16 +129,16 @@ self.onmessage = (e: MessageEvent<InitMessage | UpdateMessage | WorkerInput>): v
     linkColors = new Float32Array(0)
   }
 
-  // Step 4: Count matching nodes
+  // Step 5: Count matching nodes
   let matchingCount = 0
   for (let i = 0; i < nodeCount; i++) {
     if (visible[i]) matchingCount++
   }
 
-  const msg = { pointColors, pointSizes, linkColors, visible, matchingCount, hasActiveFilters }
+  const msg = { pointColors, pointSizes, linkColors, matchingCount }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(self.postMessage as any)(msg, [
-    pointColors.buffer, pointSizes.buffer, linkColors.buffer, visible.buffer,
+    pointColors.buffer, pointSizes.buffer, linkColors.buffer,
   ])
 }
 
@@ -183,5 +154,139 @@ function passesFilter(value: unknown, filter: SerializableFilter): boolean {
     }
     case 'date':
       return typeof value === 'string' && value >= filter.after! && value <= filter.before!
+  }
+}
+
+/** Parse hex to normalized [r, g, b] (0-1). */
+function hexToRgbNorm(hex: string): [number, number, number] {
+  const h = hex.replace('#', '')
+  return [
+    parseInt(h.substring(0, 2), 16) / 255,
+    parseInt(h.substring(2, 4), 16) / 255,
+    parseInt(h.substring(4, 6), 16) / 255,
+  ]
+}
+
+/** Interpolate between palette stops at parameter t ∈ [0,1]. */
+function interpolateStops(stops: [number, number, number][], t: number): [number, number, number] {
+  if (t <= 0) return stops[0]
+  if (t >= 1) return stops[stops.length - 1]
+  const segment = t * (stops.length - 1)
+  const i = Math.floor(segment)
+  const f = segment - i
+  const a = stops[i]
+  const b = stops[Math.min(i + 1, stops.length - 1)]
+  return [
+    a[0] + (b[0] - a[0]) * f,
+    a[1] + (b[1] - a[1]) * f,
+    a[2] + (b[2] - a[2]) * f,
+  ]
+}
+
+/** Apply gradient colors directly into pointColors for visible nodes. */
+function applyGradient(
+  pointColors: Float32Array,
+  visible: Uint8Array,
+  col: (number | string | boolean | undefined)[],
+  propType: string,
+  stops: [number, number, number][],
+  nodeCount: number,
+): void {
+  if (propType === 'number') {
+    // Find min/max
+    let min = Infinity, max = -Infinity
+    for (let i = 0; i < nodeCount; i++) {
+      if (!visible[i]) continue
+      const v = col[i]
+      if (typeof v !== 'number') continue
+      if (v < min) min = v
+      if (v > max) max = v
+    }
+    if (!isFinite(min)) return
+    const range = max - min
+    for (let i = 0; i < nodeCount; i++) {
+      if (!visible[i]) continue
+      const v = col[i]
+      if (typeof v !== 'number') continue
+      const t = range === 0 ? 0.5 : (v - min) / range
+      const [r, g, b] = interpolateStops(stops, t)
+      const off = i * 4
+      pointColors[off] = r
+      pointColors[off + 1] = g
+      pointColors[off + 2] = b
+      pointColors[off + 3] = 1
+    }
+  } else if (propType === 'date') {
+    // Parse dates to timestamps, find min/max
+    let min = Infinity, max = -Infinity
+    const timestamps = new Float64Array(nodeCount)
+    for (let i = 0; i < nodeCount; i++) {
+      if (!visible[i]) continue
+      const v = col[i]
+      if (typeof v !== 'string') continue
+      const ts = new Date(v).getTime()
+      if (isNaN(ts)) continue
+      timestamps[i] = ts
+      if (ts < min) min = ts
+      if (ts > max) max = ts
+    }
+    if (!isFinite(min)) return
+    const range = max - min
+    for (let i = 0; i < nodeCount; i++) {
+      if (!visible[i] || typeof col[i] !== 'string') continue
+      const t = range === 0 ? 0.5 : (timestamps[i] - min) / range
+      const [r, g, b] = interpolateStops(stops, t)
+      const off = i * 4
+      pointColors[off] = r
+      pointColors[off + 1] = g
+      pointColors[off + 2] = b
+      pointColors[off + 3] = 1
+    }
+  } else if (propType === 'boolean') {
+    const falseColor = stops[0]
+    const trueColor = stops[stops.length - 1]
+    for (let i = 0; i < nodeCount; i++) {
+      if (!visible[i]) continue
+      const v = col[i]
+      if (typeof v !== 'boolean') continue
+      const [r, g, b] = v ? trueColor : falseColor
+      const off = i * 4
+      pointColors[off] = r
+      pointColors[off + 1] = g
+      pointColors[off + 2] = b
+      pointColors[off + 3] = 1
+    }
+  } else if (propType === 'string') {
+    // Collect distinct values, map to colors round-robin
+    const distinctMap = new Map<string, number>()
+    const distinctValues: string[] = []
+    for (let i = 0; i < nodeCount; i++) {
+      if (!visible[i]) continue
+      const v = col[i]
+      if (typeof v !== 'string') continue
+      if (!distinctMap.has(v)) {
+        distinctMap.set(v, distinctValues.length)
+        distinctValues.push(v)
+      }
+    }
+    distinctValues.sort()
+    // Rebuild map after sort
+    distinctMap.clear()
+    for (let i = 0; i < distinctValues.length; i++) {
+      distinctMap.set(distinctValues[i], i)
+    }
+    for (let i = 0; i < nodeCount; i++) {
+      if (!visible[i]) continue
+      const v = col[i]
+      if (typeof v !== 'string') continue
+      const idx = distinctMap.get(v)!
+      const stopIdx = idx % stops.length
+      const [r, g, b] = stops[stopIdx]
+      const off = i * 4
+      pointColors[off] = r
+      pointColors[off + 1] = g
+      pointColors[off + 2] = b
+      pointColors[off + 3] = 1
+    }
   }
 }

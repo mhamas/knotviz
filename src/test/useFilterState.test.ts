@@ -2,28 +2,18 @@ import { describe, expect, it } from 'vitest'
 import type {
   BooleanFilterState,
   DateFilterState,
-  GraphData,
   NumberFilterState,
   PropertyMeta,
   StringFilterState,
 } from '../types'
-import {
-  buildNodeValueIndex,
-  computeMatchingNodeIds,
-  initializeFilters,
-  nodePassesFilter,
-} from '../hooks/useFilterState'
+import { initializeFilters } from '../hooks/useFilterState'
+import type { PropertyColumns } from '../hooks/useFilterState'
 
-const sampleGraph: GraphData = {
-  version: '1',
-  nodes: [
-    { id: '1', label: 'Alice', properties: { age: 34, active: true, status: 'active', joined: '2021-03-15' } },
-    { id: '2', label: 'Bob', properties: { age: 28, active: false, status: 'pending', joined: '2023-11-02' } },
-    { id: '3', label: 'Carol', properties: { age: 45, active: true, status: 'active', joined: '2019-07-20' } },
-    { id: '4', label: 'Dave', properties: { age: 31, active: false, status: 'inactive', joined: '2022-01-10' } },
-    { id: '5', label: 'Eve', properties: { age: 27, active: true, status: 'pending', joined: '2024-05-30' } },
-  ],
-  edges: [],
+const columns: PropertyColumns = {
+  age: [34, 28, 45, 31, 27],
+  active: [true, false, true, false, true],
+  status: ['active', 'pending', 'active', 'inactive', 'pending'],
+  joined: ['2021-03-15', '2023-11-02', '2019-07-20', '2022-01-10', '2024-05-30'],
 }
 
 const metas: PropertyMeta[] = [
@@ -33,299 +23,69 @@ const metas: PropertyMeta[] = [
   { key: 'joined', type: 'date' },
 ]
 
-describe('buildNodeValueIndex', () => {
-  it('builds index with all properties and nodes', () => {
-    const index = buildNodeValueIndex(sampleGraph)
-    expect(index.size).toBe(4)
-    expect(index.get('age')?.get('1')).toBe(34)
-    expect(index.get('active')?.get('2')).toBe(false)
-    expect(index.get('status')?.get('4')).toBe('inactive')
-    expect(index.get('joined')?.get('5')).toBe('2024-05-30')
-  })
-
-  it('handles nodes without properties', () => {
-    const graph: GraphData = {
-      version: '1',
-      nodes: [{ id: '1' }, { id: '2', properties: { x: 10 } }],
-      edges: [],
-    }
-    const index = buildNodeValueIndex(graph)
-    expect(index.size).toBe(1)
-    expect(index.get('x')?.size).toBe(1)
-  })
-})
-
 describe('initializeFilters', () => {
-  const index = buildNodeValueIndex(sampleGraph)
-
-  it('initializes number filter with correct domain', () => {
-    const filters = initializeFilters(metas, index)
-    const ageFilter = filters.get('age') as NumberFilterState
-    expect(ageFilter.type).toBe('number')
-    expect(ageFilter.isEnabled).toBe(false)
-    expect(ageFilter.domainMin).toBe(27)
-    expect(ageFilter.domainMax).toBe(45)
-    expect(ageFilter.min).toBe(27)
-    expect(ageFilter.max).toBe(45)
+  it('creates a filter for each property meta', () => {
+    const filters = initializeFilters(metas, columns)
+    expect(filters.size).toBe(4)
+    expect(filters.has('age')).toBe(true)
+    expect(filters.has('active')).toBe(true)
+    expect(filters.has('status')).toBe(true)
+    expect(filters.has('joined')).toBe(true)
   })
 
-  it('initializes boolean filter with true', () => {
-    const filters = initializeFilters(metas, index)
-    const boolFilter = filters.get('active') as BooleanFilterState
-    expect(boolFilter.type).toBe('boolean')
-    expect(boolFilter.selected).toBe(true)
-    expect(boolFilter.isEnabled).toBe(false)
+  it('number filter gets correct domain min/max', () => {
+    const filters = initializeFilters(metas, columns)
+    const age = filters.get('age') as NumberFilterState
+    expect(age.type).toBe('number')
+    expect(age.domainMin).toBe(27)
+    expect(age.domainMax).toBe(45)
+    expect(age.min).toBe(27)
+    expect(age.max).toBe(45)
+    expect(age.isEnabled).toBe(false)
   })
 
-  it('initializes string filter with empty selectedValues', () => {
-    const filters = initializeFilters(metas, index)
-    const strFilter = filters.get('status') as StringFilterState
-    expect(strFilter.type).toBe('string')
-    expect(strFilter.allValues).toEqual(['active', 'inactive', 'pending'])
-    expect(strFilter.selectedValues).toEqual(new Set())
+  it('boolean filter initializes with selected=true', () => {
+    const filters = initializeFilters(metas, columns)
+    const active = filters.get('active') as BooleanFilterState
+    expect(active.type).toBe('boolean')
+    expect(active.selected).toBe(true)
+    expect(active.isEnabled).toBe(false)
   })
 
-  it('initializes date filter with domain bounds', () => {
-    const filters = initializeFilters(metas, index)
-    const dateFilter = filters.get('joined') as DateFilterState
-    expect(dateFilter.type).toBe('date')
-    expect(dateFilter.domainMin).toBe('2019-07-20')
-    expect(dateFilter.domainMax).toBe('2024-05-30')
-    expect(dateFilter.after).toBe('2019-07-20')
-    expect(dateFilter.before).toBe('2024-05-30')
+  it('string filter gets sorted distinct values', () => {
+    const filters = initializeFilters(metas, columns)
+    const status = filters.get('status') as StringFilterState
+    expect(status.type).toBe('string')
+    expect(status.allValues).toEqual(['active', 'inactive', 'pending'])
+    expect(status.selectedValues.size).toBe(0)
+    expect(status.isEnabled).toBe(false)
   })
 
-  it('number filter with identical values has domainMin === domainMax', () => {
-    const graph: GraphData = {
-      version: '1',
-      nodes: [
-        { id: '1', properties: { score: 5 } },
-        { id: '2', properties: { score: 5 } },
-      ],
-      edges: [],
-    }
-    const idx = buildNodeValueIndex(graph)
-    const filters = initializeFilters([{ key: 'score', type: 'number' }], idx)
-    const f = filters.get('score') as NumberFilterState
-    expect(f.domainMin).toBe(5)
-    expect(f.domainMax).toBe(5)
-    expect(f.min).toBe(5)
-    expect(f.max).toBe(5)
+  it('date filter gets correct domain min/max', () => {
+    const filters = initializeFilters(metas, columns)
+    const joined = filters.get('joined') as DateFilterState
+    expect(joined.type).toBe('date')
+    expect(joined.domainMin).toBe('2019-07-20')
+    expect(joined.domainMax).toBe('2024-05-30')
+    expect(joined.after).toBe('2019-07-20')
+    expect(joined.before).toBe('2024-05-30')
+    expect(joined.isEnabled).toBe(false)
   })
 
-  it('string filter: always starts with empty selectedValues regardless of cardinality', () => {
-    // Low cardinality (<=50)
-    const nodes50 = Array.from({ length: 50 }, (_, i) => ({
-      id: String(i),
-      properties: { tag: `tag_${String(i).padStart(2, '0')}` },
-    }))
-    const graph50: GraphData = { version: '1', nodes: nodes50, edges: [] }
-    const idx50 = buildNodeValueIndex(graph50)
-    const filters50 = initializeFilters([{ key: 'tag', type: 'string' }], idx50)
-    const strFilter50 = filters50.get('tag') as StringFilterState
-    expect(strFilter50.selectedValues.size).toBe(0)
-    expect(strFilter50.allValues.length).toBe(50)
-
-    // High cardinality (>50)
-    const nodes51 = Array.from({ length: 51 }, (_, i) => ({
-      id: String(i),
-      properties: { tag: `tag_${i}` },
-    }))
-    const graph51: GraphData = { version: '1', nodes: nodes51, edges: [] }
-    const idx51 = buildNodeValueIndex(graph51)
-    const filters51 = initializeFilters([{ key: 'tag', type: 'string' }], idx51)
-    const strFilter51 = filters51.get('tag') as StringFilterState
-    expect(strFilter51.selectedValues.size).toBe(0)
-    expect(strFilter51.allValues.length).toBe(51)
-  })
-})
-
-describe('nodePassesFilter', () => {
-  const index = buildNodeValueIndex(sampleGraph)
-
-  it('disabled filter always passes', () => {
-    const filter: NumberFilterState = {
-      type: 'number', isEnabled: false, min: 100, max: 200, domainMin: 0, domainMax: 200,
-    }
-    expect(nodePassesFilter('1', filter, index, 'age')).toBe(true)
+  it('handles empty columns', () => {
+    const filters = initializeFilters(metas, {})
+    const age = filters.get('age') as NumberFilterState
+    expect(age.domainMin).toBe(0)
+    expect(age.domainMax).toBe(0)
   })
 
-  it('number filter: in range passes', () => {
-    const filter: NumberFilterState = {
-      type: 'number', isEnabled: true, min: 30, max: 50, domainMin: 27, domainMax: 45,
-    }
-    expect(nodePassesFilter('1', filter, index, 'age')).toBe(true) // 34
-    expect(nodePassesFilter('2', filter, index, 'age')).toBe(false) // 28
-    expect(nodePassesFilter('3', filter, index, 'age')).toBe(true) // 45
-    expect(nodePassesFilter('4', filter, index, 'age')).toBe(true) // 31
-    expect(nodePassesFilter('5', filter, index, 'age')).toBe(false) // 27
-  })
-
-  it('number filter: boundary values included', () => {
-    const filter: NumberFilterState = {
-      type: 'number', isEnabled: true, min: 28, max: 28, domainMin: 27, domainMax: 45,
-    }
-    expect(nodePassesFilter('2', filter, index, 'age')).toBe(true) // exactly 28
-    expect(nodePassesFilter('1', filter, index, 'age')).toBe(false) // 34
-  })
-
-  it('boolean filter: true', () => {
-    const filter: BooleanFilterState = { type: 'boolean', isEnabled: true, selected: true }
-    expect(nodePassesFilter('1', filter, index, 'active')).toBe(true) // Alice: true
-    expect(nodePassesFilter('2', filter, index, 'active')).toBe(false) // Bob: false
-  })
-
-  it('boolean filter: false', () => {
-    const filter: BooleanFilterState = { type: 'boolean', isEnabled: true, selected: false }
-    expect(nodePassesFilter('1', filter, index, 'active')).toBe(false)
-    expect(nodePassesFilter('2', filter, index, 'active')).toBe(true)
-  })
-
-  it('string filter: selected values', () => {
-    const filter: StringFilterState = {
-      type: 'string', isEnabled: true,
-      selectedValues: new Set(['active']),
-      allValues: ['active', 'inactive', 'pending'],
-    }
-    expect(nodePassesFilter('1', filter, index, 'status')).toBe(true) // active
-    expect(nodePassesFilter('2', filter, index, 'status')).toBe(false) // pending
-    expect(nodePassesFilter('4', filter, index, 'status')).toBe(false) // inactive
-  })
-
-  it('string filter: empty selectedValues → all pass', () => {
-    const filter: StringFilterState = {
-      type: 'string', isEnabled: true,
-      selectedValues: new Set(),
-      allValues: ['active', 'inactive', 'pending'],
-    }
-    expect(nodePassesFilter('1', filter, index, 'status')).toBe(true)
-    expect(nodePassesFilter('4', filter, index, 'status')).toBe(true)
-  })
-
-  it('date filter: after constraint (before at domain max)', () => {
-    const filter: DateFilterState = {
-      type: 'date', isEnabled: true, after: '2022-01-01', before: '2024-05-30',
-      domainMin: '2019-07-20', domainMax: '2024-05-30',
-    }
-    expect(nodePassesFilter('2', filter, index, 'joined')).toBe(true) // 2023-11-02
-    expect(nodePassesFilter('3', filter, index, 'joined')).toBe(false) // 2019-07-20
-    expect(nodePassesFilter('4', filter, index, 'joined')).toBe(true) // 2022-01-10
-  })
-
-  it('date filter: before constraint (after at domain min)', () => {
-    const filter: DateFilterState = {
-      type: 'date', isEnabled: true, after: '2019-07-20', before: '2022-01-01',
-      domainMin: '2019-07-20', domainMax: '2024-05-30',
-    }
-    expect(nodePassesFilter('1', filter, index, 'joined')).toBe(true) // 2021-03-15
-    expect(nodePassesFilter('2', filter, index, 'joined')).toBe(false) // 2023-11-02
-  })
-
-  it('date filter: range constraints', () => {
-    const filter: DateFilterState = {
-      type: 'date', isEnabled: true, after: '2021-01-01', before: '2023-01-01',
-      domainMin: '2019-07-20', domainMax: '2024-05-30',
-    }
-    expect(nodePassesFilter('1', filter, index, 'joined')).toBe(true) // 2021-03-15
-    expect(nodePassesFilter('2', filter, index, 'joined')).toBe(false) // 2023-11-02
-    expect(nodePassesFilter('3', filter, index, 'joined')).toBe(false) // 2019-07-20
-    expect(nodePassesFilter('4', filter, index, 'joined')).toBe(true) // 2022-01-10
-  })
-
-  it('number filter: node without property fails', () => {
-    const graph: GraphData = {
-      version: '1',
-      nodes: [{ id: '1' }],
-      edges: [],
-    }
-    const idx = buildNodeValueIndex(graph)
-    const filter: NumberFilterState = {
-      type: 'number', isEnabled: true, min: 0, max: 100, domainMin: 0, domainMax: 100,
-    }
-    expect(nodePassesFilter('1', filter, idx, 'age')).toBe(false)
-  })
-
-  it('boolean filter: node without property fails', () => {
-    const graph: GraphData = { version: '1', nodes: [{ id: '1' }], edges: [] }
-    const idx = buildNodeValueIndex(graph)
-    const filter: BooleanFilterState = { type: 'boolean', isEnabled: true, selected: true }
-    expect(nodePassesFilter('1', filter, idx, 'active')).toBe(false)
-  })
-
-  it('string filter: node without property fails', () => {
-    const graph: GraphData = { version: '1', nodes: [{ id: '1' }], edges: [] }
-    const idx = buildNodeValueIndex(graph)
-    const filter: StringFilterState = {
-      type: 'string', isEnabled: true, selectedValues: new Set(['x']), allValues: ['x'],
-    }
-    expect(nodePassesFilter('1', filter, idx, 'status')).toBe(false)
-  })
-
-  it('date filter: node without property fails', () => {
-    const graph: GraphData = { version: '1', nodes: [{ id: '1' }], edges: [] }
-    const idx = buildNodeValueIndex(graph)
-    const filter: DateFilterState = {
-      type: 'date', isEnabled: true, after: '2020-01-01', before: '2024-05-30',
-      domainMin: '2019-07-20', domainMax: '2024-05-30',
-    }
-    expect(nodePassesFilter('1', filter, idx, 'joined')).toBe(false)
-  })
-})
-
-describe('computeMatchingNodeIds', () => {
-  const index = buildNodeValueIndex(sampleGraph)
-
-  it('all disabled filters → all nodes match', () => {
-    const filters = initializeFilters(metas, index)
-    const matching = computeMatchingNodeIds(sampleGraph, filters, index)
-    expect(matching.size).toBe(5)
-  })
-
-  it('single number filter narrows results', () => {
-    const filters = initializeFilters(metas, index)
-    filters.set('age', {
-      type: 'number', isEnabled: true, min: 30, max: 50, domainMin: 27, domainMax: 45,
-    })
-    const matching = computeMatchingNodeIds(sampleGraph, filters, index)
-    expect(matching).toEqual(new Set(['1', '3', '4'])) // Alice 34, Carol 45, Dave 31
-  })
-
-  it('AND logic: number + boolean', () => {
-    const filters = initializeFilters(metas, index)
-    filters.set('age', {
-      type: 'number', isEnabled: true, min: 30, max: 50, domainMin: 27, domainMax: 45,
-    })
-    filters.set('active', {
-      type: 'boolean', isEnabled: true, selected: true,
-    })
-    const matching = computeMatchingNodeIds(sampleGraph, filters, index)
-    // Alice (34, true) and Carol (45, true) — Dave (31, false) excluded
-    expect(matching).toEqual(new Set(['1', '3']))
-  })
-
-  it('AND logic: number + boolean + date', () => {
-    const filters = initializeFilters(metas, index)
-    filters.set('age', {
-      type: 'number', isEnabled: true, min: 25, max: 35, domainMin: 27, domainMax: 45,
-    })
-    filters.set('active', { type: 'boolean', isEnabled: true, selected: true })
-    filters.set('joined', {
-      type: 'date', isEnabled: true, after: '2020-01-01', before: '2024-05-30',
-      domainMin: '2019-07-20', domainMax: '2024-05-30',
-    })
-    const matching = computeMatchingNodeIds(sampleGraph, filters, index)
-    // Alice (34, true, 2021) and Eve (27, true, 2024) pass age+active
-    // But Alice joined 2021 > 2020 ✓, Eve joined 2024 > 2020 ✓
-    // Carol (45) excluded by age, Bob (false) excluded by active, Dave (false) excluded by active
-    expect(matching).toEqual(new Set(['1', '5']))
-  })
-
-  it('all filters enabled with restrictive values → may yield zero matches', () => {
-    const filters = initializeFilters(metas, index)
-    filters.set('age', {
-      type: 'number', isEnabled: true, min: 100, max: 200, domainMin: 27, domainMax: 45,
-    })
-    const matching = computeMatchingNodeIds(sampleGraph, filters, index)
-    expect(matching.size).toBe(0)
+  it('handles single-value number column', () => {
+    const filters = initializeFilters(
+      [{ key: 'x', type: 'number' }],
+      { x: [42] },
+    )
+    const x = filters.get('x') as NumberFilterState
+    expect(x.domainMin).toBe(42)
+    expect(x.domainMax).toBe(42)
   })
 })

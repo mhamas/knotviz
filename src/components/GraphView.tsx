@@ -1,11 +1,10 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { CosmosGraphData, ColorGradientState, GraphData, PropertyMeta, PropertyType } from '../types'
+import type { PropertyColumns } from '../hooks/useFilterState'
 import { useCosmos } from '../hooks/useCosmos'
 import { useFileDrop } from '../hooks/useFileDrop'
 import { useSpacebarToggle } from '../hooks/useSpacebarToggle'
 import { useFilterState } from '../hooks/useFilterState'
-import { useNodeColors } from '../hooks/useNodeColors'
-import { useColorGradient } from '../hooks/useColorGradient'
 import { detectPropertyTypes } from '../lib/detectPropertyTypes'
 import { FilenameLabel } from './FilenameLabel'
 import { CanvasControls } from './CanvasControls'
@@ -49,10 +48,32 @@ export function GraphView({
     return Array.from(typeMap.entries()).map(([key, type]) => ({ key, type }))
   }, [graphData.nodes])
 
-  // Filter system
-  const filterHandle = useFilterState(graphData, propertyMetas)
+  const propertyTypeMap = useMemo<Map<string, PropertyType>>(
+    () => new Map(propertyMetas.map((m) => [m.key, m.type])),
+    [propertyMetas],
+  )
 
-  // Color gradient
+  // Build columnar property arrays once per graph (shared by filters + worker)
+  const propertyColumns = useMemo<PropertyColumns>(() => {
+    const columns: PropertyColumns = {}
+    const n = graphData.nodes.length
+    for (let i = 0; i < n; i++) {
+      const props = graphData.nodes[i].properties
+      if (!props) continue
+      for (const k of Object.keys(props)) {
+        if (!(k in columns)) {
+          columns[k] = new Array(n).fill(undefined)
+        }
+        columns[k][i] = props[k] as number | string | boolean | undefined
+      }
+    }
+    return columns
+  }, [graphData.nodes])
+
+  // Filter system (UI state only — matching computed in worker)
+  const filterHandle = useFilterState(propertyMetas, propertyColumns)
+
+  // Color gradient state
   const [gradientState, setGradientState] = useState<ColorGradientState>({
     propertyKey: null,
     palette: 'Viridis',
@@ -61,22 +82,7 @@ export function GraphView({
     customPalettes: [],
   })
 
-  const propertyTypeMap = useMemo<Map<string, PropertyType>>(
-    () => new Map(propertyMetas.map((m) => [m.key, m.type])),
-    [propertyMetas],
-  )
-
-  const gradientColors = useColorGradient(
-    cosmosData,
-    filterHandle.matchingNodeIds,
-    gradientState,
-    propertyTypeMap,
-  )
-
-  const nodeIds = useMemo(() => graphData.nodes.map((n) => n.id), [graphData.nodes])
-  const nodeColors = useNodeColors(nodeIds, filterHandle.matchingNodeIds, filterHandle.hasActiveFilters, gradientColors)
-
-  // Cosmos rendering
+  // Cosmos rendering (worker handles filter matching + gradient + appearance)
   const {
     containerRef,
     labelsRef,
@@ -91,17 +97,17 @@ export function GraphView({
     handleRotateCCW,
     rotationCenter,
     isSimulationRunning,
+    matchingCount,
     startSimulation,
     stopSimulation,
     randomizePositions,
     cosmosRef,
   } = useCosmos(
     cosmosData,
-    nodeColors,
-    filterHandle.matchingNodeIds,
-    filterHandle.hasActiveFilters,
+    propertyColumns,
     filterHandle.filters,
-    gradientColors,
+    gradientState,
+    propertyTypeMap,
   )
 
   const { isDragOver, isConfirmOpen, handleConfirm, handleCancel } = useFileDrop(onLoadNewFile)
@@ -121,7 +127,7 @@ export function GraphView({
       })),
       edges: graphData.edges,
     }
-    const blob = new Blob([JSON.stringify(exported, null, 2)], { type: 'application/json' })
+    const blob = new Blob([JSON.stringify(exported)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -209,7 +215,9 @@ export function GraphView({
         gradientState={gradientState}
         onGradientChange={setGradientState}
         cosmosData={cosmosData}
-        matchingNodeIds={filterHandle.matchingNodeIds}
+        matchingCount={matchingCount}
+        nodeCount={graphData.nodes.length}
+        propertyColumns={propertyColumns}
       />
 
       <AlertDialog open={isConfirmOpen} onOpenChange={(isOpen): void => { if (!isOpen) handleCancel() }}>

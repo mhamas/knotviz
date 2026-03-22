@@ -2,7 +2,7 @@ import type { CosmosGraphData, NullDefaultResult, PositionMode } from '../types'
 
 /**
  * Converts validated, normalised GraphData into a CosmosGraphData structure
- * optimised for @cosmos.gl/graph (Float32Arrays, index maps, adjacency).
+ * optimised for @cosmos.gl/graph (Float32Arrays, index maps).
  *
  * @param nullDefaultResult - The full result from applyNullDefaults.
  * @returns CosmosGraphData ready for the Cosmos renderer.
@@ -10,7 +10,7 @@ import type { CosmosGraphData, NullDefaultResult, PositionMode } from '../types'
  * const cosmosData = buildGraph(nullDefaultResult)
  */
 export function buildGraph(nullDefaultResult: NullDefaultResult): CosmosGraphData {
-  const { data, defaultedByNode } = nullDefaultResult
+  const { data } = nullDefaultResult
   const nodeCount = data.nodes.length
   const edgeCount = data.edges.length
 
@@ -46,14 +46,8 @@ export function buildGraph(nullDefaultResult: NullDefaultResult): CosmosGraphDat
     }
   }
 
-  // Build link indices and adjacency in a single pass.
-  // Pre-allocate linkIndices at max size, then trim if edges were skipped.
+  // Build link indices — pre-allocate at max size, trim if edges were skipped
   const linkIndices = new Float32Array(edgeCount * 2)
-  const adjacency = new Map<string, Set<string>>()
-  const nodeEdgeIndices = new Map<string, Set<number>>()
-
-  // Lazily initialise adjacency sets — only create when first edge touches a node.
-  // This avoids creating 1M empty Sets upfront.
   let validEdgeCount = 0
   let skippedEdges = 0
   for (let i = 0; i < edgeCount; i++) {
@@ -64,28 +58,9 @@ export function buildGraph(nullDefaultResult: NullDefaultResult): CosmosGraphDat
       skippedEdges++
       continue
     }
-
     const offset = validEdgeCount * 2
     linkIndices[offset] = srcIdx
     linkIndices[offset + 1] = tgtIdx
-
-    // Adjacency (lazy init)
-    let srcAdj = adjacency.get(edge.source)
-    if (!srcAdj) { srcAdj = new Set(); adjacency.set(edge.source, srcAdj) }
-    srcAdj.add(edge.target)
-
-    let tgtAdj = adjacency.get(edge.target)
-    if (!tgtAdj) { tgtAdj = new Set(); adjacency.set(edge.target, tgtAdj) }
-    tgtAdj.add(edge.source)
-
-    let srcEdges = nodeEdgeIndices.get(edge.source)
-    if (!srcEdges) { srcEdges = new Set(); nodeEdgeIndices.set(edge.source, srcEdges) }
-    srcEdges.add(validEdgeCount)
-
-    let tgtEdges = nodeEdgeIndices.get(edge.target)
-    if (!tgtEdges) { tgtEdges = new Set(); nodeEdgeIndices.set(edge.target, tgtEdges) }
-    tgtEdges.add(validEdgeCount)
-
     validEdgeCount++
   }
 
@@ -93,7 +68,6 @@ export function buildGraph(nullDefaultResult: NullDefaultResult): CosmosGraphDat
     console.warn(`Skipped ${skippedEdges} edges referencing unknown node ids`)
   }
 
-  // Trim if edges were skipped
   const finalLinkIndices = skippedEdges > 0
     ? linkIndices.subarray(0, validEdgeCount * 2)
     : linkIndices
@@ -104,9 +78,6 @@ export function buildGraph(nullDefaultResult: NullDefaultResult): CosmosGraphDat
     nodeIndexMap,
     initialPositions,
     linkIndices: finalLinkIndices,
-    adjacency,
-    nodeEdgeIndices,
     positionMode,
-    defaultedByNode,
   }
 }

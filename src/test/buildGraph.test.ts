@@ -2,12 +2,8 @@ import { describe, it, expect, vi } from 'vitest'
 import { buildGraph } from '../lib/buildGraph'
 import type { NullDefaultResult, GraphData } from '../types'
 
-function makeResult(data: GraphData, defaultedByNode?: Map<string, string[]>): NullDefaultResult {
-  return {
-    data,
-    replacementCount: defaultedByNode ? Array.from(defaultedByNode.values()).flat().length : 0,
-    defaultedByNode: defaultedByNode ?? new Map(),
-  }
+function makeResult(data: GraphData): NullDefaultResult {
+  return { data, replacementCount: 0 }
 }
 
 describe('buildGraph', () => {
@@ -107,20 +103,6 @@ describe('buildGraph', () => {
     expect(cosmosData.nodes[0].properties?.name).toBe('Alice')
   })
 
-  it('stores defaultedByNode from input', () => {
-    const defaultedByNode = new Map([['1', ['age', 'name']]])
-    const result = makeResult(
-      {
-        version: '1',
-        nodes: [{ id: '1', properties: { age: 0, name: '' } }],
-        edges: [],
-      },
-      defaultedByNode
-    )
-    const cosmosData = buildGraph(result)
-    expect(cosmosData.defaultedByNode.get('1')).toEqual(['age', 'name'])
-  })
-
   it('builds nodeIndexMap correctly', () => {
     const result = makeResult({
       version: '1',
@@ -131,21 +113,6 @@ describe('buildGraph', () => {
     expect(cosmosData.nodeIndexMap.get('a')).toBe(0)
     expect(cosmosData.nodeIndexMap.get('b')).toBe(1)
     expect(cosmosData.nodeIndexMap.get('c')).toBe(2)
-  })
-
-  it('builds adjacency index correctly', () => {
-    const result = makeResult({
-      version: '1',
-      nodes: [{ id: '1' }, { id: '2' }, { id: '3' }],
-      edges: [
-        { source: '1', target: '2' },
-        { source: '2', target: '3' },
-      ],
-    })
-    const cosmosData = buildGraph(result)
-    expect(cosmosData.adjacency.get('1')).toEqual(new Set(['2']))
-    expect(cosmosData.adjacency.get('2')).toEqual(new Set(['1', '3']))
-    expect(cosmosData.adjacency.get('3')).toEqual(new Set(['2']))
   })
 
   it('preserves edge weight on original edge objects', () => {

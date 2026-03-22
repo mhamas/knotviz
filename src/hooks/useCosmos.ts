@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Graph as CosmosGraph } from '@cosmos.gl/graph'
 import type { GraphConfigInterface } from '@cosmos.gl/graph'
-import type { CosmosGraphData, FilterMap, TooltipState } from '../types'
+import type { CosmosGraphData, ColorGradientState, FilterMap, PropertyType, TooltipState } from '../types'
+import type { PropertyColumns } from './useFilterState'
+import { getPaletteColors, isBuiltinPalette } from '@/lib/colorScales'
 import { useGraphStore } from '@/stores/useGraphStore'
 import { COLOR_DEFAULT, COLOR_EDGE_DEFAULT } from '@/lib/colors'
 import AppearanceWorker from '@/workers/appearanceWorker?worker'
@@ -48,6 +50,7 @@ export interface UseCosmosReturn {
   handleRotateCCW: () => void
   rotationCenter: { x: number; y: number } | null
   isSimulationRunning: boolean
+  matchingCount: number
   startSimulation: () => void
   stopSimulation: () => void
   pauseSimulation: () => void
@@ -65,11 +68,10 @@ export interface UseCosmosReturn {
  */
 export function useCosmos(
   data: CosmosGraphData | null,
-  nodeColors: Map<string, string>,
-  matchingNodeIds: Set<string>,
-  hasActiveFilters: boolean,
+  propertyColumns: PropertyColumns,
   filters: FilterMap,
-  gradientColors: Map<string, string> | null,
+  gradientState: ColorGradientState,
+  propertyTypeMap: Map<string, PropertyType>,
 ): UseCosmosReturn {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const labelsRef = useRef<HTMLDivElement | null>(null)
@@ -78,6 +80,7 @@ export function useCosmos(
   const [hoverLabel, setHoverLabel] = useState<HoverLabel | null>(null)
   const hoverRef = useRef<HTMLDivElement | null>(null)
   const [isSimulationRunning, setIsSimulationRunning] = useState(false)
+  const [matchingCount, setMatchingCount] = useState(0)
 
   // Store state
   const nodeSize = useGraphStore((s) => s.nodeSize)
@@ -92,9 +95,6 @@ export function useCosmos(
 
   // Refs for callback closures
   const dataRef = useRef(data)
-  const nodeColorsRef = useRef(nodeColors)
-  const matchingNodeIdsRef = useRef(matchingNodeIds)
-  const hasActiveFiltersRef = useRef(hasActiveFilters)
   const isHighlightNeighborsRef = useRef(isHighlightNeighbors)
   const isNodeLabelsVisibleRef = useRef(isNodeLabelsVisible)
   const hoveredIndexRef = useRef<number | undefined>(undefined)
@@ -102,9 +102,6 @@ export function useCosmos(
   const isSimRunningRef = useRef(false)
 
   useEffect(() => { dataRef.current = data }, [data])
-  useEffect(() => { nodeColorsRef.current = nodeColors }, [nodeColors])
-  useEffect(() => { matchingNodeIdsRef.current = matchingNodeIds }, [matchingNodeIds])
-  useEffect(() => { hasActiveFiltersRef.current = hasActiveFilters }, [hasActiveFilters])
   useEffect(() => { isHighlightNeighborsRef.current = isHighlightNeighbors }, [isHighlightNeighbors])
   useEffect(() => { isNodeLabelsVisibleRef.current = isNodeLabelsVisible }, [isNodeLabelsVisible])
 
@@ -321,9 +318,6 @@ export function useCosmos(
       // Links
       cosmos.setLinks(data.linkIndices)
 
-      // Colors and filter visibility
-      applyFilteredAppearance(cosmos, data, nodeColorsRef.current, matchingNodeIdsRef.current, hasActiveFiltersRef.current)
-
       // Render statically (alpha=0 = no physics forces).
       // fitViewOnInit zooms camera to frame all nodes.
       cosmos.render(0)
@@ -451,26 +445,6 @@ export function useCosmos(
     cosmosRef.current?.setConfig({ linkWidthScale: edgeSize })
   }, [edgeSize])
 
-  // ── Precompute property columns once per graph (for worker) ──
-  const propertyColumnsRef = useRef<Record<string, (number | string | boolean | undefined)[]>>({})
-  useEffect(() => {
-    if (!data) return
-    // Build columnar property arrays: one pass to discover keys + fill values
-    const columns: Record<string, (number | string | boolean | undefined)[]> = {}
-    const n = data.nodes.length
-    for (let i = 0; i < n; i++) {
-      const props = data.nodes[i].properties
-      if (!props) continue
-      for (const k of Object.keys(props)) {
-        if (!(k in columns)) {
-          // New key discovered — backfill with undefined
-          columns[k] = new Array(n).fill(undefined)
-        }
-        columns[k][i] = props[k] as number | string | boolean | undefined
-      }
-    }
-    propertyColumnsRef.current = columns
-  }, [data])
 
   // ── Appearance worker: send columns once, then lightweight updates ──
   const workerRef = useRef<Worker | null>(null)
@@ -478,10 +452,11 @@ export function useCosmos(
     const worker = new AppearanceWorker()
     workerRef.current = worker
     worker.onmessage = (e: MessageEvent): void => {
-      const { pointColors, pointSizes, linkColors } = e.data as {
+      const { pointColors, pointSizes, linkColors, matchingCount: mc } = e.data as {
         pointColors: Float32Array
         pointSizes: Float32Array
         linkColors: Float32Array
+        matchingCount: number
       }
       const c = cosmosRef.current
       if (!c) return
@@ -489,6 +464,7 @@ export function useCosmos(
       c.setPointSizes(pointSizes)
       c.setLinkColors(linkColors)
       c.render(0)
+      setMatchingCount(mc)
     }
     return () => { worker.terminate(); workerRef.current = null }
   }, [])
@@ -500,10 +476,12 @@ export function useCosmos(
     if (!worker) return
     worker.postMessage({
       type: 'init',
-      propertyColumns: propertyColumnsRef.current,
+      propertyColumns,
       linkIndices: data.linkIndices,
     })
-  }, [data])
+    // Also trigger initial appearance
+    setMatchingCount(data.nodes.length)
+  }, [data, propertyColumns])
 
   // Send lightweight update on filter/gradient change (no columns cloned)
   useEffect(() => {
@@ -521,35 +499,33 @@ export function useCosmos(
       }
     }
 
-    // Build gradient entries as sparse Float32Array: [index, r, g, b, a, ...]
-    let gradientEntries: Float32Array
-    if (gradientColors && gradientColors.size > 0) {
-      gradientEntries = new Float32Array(gradientColors.size * 5)
-      let offset = 0
-      for (const [id, hex] of gradientColors) {
-        const idx = data.nodeIndexMap.get(id)
-        if (idx === undefined) continue
-        const rgba = hexToRgba(hex)
-        gradientEntries[offset++] = idx
-        gradientEntries[offset++] = rgba[0]
-        gradientEntries[offset++] = rgba[1]
-        gradientEntries[offset++] = rgba[2]
-        gradientEntries[offset++] = rgba[3]
+    // Resolve palette stops for the worker
+    let paletteStops: string[] = []
+    if (gradientState.propertyKey) {
+      if (isBuiltinPalette(gradientState.palette)) {
+        paletteStops = getPaletteColors(gradientState.palette, gradientState.customColors)
+      } else {
+        const custom = gradientState.customPalettes.find((p) => p.id === gradientState.palette)
+        paletteStops = custom ? [...custom.colors, ...gradientState.customColors] : getPaletteColors('Viridis', gradientState.customColors)
       }
-      if (offset < gradientEntries.length) gradientEntries = gradientEntries.subarray(0, offset)
-    } else {
-      gradientEntries = new Float32Array(0)
+      if (gradientState.isReversed) paletteStops = [...paletteStops].reverse()
     }
+
+    const propType = gradientState.propertyKey ? (propertyTypeMap.get(gradientState.propertyKey) ?? null) : null
 
     worker.postMessage({
       type: 'update',
       nodeCount: data.nodes.length,
       filters: serializedFilters,
-      gradientEntries,
+      gradientConfig: {
+        propertyKey: gradientState.propertyKey,
+        paletteStops,
+        propType,
+      },
       defaultRgba: hexToRgba(COLOR_DEFAULT),
       edgeRgba: hexToRgba(COLOR_EDGE_DEFAULT),
     })
-  }, [data, filters, gradientColors])
+  }, [data, filters, gradientState, propertyTypeMap])
 
   // ── Sync highlight neighbors ──
   useEffect(() => {
@@ -707,6 +683,7 @@ export function useCosmos(
     handleRotateCCW,
     rotationCenter,
     isSimulationRunning,
+    matchingCount,
     startSimulation,
     stopSimulation,
     pauseSimulation,
@@ -715,72 +692,4 @@ export function useCosmos(
   }
 }
 
-/**
- * Apply node colors, sizes, and link visibility based on filter state.
- * Filtered-out nodes get alpha=0 (invisible) and size=0.
- * Edges where either endpoint is filtered get alpha=0.
- *
- * Performance: uses Uint8Array bitmask for O(1) index-based visibility checks
- * instead of Set<string>.has() for each of N nodes + E edges.
- */
-function applyFilteredAppearance(
-  cosmos: CosmosGraph,
-  data: CosmosGraphData,
-  nodeColors: Map<string, string>,
-  matchingNodeIds: Set<string>,
-  hasActiveFilters: boolean,
-): void {
-  const n = data.nodes.length
-  const colors = new Float32Array(n * 4)
-  const sizes = new Float32Array(n)
-  const defaultRgba = hexToRgba(COLOR_DEFAULT)
-
-  // Build index-based visibility bitmask once (avoids repeated Set.has(string) in edge loop)
-  // visible[i] = 1 if node i is visible, 0 if hidden
-  let visible: Uint8Array | null = null
-  if (hasActiveFilters) {
-    visible = new Uint8Array(n)
-    for (let i = 0; i < n; i++) {
-      visible[i] = matchingNodeIds.has(data.nodes[i].id) ? 1 : 0
-    }
-  }
-
-  for (let i = 0; i < n; i++) {
-    if (visible && !visible[i]) {
-      // Hidden: alpha=0, size=0 — leave Float32Array default (0)
-      continue
-    }
-    const hex = nodeColors.get(data.nodes[i].id)
-    const rgba = hex ? hexToRgba(hex) : defaultRgba
-    const off = i * 4
-    colors[off] = rgba[0]
-    colors[off + 1] = rgba[1]
-    colors[off + 2] = rgba[2]
-    colors[off + 3] = rgba[3]
-    sizes[i] = 4
-  }
-  cosmos.setPointColors(colors)
-  cosmos.setPointSizes(sizes)
-
-  // Link visibility: use the bitmask for O(1) checks per edge (no string lookups)
-  if (visible) {
-    const linkCount = data.linkIndices.length / 2
-    const linkColors = new Float32Array(linkCount * 4)
-    const er = hexToRgba(COLOR_EDGE_DEFAULT)
-    const er0 = er[0], er1 = er[1], er2 = er[2], er3 = er[3]
-    const indices = data.linkIndices
-    for (let i = 0; i < linkCount; i++) {
-      if (visible[indices[i * 2]] && visible[indices[i * 2 + 1]]) {
-        const off = i * 4
-        linkColors[off] = er0
-        linkColors[off + 1] = er1
-        linkColors[off + 2] = er2
-        linkColors[off + 3] = er3
-      }
-    }
-    cosmos.setLinkColors(linkColors)
-  } else {
-    cosmos.setLinkColors(new Float32Array(0))
-  }
-}
 

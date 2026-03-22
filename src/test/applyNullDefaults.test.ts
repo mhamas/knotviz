@@ -14,7 +14,6 @@ describe('applyNullDefaults', () => {
     ])
     const result = applyNullDefaults(graph)
     expect(result.replacementCount).toBe(0)
-    expect(result.defaultedByNode.size).toBe(0)
   })
 
   it('replaces missing number property with 0', () => {
@@ -67,19 +66,5 @@ describe('applyNullDefaults', () => {
     // node 2 missing: name, active (2)
     // node 3 missing: age, name, active (3)
     expect(result.replacementCount).toBe(5)
-    expect(result.defaultedByNode.get('2')).toEqual(expect.arrayContaining(['name', 'active']))
-    expect(result.defaultedByNode.get('3')).toEqual(
-      expect.arrayContaining(['age', 'name', 'active'])
-    )
-  })
-
-  it('does not include node with all keys present in defaultedByNode', () => {
-    const graph = makeGraph([
-      { id: '1', properties: { age: 34, name: 'Alice' } },
-      { id: '2', properties: { age: 28 } },
-    ])
-    const result = applyNullDefaults(graph)
-    expect(result.defaultedByNode.has('1')).toBe(false)
-    expect(result.defaultedByNode.has('2')).toBe(true)
   })
 })

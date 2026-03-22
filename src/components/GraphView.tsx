@@ -81,6 +81,8 @@ export function GraphView({
     containerRef,
     tooltipState,
     setTooltipState,
+    hoverLabel,
+    hoverRef,
     handleZoomIn,
     handleZoomOut,
     handleFit,
@@ -149,6 +151,13 @@ export function GraphView({
             onClose={(): void => setTooltipState(null)}
           />
         )}
+        <div
+          ref={hoverRef}
+          className="pointer-events-none absolute z-20 rounded bg-slate-800 px-2 py-1 text-xs text-white shadow"
+          style={{ display: hoverLabel && !tooltipState ? 'block' : 'none' }}
+        >
+          {hoverLabel?.label}
+        </div>
         <DragOverlay isVisible={isDragOver} />
         <FilenameLabel filename={filename} />
         <CanvasControls

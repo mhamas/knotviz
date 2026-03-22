@@ -23,10 +23,17 @@ function generateRandomPositions(n: number): Float32Array {
   return positions
 }
 
+export interface HoverLabel {
+  nodeId: string
+  label: string
+}
+
 export interface UseCosmosReturn {
   containerRef: React.RefObject<HTMLDivElement | null>
   tooltipState: TooltipState | null
   setTooltipState: (state: TooltipState | null) => void
+  hoverLabel: HoverLabel | null
+  hoverRef: React.RefObject<HTMLDivElement | null>
   handleZoomIn: () => void
   handleZoomOut: () => void
   handleFit: () => void
@@ -53,6 +60,8 @@ export function useCosmos(
   const containerRef = useRef<HTMLDivElement | null>(null)
   const cosmosRef = useRef<CosmosGraph | null>(null)
   const [tooltipState, setTooltipState] = useState<TooltipState | null>(null)
+  const [hoverLabel, setHoverLabel] = useState<HoverLabel | null>(null)
+  const hoverRef = useRef<HTMLDivElement | null>(null)
   const [isSimulationRunning, setIsSimulationRunning] = useState(false)
 
   // Store state
@@ -91,6 +100,16 @@ export function useCosmos(
 
     let cosmos: CosmosGraph | null = null
     let observer: ResizeObserver | null = null
+
+    /** Update hover label position directly on DOM (no React re-render). */
+    const updateHoverPosition = (clientX: number, clientY: number): void => {
+      const el = hoverRef.current
+      if (!el || hoveredIndexRef.current === undefined) return
+      const bounds = containerRef.current?.getBoundingClientRect()
+      if (!bounds) return
+      el.style.left = `${clientX - bounds.left + 10}px`
+      el.style.top = `${clientY - bounds.top - 10}px`
+    }
 
     const config: GraphConfigInterface = {
       backgroundColor: '#f8fafc',
@@ -148,15 +167,31 @@ export function useCosmos(
       onBackgroundClick: () => {
         setTooltipState(null)
       },
+      onMouseMove: (_index, _pointPosition, event) => {
+        updateHoverPosition(event.clientX, event.clientY)
+      },
+      onDrag: (e) => {
+        const src = e.sourceEvent as MouseEvent | undefined
+        if (src) updateHoverPosition(src.clientX, src.clientY)
+      },
       onPointMouseOver: (index) => {
         hoveredIndexRef.current = index
         const d = dataRef.current
         const c = cosmosRef.current
-        if (!d || !c || !isHighlightNeighborsRef.current) return
-        c.selectPointByIndex(index, true)
+        if (!d || !c) return
+
+        const node = d.nodes[index]
+        if (node) {
+          setHoverLabel({ nodeId: node.id, label: node.label ?? node.id })
+        }
+
+        if (isHighlightNeighborsRef.current) {
+          c.selectPointByIndex(index, true)
+        }
       },
       onPointMouseOut: () => {
         hoveredIndexRef.current = undefined
+        setHoverLabel(null)
         const c = cosmosRef.current
         if (!c || !isHighlightNeighborsRef.current) return
         c.unselectPoints()
@@ -312,6 +347,8 @@ export function useCosmos(
     containerRef,
     tooltipState,
     setTooltipState,
+    hoverLabel,
+    hoverRef,
     handleZoomIn,
     handleZoomOut,
     handleFit,

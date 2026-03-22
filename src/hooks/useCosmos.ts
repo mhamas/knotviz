@@ -186,6 +186,7 @@ export function useCosmos(
     }
 
     const config: GraphConfigInterface = {
+      spaceSize: 8192,
       backgroundColor: '#ffffff',
       pointDefaultColor: COLOR_DEFAULT,
       linkDefaultColor: COLOR_EDGE_DEFAULT,

@@ -4,6 +4,7 @@ import type { GraphConfigInterface } from '@cosmos.gl/graph'
 import type { CosmosGraphData, TooltipState } from '../types'
 import { useGraphStore } from '@/stores/useGraphStore'
 import { COLOR_DEFAULT, COLOR_EDGE_DEFAULT } from '@/lib/colors'
+import AppearanceWorker from '@/workers/appearanceWorker?worker'
 
 /** Parse a hex color string to normalized [r, g, b, a] (all 0.0–1.0). Cached. */
 const rgbaCache = new Map<string, [number, number, number, number]>()
@@ -447,15 +448,64 @@ export function useCosmos(
     cosmosRef.current?.setConfig({ linkWidthScale: edgeSize })
   }, [edgeSize])
 
-  // ── Sync node colors + filter visibility ──
-  // Must call render(0) — not create() — because render() runs
-  // this.graph.update() which processes input data before uploading to GPU.
+  // ── Sync node colors + filter visibility (via Web Worker) ──
+  const workerRef = useRef<Worker | null>(null)
+  useEffect(() => {
+    const worker = new AppearanceWorker()
+    workerRef.current = worker
+    return () => { worker.terminate(); workerRef.current = null }
+  }, [])
+
   useEffect(() => {
     if (!data) return
     const cosmos = cosmosRef.current
-    if (!cosmos) return
-    applyFilteredAppearance(cosmos, data, nodeColors, matchingNodeIds, hasActiveFilters)
-    cosmos.render(0)
+    const worker = workerRef.current
+    if (!cosmos || !worker) return
+
+    const n = data.nodes.length
+    const defaultRgba = hexToRgba(COLOR_DEFAULT)
+
+    // Build visibility bitmask (fast: 1M Set.has calls)
+    let visible: Uint8Array | null = null
+    if (hasActiveFilters) {
+      visible = new Uint8Array(n)
+      for (let i = 0; i < n; i++) {
+        visible[i] = matchingNodeIds.has(data.nodes[i].id) ? 1 : 0
+      }
+    }
+
+    // Build per-node RGBA on main thread (fast: sparse map lookup + cached hexToRgba)
+    const nodeRgba = new Float32Array(n * 4)
+    for (let i = 0; i < n; i++) {
+      if (visible && !visible[i]) continue // leave as 0,0,0,0
+      const hex = nodeColors.get(data.nodes[i].id)
+      const rgba = hex ? hexToRgba(hex) : defaultRgba
+      const off = i * 4
+      nodeRgba[off] = rgba[0]
+      nodeRgba[off + 1] = rgba[1]
+      nodeRgba[off + 2] = rgba[2]
+      nodeRgba[off + 3] = rgba[3]
+    }
+
+    // Send to worker for heavy edge processing (transferred, zero-copy)
+    const edgeRgba = hexToRgba(COLOR_EDGE_DEFAULT)
+    worker.onmessage = (e: MessageEvent): void => {
+      const { pointColors, pointSizes, linkColors } = e.data as {
+        pointColors: Float32Array
+        pointSizes: Float32Array
+        linkColors: Float32Array
+      }
+      const c = cosmosRef.current
+      if (!c) return
+      c.setPointColors(pointColors)
+      c.setPointSizes(pointSizes)
+      c.setLinkColors(linkColors)
+      c.render(0)
+    }
+    worker.postMessage(
+      { nodeRgba, visible, linkIndices: data.linkIndices, edgeRgba, hasActiveFilters },
+      [nodeRgba.buffer, ...(visible ? [visible.buffer] : [])],
+    )
   }, [data, nodeColors, matchingNodeIds, hasActiveFilters])
 
   // ── Sync highlight neighbors ──

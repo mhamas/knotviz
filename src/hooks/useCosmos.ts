@@ -363,7 +363,7 @@ export function useCosmos(
         e.preventDefault()
       }
     }
-    // Capture phase so we intercept before d3-zoom/d3-drag
+    // Capture phase so we intercept before Cosmos event handlers
     div.addEventListener('mousedown', blockEvent, { capture: true })
     div.addEventListener('wheel', blockEvent, { capture: true, passive: false })
     div.addEventListener('touchstart', blockEvent, { capture: true })

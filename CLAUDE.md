@@ -1,8 +1,8 @@
 # Graph Visualizer — Project Context
 
-Single-page React + TypeScript app that lets a user drag-and-drop a JSON graph file, visualizes it using **Sigma.js + Graphology**, and lets them run and tune a **ForceAtlas2 spring simulation** via basic sliders.
+Single-page React + TypeScript app that lets a user drag-and-drop a JSON graph file, visualizes it using **@cosmos.gl/graph** (GPU-accelerated WebGL), and lets them run and tune a **GPU force-directed simulation** targeting 1M+ nodes.
 
-The goal is a clean, working prototype — not a production app. Prioritize correctness and clarity over polish.
+Production-grade graph visualization tool. Prioritize performance, correctness, and maintainability.
 
 ---
 
@@ -11,9 +11,7 @@ The goal is a clean, working prototype — not a production app. Prioritize corr
 | Concern | Library |
 |---|---|
 | Framework | React 19 + TypeScript (strict) |
-| Graph rendering | `sigma` (v3) |
-| Graph data model | `graphology` |
-| Spring layout | `graphology-layout-forceatlas2` |
+| Graph rendering + layout | `@cosmos.gl/graph` (GPU-accelerated WebGL force graph) |
 | UI components | shadcn/ui v4 (Base UI primitives) |
 | Styling | Tailwind CSS v4 (PostCSS plugin) |
 | Build tool | Vite 8 |
@@ -59,9 +57,12 @@ grapphy/
 │   │   ├── CanvasControls.tsx, FilenameLabel.tsx, KeyboardShortcutsHelp.tsx
 │   │   └── ErrorBoundary.tsx
 │   ├── hooks/
-│   │   ├── useFA2Simulation.ts, useSigma.ts, useFileDrop.ts, useSpacebarToggle.ts
-│   │   ├── useFilterState.ts, useNodeColors.ts
-│   │   └── useDebounce.ts
+│   │   ├── useCosmos.ts         # Core: Cosmos.gl lifecycle, worker comms, camera, simulation
+│   │   ├── useFilterState.ts    # Filter UI state (matching computed in worker)
+│   │   ├── useColorGradient.ts  # Pure gradient computation (used by tests; worker handles runtime)
+│   │   ├── useFileDrop.ts, useSpacebarToggle.ts, useDebounce.ts
+│   ├── workers/
+│   │   └── appearanceWorker.ts  # Web Worker: filter matching + gradient + link visibility
 │   ├── lib/
 │   │   ├── buildGraph.ts, validateGraph.ts, parseJSON.ts
 │   │   ├── applyNullDefaults.ts, detectPropertyTypes.ts
@@ -160,11 +161,14 @@ Import via `import { SectionHeading, LabeledSlider, ... } from '@/components/sid
 
 ## Key Patterns
 
-- **FA2 simulation** runs in a Web Worker (`graphology-layout-forceatlas2/worker`) to keep the UI thread free. Slider changes: `stop()` → update settings → `start()`. Reset: `stop()` → randomize positions → `start()`.
-- **Node color updates** apply without remounting Sigma: `graph.updateEachNodeAttributes(...)` + `sigma.refresh()`.
+- **Cosmos.gl simulation** runs entirely on the GPU. Simulation controls: `start()` / `pause()` / `unpause()`. Camera auto-follows via `fitView(0)` on every tick. User must click "Run" to start; simulation does not auto-start on load.
+- **Appearance pipeline** (filter matching + gradient colors + link visibility) runs in a **Web Worker** (`src/workers/appearanceWorker.ts`) to keep the UI thread free. The worker receives property columns + filter state, computes Float32Arrays for point colors/sizes/link colors, and transfers them back zero-copy.
+- **Property columns** are the shared data format for node properties — flat arrays indexed by node index (`Record<string, (number|string|boolean|undefined)[]>`). Built once on graph load in `GraphView`, shared by `useFilterState` (for initializing filter domains) and the appearance worker (for filter matching + gradient computation).
+- **Node labels** are rendered as HTML overlays (not part of the WebGL canvas). Positions read from `cosmos.getPointPositions()` + `spaceToScreenPosition()`, capped at 300 labels, updated on tick/zoom/drag.
+- **Cosmos data pipeline**: `setPointColors` / `setPointSizes` / `setLinkColors` set data, but it only reaches the GPU when `render()` is called (which triggers `graph.update()` → `create()` → GPU upload). Always call `render(0)` after setting data for static display.
 - **Unit tests** (`src/test/`) cover pure functions in `lib/` and hooks/stores.
 - **Component tests** (`src/components/__tests__/`) render isolated React components in a real Chromium browser via Vitest Browser Mode. These test props, interactions, and rendered output without needing the full app.
-- **E2E tests** (`e2e/`) cover multi-step user journeys (load file → interact → verify) using Playwright. Chromium uses SwiftShader (`--use-gl=angle --use-angle=swiftshader`) for headless WebGL support.
+- **E2E tests** (`e2e/`) cover multi-step user journeys (load file → interact → verify) using Playwright. Chromium uses SwiftShader (`--use-gl=angle --use-angle=swiftshader`) for headless WebGL support. 4 GPU-dependent tests are skipped (simulation, tooltip click, position readback).
 
 ---
 
@@ -200,7 +204,7 @@ Every task or feature **must** include tests. This is non-negotiable.
 | Empty graph (0 nodes) | "Graph has no nodes to display" |
 | Property value not number or string | Treat as null, `console.warn` |
 | Date string fails `new Date()` parse | Treat as null, `console.warn` |
-| Sigma mount fails | Catch in `useEffect`, render fallback error |
+| Cosmos init fails | Catch in `useEffect`, log error, render empty canvas |
 | Tooltip off-canvas | Clamp position within canvas bounds |
 
 ---
@@ -213,7 +217,7 @@ Every exported function, hook, and component must have a one-sentence descriptio
 
 ## Scope Boundaries
 
-The app is a client-side-only prototype. These categories are out of scope:
+The app is client-side only. These categories are out of scope:
 
 - **No server-side**: no routing, no backend/API calls, no auth, no database
 - **No complex analysis**: no multi-property comparison, no edge weight visualization
@@ -221,3 +225,20 @@ The app is a client-side-only prototype. These categories are out of scope:
 - **No React Testing Library**: component tests use Vitest Browser Mode (real browser), not RTL/jsdom
 
 For the current feature set, see `README.md`.
+
+---
+
+## Performance Rules (1M+ nodes)
+
+The app must handle graphs with 1M+ nodes and 2.7M+ edges. Follow these rules to avoid freezing the UI:
+
+1. **Never use `Math.min(...array)` or `Math.max(...array)`** — spreads blow the call stack at ~100K elements. Use a `for` loop.
+2. **Never iterate all nodes on the main thread** during user interactions (filter/color changes). All O(N) work must happen in the Web Worker.
+3. **Use `render(0)` to flush cosmos data** — `setPointColors` / `setPointSizes` / `setLinkColors` only set flags; data reaches the GPU only when `render()` calls `graph.update()` → `create()`.
+4. **Cosmos constructor needs a sized container** — if `clientWidth === 0`, Cosmos defers `create()` via ResizeObserver, and subsequent `set*` calls silently no-op because `this.points` is null. Always verify the container has dimensions before constructing.
+5. **`setPointColors` uses normalized 0–1 RGBA** (not 0–255) — the Float32Array goes directly to GPU shaders with no normalization.
+6. **Cache `hexToRgba` results** — only ~20 unique colors exist in practice, but the function may be called millions of times.
+7. **Send large data to workers once** (init message), then send only lightweight deltas (filter state, gradient config) on updates. Avoid structured-cloning megabytes per interaction.
+8. **Use typed arrays** (`Float32Array`, `Uint8Array`) over JS objects/Maps for per-node data. A `Map<string, number>` with 1M entries costs ~100MB; a `Float64Array(1M)` costs 8MB.
+9. **Pre-allocate and reuse** Float32Arrays where possible. For 1M nodes, each `new Float32Array(4M)` is a 16MB allocation.
+10. **Cosmos `spaceSize`** is bounded (max 8192) by GPU texture size. Nodes cannot move beyond the simulation space boundary.

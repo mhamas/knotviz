@@ -38,16 +38,14 @@ interface Props {
  * @param props - Simulation state and imperative callbacks.
  * @returns Left sidebar element.
  */
-const noop = (): void => {}
-
 export function LeftSidebar({
   isRunning = false,
   simulationError = null,
-  onRun = noop,
-  onStop = noop,
-  onRandomizeLayout = noop,
-  onDownload = noop,
-  onReset = noop,
+  onRun = () => {},
+  onStop = () => {},
+  onRandomizeLayout = () => {},
+  onDownload = () => {},
+  onReset = () => {},
 }: Props): React.JSX.Element {
   // Store state
   const isGraphLoaded = useGraphStore((s) => s.isGraphLoaded)

@@ -206,7 +206,7 @@ export function GraphView({
           onFit={handleFit}
           onRotateCW={handleRotateCW}
           onRotateCCW={handleRotateCCW}
-          disabled={isSimulationRunning}
+          isDisabled={isSimulationRunning}
         />
       </div>
       <RightSidebar

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { X, RefreshCw } from 'lucide-react'
 import type { ColorGradientState, CustomPalette, PropertyMeta, PropertyType } from '@/types'
 import type { PropertyColumns } from '@/hooks/useFilterState'
 import {
@@ -171,9 +172,7 @@ export function ColorTab({
                       data-testid={`delete-palette-${cp.id}`}
                       aria-label={`Delete ${cp.name}`}
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3 w-3">
-                        <path d="M4.28 3.22a.75.75 0 0 0-1.06 1.06L6.94 8l-3.72 3.72a.75.75 0 1 0 1.06 1.06L8 9.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L9.06 8l3.72-3.72a.75.75 0 0 0-1.06-1.06L8 6.94 4.28 3.22Z" />
-                      </svg>
+                      <X className="h-3 w-3" />
                     </button>
                   </span>
                 </SelectItem>
@@ -191,9 +190,7 @@ export function ColorTab({
           onClick={(): void => onChange({ ...state, isReversed: !state.isReversed })}
           data-testid="reverse-palette-btn"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" className="h-3.5 w-3.5">
-            <path fillRule="evenodd" d="M13.836 2.477a.75.75 0 0 1 .75.75v3.182a.75.75 0 0 1-.75.75h-3.182a.75.75 0 0 1 0-1.5h1.37l-.84-.841a4.5 4.5 0 0 0-7.08.681.75.75 0 0 1-1.3-.75 6 6 0 0 1 9.44-.908l.84.841V3.227a.75.75 0 0 1 .75-.75Zm-.911 7.5A.75.75 0 0 1 13.199 11a6 6 0 0 1-9.44.908l-.84-.841v1.255a.75.75 0 0 1-1.5 0V9.14a.75.75 0 0 1 .75-.75h3.182a.75.75 0 0 1 0 1.5h-1.37l.84.841a4.5 4.5 0 0 0 7.08-.681.75.75 0 0 1 1.024-.274Z" clipRule="evenodd" />
-          </svg>
+          <RefreshCw className="h-3.5 w-3.5" />
           Reverse colors
         </button>
       </div>

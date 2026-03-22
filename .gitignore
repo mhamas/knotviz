@@ -26,3 +26,4 @@ test-results
 playwright-report
 cosmos-test.png
 .vitest-attachments/
+src/components/__tests__/__screenshots__/

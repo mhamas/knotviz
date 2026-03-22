@@ -38,6 +38,9 @@ export interface UseCosmosReturn {
   handleZoomIn: () => void
   handleZoomOut: () => void
   handleFit: () => void
+  handleRotateCW: () => void
+  handleRotateCCW: () => void
+  rotationCenter: { x: number; y: number } | null
   isSimulationRunning: boolean
   startSimulation: () => void
   stopSimulation: () => void
@@ -84,6 +87,7 @@ export function useCosmos(
   const isNodeLabelsVisibleRef = useRef(isNodeLabelsVisible)
   const hoveredIndexRef = useRef<number | undefined>(undefined)
   const tooltipNodeIndexRef = useRef<number | undefined>(undefined)
+  const isSimRunningRef = useRef(false)
 
   useEffect(() => { dataRef.current = data }, [data])
   useEffect(() => { nodeColorsRef.current = nodeColors }, [nodeColors])
@@ -168,7 +172,7 @@ export function useCosmos(
     }
 
     const config: GraphConfigInterface = {
-      backgroundColor: '#f8fafc',
+      backgroundColor: '#ffffff',
       pointDefaultColor: COLOR_DEFAULT,
       linkDefaultColor: COLOR_EDGE_DEFAULT,
       pointDefaultSize: 4,
@@ -196,18 +200,29 @@ export function useCosmos(
       pointGreyoutOpacity: 0.1,
       linkGreyoutOpacity: 0.1,
       attribution: '',
-      onSimulationStart: () => setIsSimulationRunning(true),
+      onSimulationStart: () => {
+        isSimRunningRef.current = true
+        setIsSimulationRunning(true)
+      },
       onSimulationTick: () => {
         cosmosRef.current?.fitView(0)
         updateLabels()
       },
       onSimulationEnd: () => {
+        isSimRunningRef.current = false
         setIsSimulationRunning(false)
         cosmosRef.current?.fitView(250)
       },
-      onSimulationPause: () => setIsSimulationRunning(false),
-      onSimulationUnpause: () => setIsSimulationRunning(true),
+      onSimulationPause: () => {
+        isSimRunningRef.current = false
+        setIsSimulationRunning(false)
+      },
+      onSimulationUnpause: () => {
+        isSimRunningRef.current = true
+        setIsSimulationRunning(true)
+      },
       onPointClick: (index, _pointPosition, event) => {
+        if (isSimRunningRef.current) return
         const d = dataRef.current
         const c = cosmosRef.current
         if (!d || !c || index === undefined) return
@@ -329,6 +344,27 @@ export function useCosmos(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data])
 
+  // ── Block pan/zoom/drag on canvas during simulation (but allow mousemove for hover) ──
+  useEffect(() => {
+    const div = containerRef.current
+    if (!div) return
+    const blockEvent = (e: Event): void => {
+      if (isSimRunningRef.current) {
+        e.stopPropagation()
+        e.preventDefault()
+      }
+    }
+    // Capture phase so we intercept before d3-zoom/d3-drag
+    div.addEventListener('mousedown', blockEvent, { capture: true })
+    div.addEventListener('wheel', blockEvent, { capture: true, passive: false })
+    div.addEventListener('touchstart', blockEvent, { capture: true })
+    return (): void => {
+      div.removeEventListener('mousedown', blockEvent, { capture: true })
+      div.removeEventListener('wheel', blockEvent, { capture: true })
+      div.removeEventListener('touchstart', blockEvent, { capture: true })
+    }
+  }, [])
+
   // ── Sync simulation settings ──
   useEffect(() => {
     cosmosRef.current?.setConfig({
@@ -425,6 +461,82 @@ export function useCosmos(
     }
   }, [])
 
+  // ── Rotation (transforms actual node positions) ──
+  const [rotationCenter, setRotationCenter] = useState<{ x: number; y: number } | null>(null)
+  const hideRotationCenterTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  /** Rotate all point positions by a delta angle (degrees) around their center of mass. */
+  const rotatePositions = useCallback((deltaDeg: number): void => {
+    const cosmos = cosmosRef.current
+    if (!cosmos || isSimRunningRef.current) return
+    const positions = cosmos.getPointPositions()
+    if (!positions || positions.length < 2) return
+
+    const n = positions.length / 2
+    // Find center of mass
+    let cx = 0, cy = 0
+    for (let i = 0; i < n; i++) {
+      cx += positions[i * 2]
+      cy += positions[i * 2 + 1]
+    }
+    cx /= n
+    cy /= n
+
+    // Apply rotation matrix around center
+    const rad = (deltaDeg * Math.PI) / 180
+    const cos = Math.cos(rad)
+    const sin = Math.sin(rad)
+    const rotated = new Float32Array(positions.length)
+    for (let i = 0; i < n; i++) {
+      const x = positions[i * 2] - cx
+      const y = positions[i * 2 + 1] - cy
+      rotated[i * 2] = x * cos - y * sin + cx
+      rotated[i * 2 + 1] = x * sin + y * cos + cy
+    }
+    cosmos.setPointPositions(rotated)
+    cosmos.render(0)
+
+    // Hide hover label during rotation
+    setHoverLabel(null)
+
+    // Show rotation center marker
+    const [sx, sy] = cosmos.spaceToScreenPosition([cx, cy])
+    setRotationCenter({ x: sx, y: sy })
+
+    // Auto-hide after 600ms of no rotation
+    if (hideRotationCenterTimer.current) clearTimeout(hideRotationCenterTimer.current)
+    hideRotationCenterTimer.current = setTimeout(() => setRotationCenter(null), 150)
+  }, [])
+
+  // Shift+wheel rotation handler — batches rapid scroll events into one rAF
+  useEffect(() => {
+    const div = containerRef.current
+    if (!div) return
+    let pendingDeg = 0
+    let frameId = 0
+    const flush = (): void => {
+      frameId = 0
+      if (pendingDeg === 0) return
+      const deg = pendingDeg
+      pendingDeg = 0
+      rotatePositions(deg)
+    }
+    const handleWheel = (e: WheelEvent): void => {
+      if (!e.shiftKey || isSimRunningRef.current) return
+      const rawDelta = e.deltaY || e.deltaX
+      if (!rawDelta) return
+      e.preventDefault()
+      e.stopPropagation()
+      pendingDeg += rawDelta * 0.3
+      if (!frameId) frameId = requestAnimationFrame(flush)
+    }
+    div.addEventListener('wheel', handleWheel, { passive: false, capture: true })
+    return (): void => {
+      div.removeEventListener('wheel', handleWheel, { capture: true })
+      if (frameId) cancelAnimationFrame(frameId)
+    }
+  }, [rotatePositions])
+
   // ── Camera controls ──
   const handleZoomIn = useCallback((): void => {
     const cosmos = cosmosRef.current
@@ -441,6 +553,14 @@ export function useCosmos(
   const handleFit = useCallback((): void => {
     cosmosRef.current?.fitView(200)
   }, [])
+
+  const handleRotateCW = useCallback((): void => {
+    rotatePositions(15)
+  }, [rotatePositions])
+
+  const handleRotateCCW = useCallback((): void => {
+    rotatePositions(-15)
+  }, [rotatePositions])
 
   // ── Simulation controls ──
   const startSimulation = useCallback((): void => {
@@ -477,6 +597,9 @@ export function useCosmos(
     handleZoomIn,
     handleZoomOut,
     handleFit,
+    handleRotateCW,
+    handleRotateCCW,
+    rotationCenter,
     isSimulationRunning,
     startSimulation,
     stopSimulation,

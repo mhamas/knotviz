@@ -8,22 +8,30 @@ test('renders all control buttons', async () => {
       onZoomIn={vi.fn()}
       onZoomOut={vi.fn()}
       onFit={vi.fn()}
+      onRotateCW={vi.fn()}
+      onRotateCCW={vi.fn()}
     />,
   )
   await expect.element(screen.getByRole('button', { name: 'Zoom in' })).toBeVisible()
   await expect.element(screen.getByRole('button', { name: 'Zoom out' })).toBeVisible()
   await expect.element(screen.getByRole('button', { name: 'Fit to view' })).toBeVisible()
+  await expect.element(screen.getByRole('button', { name: 'Rotate clockwise' })).toBeVisible()
+  await expect.element(screen.getByRole('button', { name: 'Rotate counter-clockwise' })).toBeVisible()
 })
 
 test('clicking buttons calls correct callbacks', async () => {
   const zoomIn = vi.fn()
   const zoomOut = vi.fn()
   const fit = vi.fn()
+  const rotateCW = vi.fn()
+  const rotateCCW = vi.fn()
   const screen = await render(
     <CanvasControls
       onZoomIn={zoomIn}
       onZoomOut={zoomOut}
       onFit={fit}
+      onRotateCW={rotateCW}
+      onRotateCCW={rotateCCW}
     />,
   )
   await screen.getByRole('button', { name: 'Zoom in' }).click()
@@ -32,4 +40,8 @@ test('clicking buttons calls correct callbacks', async () => {
   expect(zoomOut).toHaveBeenCalledOnce()
   await screen.getByRole('button', { name: 'Fit to view' }).click()
   expect(fit).toHaveBeenCalledOnce()
+  await screen.getByRole('button', { name: 'Rotate clockwise' }).click()
+  expect(rotateCW).toHaveBeenCalledOnce()
+  await screen.getByRole('button', { name: 'Rotate counter-clockwise' }).click()
+  expect(rotateCCW).toHaveBeenCalledOnce()
 })

@@ -123,6 +123,7 @@ export function LeftSidebar({
         )}
 
         <CollapsibleSection label="Simulation settings">
+          <div className="space-y-2.5">
           <LabeledSlider
             label="Repulsion"
             value={repulsion}
@@ -168,7 +169,8 @@ export function LeftSidebar({
             }}
           />
 
-          <div className="mt-2 flex justify-end">
+          </div>
+          <div className="mt-3 flex justify-end">
             <SidebarButton className="w-1/2" onClick={onRandomizeLayout}>
               ↺ Randomize
             </SidebarButton>
@@ -184,7 +186,7 @@ export function LeftSidebar({
           label="Node size"
           value={nodeSize}
           min={0}
-          max={10}
+          max={20}
           step={0.01}
           defaultValue={[nodeSize]}
           onValueChange={(value): void => {
@@ -197,7 +199,7 @@ export function LeftSidebar({
           label="Edge size"
           value={edgeSize}
           min={0}
-          max={2}
+          max={5}
           step={0.01}
           defaultValue={[edgeSize]}
           onValueChange={(value): void => {

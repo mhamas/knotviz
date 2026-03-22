@@ -87,6 +87,9 @@ export function GraphView({
     handleZoomIn,
     handleZoomOut,
     handleFit,
+    handleRotateCW,
+    handleRotateCCW,
+    rotationCenter,
     isSimulationRunning,
     startSimulation,
     stopSimulation,
@@ -130,7 +133,7 @@ export function GraphView({
         onDownload={handleDownload}
         onReset={onLoadNewFile}
       />
-      <div className="relative flex-1">
+      <div className="relative flex-1 bg-white">
         <div
           ref={containerRef}
           data-testid="sigma-canvas"
@@ -140,7 +143,12 @@ export function GraphView({
           ref={labelsRef}
           className="pointer-events-none absolute inset-0 overflow-hidden"
         />
-        {cosmosData.positionMode === 'partial' && (
+        {isSimulationRunning && (
+          <div className="absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+            Zoom, pan, drag, and rotation are disabled while the simulation is running — the camera is following the graph. Press Space to pause.
+          </div>
+        )}
+        {!isSimulationRunning && cosmosData.positionMode === 'partial' && (
           <div className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded border border-yellow-300 bg-yellow-50 px-3 py-2 text-xs text-yellow-900">
             Some nodes have positions and some do not — positions were randomized.
             Run the simulation to generate a layout.
@@ -163,12 +171,29 @@ export function GraphView({
         >
           {hoverLabel?.label}
         </div>
+        {rotationCenter && (
+          <div
+            className="pointer-events-none absolute z-20 text-red-500"
+            style={{
+              left: rotationCenter.x - 6,
+              top: rotationCenter.y - 6,
+              fontSize: 14,
+              lineHeight: '12px',
+              fontWeight: 700,
+            }}
+          >
+            ✕
+          </div>
+        )}
         <DragOverlay isVisible={isDragOver} />
         <FilenameLabel filename={filename} />
         <CanvasControls
           onZoomIn={handleZoomIn}
           onZoomOut={handleZoomOut}
           onFit={handleFit}
+          onRotateCW={handleRotateCW}
+          onRotateCCW={handleRotateCCW}
+          disabled={isSimulationRunning}
         />
       </div>
       <RightSidebar

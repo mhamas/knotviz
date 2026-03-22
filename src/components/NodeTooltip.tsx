@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Copy, Check } from 'lucide-react'
+import { Copy, Check, X } from 'lucide-react'
 import type { GraphData, PropertyMeta, PropertyValue } from '../types'
 
 interface Props {
@@ -133,10 +133,10 @@ export function NodeTooltip({
       {/* Close button — top right corner */}
       <button
         aria-label="Close"
-        className="absolute right-1.5 top-1.5 cursor-pointer rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+        className="absolute right-1.5 top-1.5 flex h-5 w-5 cursor-pointer items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600"
         onClick={onClose}
       >
-        ×
+        <X className="h-3.5 w-3.5" />
       </button>
 
       {/* Header: label + inline copy */}

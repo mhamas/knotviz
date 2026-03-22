@@ -154,6 +154,7 @@ Import via `import { SectionHeading, LabeledSlider, ... } from '@/components/sid
 2. **No complex ad-hoc components** outside of the design system. If a UI element will appear more than once or represents a distinct pattern (heading, control, display row), it belongs in `sidebar/`.
 3. **Style changes go in the component**, not at the call site. Use `className` prop only for layout concerns (e.g. `flex-1`, `w-1/2`, `mt-4`), never for colors, fonts, or spacing that are part of the design system.
 4. **shadcn/ui** (`src/components/ui/`) provides low-level primitives (Button, Slider, Checkbox, Popover, AlertDialog). The `sidebar/` layer composes these into app-specific components with consistent styling. Use `ui/` directly only when `sidebar/` doesn't have a suitable wrapper.
+5. **Icons** — Always use icons from `lucide-react` (`import { Copy, Check, X, ... } from 'lucide-react'`). NEVER use inline SVGs, raw Unicode symbols, or hand-crafted icon markup. Lucide provides a consistent, professionally designed icon set that matches our UI. Browse available icons at https://lucide.dev/icons.
 
 ---
 

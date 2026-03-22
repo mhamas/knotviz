@@ -79,6 +79,7 @@ export function GraphView({
   // Cosmos rendering
   const {
     containerRef,
+    labelsRef,
     tooltipState,
     setTooltipState,
     hoverLabel,
@@ -133,7 +134,11 @@ export function GraphView({
         <div
           ref={containerRef}
           data-testid="sigma-canvas"
-          className="h-full w-full"
+          className="h-full w-full [&_canvas]:!cursor-default"
+        />
+        <div
+          ref={labelsRef}
+          className="pointer-events-none absolute inset-0 overflow-hidden"
         />
         {cosmosData.positionMode === 'partial' && (
           <div className="absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded border border-yellow-300 bg-yellow-50 px-3 py-2 text-xs text-yellow-900">

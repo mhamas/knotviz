@@ -30,6 +30,7 @@ export interface HoverLabel {
 
 export interface UseCosmosReturn {
   containerRef: React.RefObject<HTMLDivElement | null>
+  labelsRef: React.RefObject<HTMLDivElement | null>
   tooltipState: TooltipState | null
   setTooltipState: (state: TooltipState | null) => void
   hoverLabel: HoverLabel | null
@@ -58,6 +59,7 @@ export function useCosmos(
   nodeColors: Map<string, string>,
 ): UseCosmosReturn {
   const containerRef = useRef<HTMLDivElement | null>(null)
+  const labelsRef = useRef<HTMLDivElement | null>(null)
   const cosmosRef = useRef<CosmosGraph | null>(null)
   const [tooltipState, setTooltipState] = useState<TooltipState | null>(null)
   const [hoverLabel, setHoverLabel] = useState<HoverLabel | null>(null)
@@ -68,6 +70,7 @@ export function useCosmos(
   const nodeSize = useGraphStore((s) => s.nodeSize)
   const edgeSize = useGraphStore((s) => s.edgeSize)
   const isEdgesVisible = useGraphStore((s) => s.isEdgesVisible)
+  const isNodeLabelsVisible = useGraphStore((s) => s.isNodeLabelsVisible)
   const isHighlightNeighbors = useGraphStore((s) => s.isHighlightNeighbors)
   const repulsion = useGraphStore((s) => s.repulsion)
   const gravity = useGraphStore((s) => s.gravity)
@@ -79,11 +82,13 @@ export function useCosmos(
   const dataRef = useRef(data)
   const nodeColorsRef = useRef(nodeColors)
   const isHighlightNeighborsRef = useRef(isHighlightNeighbors)
+  const isNodeLabelsVisibleRef = useRef(isNodeLabelsVisible)
   const hoveredIndexRef = useRef<number | undefined>(undefined)
 
   useEffect(() => { dataRef.current = data }, [data])
   useEffect(() => { nodeColorsRef.current = nodeColors }, [nodeColors])
   useEffect(() => { isHighlightNeighborsRef.current = isHighlightNeighbors }, [isHighlightNeighbors])
+  useEffect(() => { isNodeLabelsVisibleRef.current = isNodeLabelsVisible }, [isNodeLabelsVisible])
 
   // Mark graph as loaded
   useEffect(() => {
@@ -100,6 +105,57 @@ export function useCosmos(
 
     let cosmos: CosmosGraph | null = null
     let observer: ResizeObserver | null = null
+
+    const MAX_LABELS = 300
+
+    /** Update node labels overlay. Direct DOM manipulation for performance. */
+    const updateLabels = (): void => {
+      const container = labelsRef.current
+      const c = cosmosRef.current
+      const d = dataRef.current
+      if (!container || !c || !d) return
+      if (!isNodeLabelsVisibleRef.current) {
+        container.style.display = 'none'
+        return
+      }
+      container.style.display = ''
+      const positions = c.getPointPositions()
+      if (!positions || positions.length === 0) return
+
+      const canvasW = containerRef.current?.clientWidth ?? 0
+      const canvasH = containerRef.current?.clientHeight ?? 0
+
+      // Collect on-screen nodes (space→screen), cap at MAX_LABELS
+      const children = container.children
+      let count = 0
+      for (let idx = 0; idx < d.nodes.length && count < MAX_LABELS; idx++) {
+        const sx = positions[idx * 2]
+        const sy = positions[idx * 2 + 1]
+        if (sx === undefined || sy === undefined) continue
+        const [screenX, screenY] = c.spaceToScreenPosition([sx, sy])
+        // Skip off-screen
+        if (screenX < -50 || screenX > canvasW + 50 || screenY < -50 || screenY > canvasH + 50) continue
+
+        let el: HTMLElement
+        if (count < children.length) {
+          el = children[count] as HTMLElement
+        } else {
+          el = document.createElement('div')
+          el.className = 'pointer-events-none absolute font-sans text-[10px] text-slate-600'
+          el.style.whiteSpace = 'nowrap'
+          container.appendChild(el)
+        }
+        el.style.left = `${screenX + 8}px`
+        el.style.top = `${screenY - 6}px`
+        el.style.display = ''
+        el.textContent = d.nodes[idx].label ?? d.nodes[idx].id
+        count++
+      }
+      // Hide excess
+      for (let i = count; i < children.length; i++) {
+        (children[i] as HTMLElement).style.display = 'none'
+      }
+    }
 
     /** Update hover label position directly on DOM (no React re-render). */
     const updateHoverPosition = (clientX: number, clientY: number): void => {
@@ -120,6 +176,7 @@ export function useCosmos(
       linkDefaultWidth: 1,
       linkWidthScale: edgeSize,
       renderLinks: isEdgesVisible,
+      hoveredPointCursor: 'default',
       renderHoveredPointRing: true,
       hoveredPointRingColor: '#3b82f6',
       focusedPointRingColor: '#3b82f6',
@@ -143,6 +200,7 @@ export function useCosmos(
       onSimulationTick: () => {
         // Keep camera tracking the graph as it moves during simulation
         cosmosRef.current?.fitView(0)
+        updateLabels()
       },
       onSimulationEnd: () => {
         setIsSimulationRunning(false)
@@ -196,6 +254,8 @@ export function useCosmos(
         if (!c || !isHighlightNeighborsRef.current) return
         c.unselectPoints()
       },
+      onZoom: () => { updateLabels() },
+      onDragEnd: () => { updateLabels() },
     }
 
     /**
@@ -225,6 +285,9 @@ export function useCosmos(
       // Render statically (alpha=0 = no physics forces).
       // fitViewOnInit zooms camera to frame all nodes.
       cosmos.render(0)
+
+      // Show labels after initial render (delayed so fitView settles first)
+      setTimeout(updateLabels, 300)
     }
 
     // Cosmos needs a container with actual pixel dimensions. If the div has
@@ -270,6 +333,46 @@ export function useCosmos(
   useEffect(() => {
     cosmosRef.current?.setConfig({ renderLinks: isEdgesVisible })
   }, [isEdgesVisible])
+
+  // ── Sync node labels ──
+  // The updateLabels function lives inside the init effect closure, so we
+  // trigger a label refresh by toggling the container visibility and
+  // re-reading positions. We use a micro-delay to let the ref update settle.
+  useEffect(() => {
+    const container = labelsRef.current
+    if (!container) return
+    if (!isNodeLabelsVisible) {
+      container.style.display = 'none'
+      return
+    }
+    // Show container, then update positions
+    container.style.display = ''
+    const cosmos = cosmosRef.current
+    if (!cosmos || !data) return
+    const positions = cosmos.getPointPositions()
+    if (!positions || positions.length === 0) return
+
+    const canvasW = containerRef.current?.clientWidth ?? 0
+    const canvasH = containerRef.current?.clientHeight ?? 0
+    container.innerHTML = ''
+    const maxLabels = 300
+    let count = 0
+    for (let idx = 0; idx < data.nodes.length && count < maxLabels; idx++) {
+      const sx = positions[idx * 2]
+      const sy = positions[idx * 2 + 1]
+      if (sx === undefined || sy === undefined) continue
+      const [screenX, screenY] = cosmos.spaceToScreenPosition([sx, sy])
+      if (screenX < -50 || screenX > canvasW + 50 || screenY < -50 || screenY > canvasH + 50) continue
+      const el = document.createElement('div')
+      el.className = 'pointer-events-none absolute font-sans text-[10px] text-slate-600'
+      el.style.whiteSpace = 'nowrap'
+      el.style.left = `${screenX + 8}px`
+      el.style.top = `${screenY - 6}px`
+      el.textContent = data.nodes[idx].label ?? data.nodes[idx].id
+      container.appendChild(el)
+      count++
+    }
+  }, [isNodeLabelsVisible, data])
 
   // ── Sync node sizes ──
   // Use pointSizeScale (shader uniform) for instant slider response — no data flush needed.
@@ -345,6 +448,7 @@ export function useCosmos(
 
   return {
     containerRef,
+    labelsRef,
     tooltipState,
     setTooltipState,
     hoverLabel,

@@ -34,6 +34,7 @@ interface Props {
 export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFile }: Props): React.JSX.Element {
   const [isDragOver, setIsDragOver] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [loadingStatus, setLoadingStatus] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [isSchemaOpen, setIsSchemaOpen] = useState(false)
   const [pendingLoad, setPendingLoad] = useState<{
@@ -47,18 +48,38 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
   const internalFileInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = externalFileInputRef ?? internalFileInputRef
 
+  /** Yield to the browser so the UI can update (spinner, status text). */
+  const yieldToUI = (): Promise<void> => new Promise((r) => setTimeout(r, 0))
+
   const processFile = useCallback(
     (file: File): void => {
       setError(null)
       setIsLoading(true)
+      setLoadingStatus('Reading file…')
 
       const reader = new FileReader()
-      reader.onload = (e): void => {
+      reader.onload = async (e): Promise<void> => {
         try {
-          const text = e.target?.result as string
-          const raw = parseJSON(text)
+          let text = e.target?.result as string
+
+          setLoadingStatus('Parsing JSON…')
+          await yieldToUI()
+          let raw = parseJSON(text)
+          // Release the text string to free ~2× file size of RAM
+          text = null as unknown as string
+
+          setLoadingStatus('Validating…')
+          await yieldToUI()
           const validated = validateGraph(raw)
+          // Release parsed JSON — validated now holds references to the same objects
+          raw = null as unknown as ReturnType<typeof parseJSON>
+
+          setLoadingStatus('Processing properties…')
+          await yieldToUI()
           const nullResult: NullDefaultResult = applyNullDefaults(validated)
+
+          setLoadingStatus('Building graph…')
+          await yieldToUI()
           const cosmosData = buildGraph(nullResult)
 
           if (nullResult.replacementCount > 0) {
@@ -156,7 +177,7 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
         {isLoading ? (
           <div data-testid="spinner" className="flex flex-col items-center gap-2">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-500" />
-            <p className="text-sm text-slate-500">Loading graph…</p>
+            <p className="text-sm text-slate-500">{loadingStatus || 'Loading graph…'}</p>
           </div>
         ) : (
           <>

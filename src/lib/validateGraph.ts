@@ -1,5 +1,5 @@
 import Ajv from 'ajv'
-import type { GraphData, NodeInput, EdgeInput, PropertyValue } from '../types'
+import type { GraphData, NodeInput, EdgeInput } from '../types'
 import graphSchema from './graphSchema.json'
 
 /**
@@ -61,79 +61,84 @@ export function validateGraph(raw: unknown): GraphData {
   const obj = raw as Record<string, unknown>
 
   // Phase 2: lenient per-item processing
+  // Validates in-place where possible — only creates new arrays when items are skipped.
+  const rawNodes = obj.nodes as unknown[]
+  const rawEdges = obj.edges as unknown[]
+
+  let skippedNodes = 0
+  let skippedEdges = 0
   const validNodes: NodeInput[] = []
-  for (const node of obj.nodes as unknown[]) {
+
+  for (let i = 0; i < rawNodes.length; i++) {
+    const node = rawNodes[i]
     if (typeof node !== 'object' || node === null) {
-      console.warn('Skipping invalid node: not an object')
+      skippedNodes++
       continue
     }
     const n = node as Record<string, unknown>
     if (typeof n.id !== 'string' || n.id === '') {
-      console.warn('Skipping node without valid string id')
+      skippedNodes++
       continue
     }
 
-    const validNode: NodeInput = { id: n.id }
-
-    if (typeof n.label === 'string') {
-      validNode.label = n.label
-    }
-    if (typeof n.x === 'number') {
-      validNode.x = n.x
-    }
-    if (typeof n.y === 'number') {
-      validNode.y = n.y
-    }
-
+    // Validate properties in-place — strip unsupported types without copying
     if (typeof n.properties === 'object' && n.properties !== null && !Array.isArray(n.properties)) {
-      const props: Record<string, PropertyValue> = {}
-      for (const [key, value] of Object.entries(n.properties as Record<string, unknown>)) {
-        if (typeof value === 'number' || typeof value === 'string' || typeof value === 'boolean') {
-          props[key] = value
-        } else {
-          console.warn(`Skipping property "${key}" on node "${n.id}": unsupported type`)
+      const props = n.properties as Record<string, unknown>
+      for (const key of Object.keys(props)) {
+        const value = props[key]
+        if (typeof value !== 'number' && typeof value !== 'string' && typeof value !== 'boolean') {
+          delete props[key]
+          skippedNodes++ // count as a warning (batched below)
         }
       }
-      validNode.properties = props
     }
 
-    validNodes.push(validNode)
+    // Cast in-place — avoid creating new NodeInput objects
+    validNodes.push(node as unknown as NodeInput)
+  }
+
+  if (skippedNodes > 0) {
+    console.warn(`Skipped ${skippedNodes} invalid nodes or property values`)
   }
 
   if (validNodes.length === 0) {
     throw new Error('Graph has no nodes to display')
   }
 
-  const nodeIds = new Set(validNodes.map((n) => n.id))
+  // Build node ID set for edge validation
+  const nodeIds = new Set<string>()
+  for (let i = 0; i < validNodes.length; i++) {
+    nodeIds.add(validNodes[i].id)
+  }
+
   const validEdges: EdgeInput[] = []
-  for (const edge of obj.edges as unknown[]) {
+  for (let i = 0; i < rawEdges.length; i++) {
+    const edge = rawEdges[i]
     if (typeof edge !== 'object' || edge === null) {
-      console.warn('Skipping invalid edge: not an object')
+      skippedEdges++
       continue
     }
     const e = edge as Record<string, unknown>
     if (typeof e.source !== 'string' || typeof e.target !== 'string') {
-      console.warn('Skipping edge: missing source or target')
+      skippedEdges++
       continue
     }
     if (!nodeIds.has(e.source) || !nodeIds.has(e.target)) {
-      console.warn(`Skipping edge ${e.source} → ${e.target}: unknown node id`)
+      skippedEdges++
       continue
     }
+    // Cast in-place
+    validEdges.push(edge as unknown as EdgeInput)
+  }
 
-    const validEdge: EdgeInput = { source: e.source, target: e.target }
-    if (typeof e.label === 'string') {
-      validEdge.label = e.label
-    }
-    if (typeof e.weight === 'number') {
-      validEdge.weight = e.weight
-    }
-    validEdges.push(validEdge)
+  if (skippedEdges > 0) {
+    console.warn(`Skipped ${skippedEdges} invalid edges`)
   }
 
   return {
     version: '1',
-    nodes: validNodes,
-    edges: validEdges,
+    // If nothing was skipped, reuse original arrays (no copy)
+    nodes: skippedNodes === 0 ? (rawNodes as NodeInput[]) : validNodes,
+    edges: skippedEdges === 0 ? (rawEdges as EdgeInput[]) : validEdges,
   }
 }

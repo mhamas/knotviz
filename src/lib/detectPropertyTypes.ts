@@ -4,7 +4,7 @@ const ISO_DATE_RE =
   /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})?)?$/
 
 /**
- * Infers the type of every property key by sampling all node values.
+ * Infers the type of every property key by examining all node values.
  *
  * Rules (applied in order):
  * 1. All non-null values are JS booleans → 'boolean'
@@ -14,6 +14,8 @@ const ISO_DATE_RE =
  *
  * Edge case: if all values are null/undefined → default to 'number'.
  *
+ * Memory-optimised: tracks type candidates per key without collecting all values.
+ *
  * @param nodes - Array of NodeInput objects to analyse.
  * @returns Map of propertyKey → PropertyType.
  * @example
@@ -21,44 +23,49 @@ const ISO_DATE_RE =
  * // → Map { 'age' → 'number', 'joined' → 'date', 'active' → 'boolean' }
  */
 export function detectPropertyTypes(nodes: NodeInput[]): Map<string, PropertyType> {
-  const valuesByKey = new Map<string, unknown[]>()
+  // Track type state per key without storing all values.
+  // isAllBoolean / isAllNumber / isAllDate start true and get flipped to false
+  // on the first non-matching value. nonNullCount tracks how many real values seen.
+  const keyState = new Map<string, {
+    nonNullCount: number
+    isAllBoolean: boolean
+    isAllNumber: boolean
+    isAllDate: boolean
+  }>()
 
-  for (const node of nodes) {
-    if (!node.properties) continue
-    for (const [key, value] of Object.entries(node.properties)) {
-      if (!valuesByKey.has(key)) {
-        valuesByKey.set(key, [])
+  for (let i = 0; i < nodes.length; i++) {
+    const props = nodes[i].properties
+    if (!props) continue
+    for (const key of Object.keys(props)) {
+      let state = keyState.get(key)
+      if (!state) {
+        state = { nonNullCount: 0, isAllBoolean: true, isAllNumber: true, isAllDate: true }
+        keyState.set(key, state)
       }
-      valuesByKey.get(key)!.push(value)
+
+      const value = props[key]
+      if (value === null || value === undefined) continue
+      state.nonNullCount++
+
+      if (state.isAllBoolean && typeof value !== 'boolean') state.isAllBoolean = false
+      if (state.isAllNumber && typeof value !== 'number') state.isAllNumber = false
+      if (state.isAllDate && !(typeof value === 'string' && ISO_DATE_RE.test(value))) state.isAllDate = false
     }
   }
 
   const result = new Map<string, PropertyType>()
-
-  for (const [key, values] of valuesByKey) {
-    const nonNull = values.filter((v) => v !== null && v !== undefined)
-
-    if (nonNull.length === 0) {
+  for (const [key, state] of keyState) {
+    if (state.nonNullCount === 0) {
       result.set(key, 'number')
-      continue
-    }
-
-    if (nonNull.every((v) => typeof v === 'boolean')) {
+    } else if (state.isAllBoolean) {
       result.set(key, 'boolean')
-      continue
-    }
-
-    if (nonNull.every((v) => typeof v === 'number')) {
+    } else if (state.isAllNumber) {
       result.set(key, 'number')
-      continue
-    }
-
-    if (nonNull.every((v) => typeof v === 'string' && ISO_DATE_RE.test(v))) {
+    } else if (state.isAllDate) {
       result.set(key, 'date')
-      continue
+    } else {
+      result.set(key, 'string')
     }
-
-    result.set(key, 'string')
   }
 
   return result

@@ -454,61 +454,28 @@ export function useCosmos(
   const propertyColumnsRef = useRef<Record<string, (number | string | boolean | undefined)[]>>({})
   useEffect(() => {
     if (!data) return
+    // Build columnar property arrays: one pass to discover keys + fill values
     const columns: Record<string, (number | string | boolean | undefined)[]> = {}
-    // Discover all property keys from first few nodes, then build columns
-    const keys = new Set<string>()
-    for (let i = 0; i < data.nodes.length; i++) {
+    const n = data.nodes.length
+    for (let i = 0; i < n; i++) {
       const props = data.nodes[i].properties
-      if (props) for (const k of Object.keys(props)) keys.add(k)
-      if (keys.size > 0 && i > 100) break // sample first 100 to discover keys
-    }
-    for (const key of keys) {
-      const col: (number | string | boolean | undefined)[] = new Array(data.nodes.length)
-      for (let i = 0; i < data.nodes.length; i++) {
-        col[i] = data.nodes[i].properties?.[key] as number | string | boolean | undefined
+      if (!props) continue
+      for (const k of Object.keys(props)) {
+        if (!(k in columns)) {
+          // New key discovered — backfill with undefined
+          columns[k] = new Array(n).fill(undefined)
+        }
+        columns[k][i] = props[k] as number | string | boolean | undefined
       }
-      columns[key] = col
     }
     propertyColumnsRef.current = columns
   }, [data])
 
-  // ── Sync node colors + filter visibility (via Web Worker) ──
+  // ── Appearance worker: send columns once, then lightweight updates ──
   const workerRef = useRef<Worker | null>(null)
   useEffect(() => {
     const worker = new AppearanceWorker()
     workerRef.current = worker
-    return () => { worker.terminate(); workerRef.current = null }
-  }, [])
-
-  useEffect(() => {
-    if (!data) return
-    const cosmos = cosmosRef.current
-    const worker = workerRef.current
-    if (!cosmos || !worker) return
-
-    // Serialize filters for worker (convert Sets to arrays)
-    const serializedFilters: Record<string, unknown> = {}
-    for (const [key, f] of filters) {
-      if (f.type === 'string') {
-        serializedFilters[key] = { ...f, selectedValues: Array.from(f.selectedValues) }
-      } else {
-        serializedFilters[key] = { ...f }
-      }
-    }
-
-    // Build gradient entries as sparse Float32Array: [index, r, g, b, a, ...]
-    let gradientEntries = new Float32Array(0)
-    if (gradientColors && gradientColors.size > 0) {
-      const entries: number[] = []
-      for (const [id, hex] of gradientColors) {
-        const idx = data.nodeIndexMap.get(id)
-        if (idx === undefined) continue
-        const rgba = hexToRgba(hex)
-        entries.push(idx, rgba[0], rgba[1], rgba[2], rgba[3])
-      }
-      gradientEntries = new Float32Array(entries)
-    }
-
     worker.onmessage = (e: MessageEvent): void => {
       const { pointColors, pointSizes, linkColors } = e.data as {
         pointColors: Float32Array
@@ -522,18 +489,66 @@ export function useCosmos(
       c.setLinkColors(linkColors)
       c.render(0)
     }
+    return () => { worker.terminate(); workerRef.current = null }
+  }, [])
 
-    const msg = {
-      nodeCount: data.nodes.length,
+  // Send property columns + link indices to worker ONCE per graph load
+  useEffect(() => {
+    if (!data) return
+    const worker = workerRef.current
+    if (!worker) return
+    worker.postMessage({
+      type: 'init',
       propertyColumns: propertyColumnsRef.current,
+      linkIndices: data.linkIndices,
+    })
+  }, [data])
+
+  // Send lightweight update on filter/gradient change (no columns cloned)
+  useEffect(() => {
+    if (!data) return
+    const worker = workerRef.current
+    if (!worker) return
+
+    // Serialize filters (convert Sets to arrays for structured clone)
+    const serializedFilters: Record<string, unknown> = {}
+    for (const [key, f] of filters) {
+      if (f.type === 'string') {
+        serializedFilters[key] = { ...f, selectedValues: Array.from(f.selectedValues) }
+      } else {
+        serializedFilters[key] = { ...f }
+      }
+    }
+
+    // Build gradient entries as sparse Float32Array: [index, r, g, b, a, ...]
+    let gradientEntries: Float32Array
+    if (gradientColors && gradientColors.size > 0) {
+      gradientEntries = new Float32Array(gradientColors.size * 5)
+      let offset = 0
+      for (const [id, hex] of gradientColors) {
+        const idx = data.nodeIndexMap.get(id)
+        if (idx === undefined) continue
+        const rgba = hexToRgba(hex)
+        gradientEntries[offset++] = idx
+        gradientEntries[offset++] = rgba[0]
+        gradientEntries[offset++] = rgba[1]
+        gradientEntries[offset++] = rgba[2]
+        gradientEntries[offset++] = rgba[3]
+      }
+      if (offset < gradientEntries.length) gradientEntries = gradientEntries.subarray(0, offset)
+    } else {
+      gradientEntries = new Float32Array(0)
+    }
+
+    worker.postMessage({
+      type: 'update',
+      nodeCount: data.nodes.length,
       filters: serializedFilters,
       gradientEntries,
       defaultRgba: hexToRgba(COLOR_DEFAULT),
       edgeRgba: hexToRgba(COLOR_EDGE_DEFAULT),
-      linkIndices: data.linkIndices,
-    }
-    worker.postMessage(msg)
-  }, [data, filters, gradientColors, nodeColors, matchingNodeIds, hasActiveFilters])
+    })
+  }, [data, filters, gradientColors])
 
   // ── Sync highlight neighbors ──
   useEffect(() => {

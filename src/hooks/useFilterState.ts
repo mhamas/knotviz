@@ -57,20 +57,14 @@ function initializeFilters(
     const values = nodeValueIndex.get(meta.key)
 
     if (meta.type === 'number') {
-      const nums: number[] = []
-      if (values) {
-        for (const v of values.values()) {
-          if (typeof v === 'number') nums.push(v)
-        }
-      }
       let domainMin = 0
       let domainMax = 0
-      if (nums.length > 0) {
-        domainMin = nums[0]
-        domainMax = nums[0]
-        for (let i = 1; i < nums.length; i++) {
-          if (nums[i] < domainMin) domainMin = nums[i]
-          if (nums[i] > domainMax) domainMax = nums[i]
+      let isFirst = true
+      if (values) {
+        for (const v of values.values()) {
+          if (typeof v !== 'number') continue
+          if (isFirst) { domainMin = v; domainMax = v; isFirst = false }
+          else { if (v < domainMin) domainMin = v; if (v > domainMax) domainMax = v }
         }
       }
       filters.set(meta.key, {
@@ -103,15 +97,16 @@ function initializeFilters(
         allValues,
       } satisfies StringFilterState)
     } else if (meta.type === 'date') {
-      const dates: string[] = []
+      let domainMin = '1970-01-01'
+      let domainMax = '1970-01-01'
+      let isFirst = true
       if (values) {
         for (const v of values.values()) {
-          if (typeof v === 'string') dates.push(v)
+          if (typeof v !== 'string') continue
+          if (isFirst) { domainMin = v; domainMax = v; isFirst = false }
+          else { if (v < domainMin) domainMin = v; if (v > domainMax) domainMax = v }
         }
       }
-      dates.sort()
-      const domainMin = dates.length > 0 ? dates[0] : '1970-01-01'
-      const domainMax = dates.length > 0 ? dates[dates.length - 1] : '1970-01-01'
       filters.set(meta.key, {
         type: 'date',
         isEnabled: false,
@@ -319,10 +314,12 @@ export function useFilterState(
     [graphData, filters, nodeValueIndex],
   )
 
-  const hasActiveFilters = useMemo(
-    () => Array.from(filters.values()).some((f) => f.isEnabled),
-    [filters],
-  )
+  const hasActiveFilters = useMemo(() => {
+    for (const f of filters.values()) {
+      if (f.isEnabled) return true
+    }
+    return false
+  }, [filters])
 
   return {
     filters,

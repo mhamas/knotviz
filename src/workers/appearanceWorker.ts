@@ -17,6 +17,8 @@ interface SerializableFilter {
   // date
   after?: string
   before?: string
+  // runtime: Set built from selectedValues array for O(1) lookup
+  _selectedSet?: Set<string>
 }
 
 interface WorkerInput {
@@ -36,13 +38,56 @@ interface WorkerInput {
   linkIndices: Float32Array
 }
 
-self.onmessage = (e: MessageEvent<WorkerInput>): void => {
-  const { nodeCount, propertyColumns, filters, gradientEntries, defaultRgba, edgeRgba, linkIndices } = e.data
+// Persistent state: columns sent once on graph load, reused across messages
+let storedColumns: Record<string, (number | string | boolean | undefined)[]> = {}
+let storedLinkIndices: Float32Array = new Float32Array(0)
+
+interface InitMessage {
+  type: 'init'
+  propertyColumns: Record<string, (number | string | boolean | undefined)[]>
+  linkIndices: Float32Array
+}
+
+interface UpdateMessage {
+  type: 'update'
+  nodeCount: number
+  filters: Record<string, SerializableFilter>
+  gradientEntries: Float32Array
+  defaultRgba: [number, number, number, number]
+  edgeRgba: [number, number, number, number]
+}
+
+self.onmessage = (e: MessageEvent<InitMessage | UpdateMessage | WorkerInput>): void => {
+  const input = e.data
+
+  // Handle init message: store columns + link indices for reuse
+  if ('type' in input && input.type === 'init') {
+    storedColumns = input.propertyColumns
+    storedLinkIndices = input.linkIndices
+    return
+  }
+
+  // Handle update message (or legacy full message)
+  const isUpdate = 'type' in input && input.type === 'update'
+  const nodeCount = isUpdate ? (input as UpdateMessage).nodeCount : (input as WorkerInput).nodeCount
+  const propertyColumns = isUpdate ? storedColumns : (input as WorkerInput).propertyColumns
+  const filters = isUpdate ? (input as UpdateMessage).filters : (input as WorkerInput).filters
+  const gradientEntries = isUpdate ? (input as UpdateMessage).gradientEntries : (input as WorkerInput).gradientEntries
+  const defaultRgba = isUpdate ? (input as UpdateMessage).defaultRgba : (input as WorkerInput).defaultRgba
+  const edgeRgba = isUpdate ? (input as UpdateMessage).edgeRgba : (input as WorkerInput).edgeRgba
+  const linkIndices = isUpdate ? storedLinkIndices : (input as WorkerInput).linkIndices
 
   // Step 1: Compute matching bitmask
   const enabledFilters: [string, SerializableFilter][] = []
   for (const [key, f] of Object.entries(filters)) {
     if (f.isEnabled) enabledFilters.push([key, f])
+  }
+
+  // Convert string filter selectedValues from arrays to Sets for O(1) lookup
+  for (const [, f] of enabledFilters) {
+    if (f.type === 'string' && f.selectedValues && Array.isArray(f.selectedValues)) {
+      f._selectedSet = new Set(f.selectedValues)
+    }
   }
 
   const hasActiveFilters = enabledFilters.length > 0
@@ -132,9 +177,10 @@ function passesFilter(value: unknown, filter: SerializableFilter): boolean {
       return typeof value === 'number' && value >= filter.min! && value <= filter.max!
     case 'boolean':
       return value === filter.selected
-    case 'string':
-      return !filter.selectedValues || filter.selectedValues.length === 0 ||
-        (typeof value === 'string' && filter.selectedValues.includes(value))
+    case 'string': {
+      const set = filter._selectedSet as Set<string> | undefined
+      return !set || set.size === 0 || (typeof value === 'string' && set.has(value))
+    }
     case 'date':
       return typeof value === 'string' && value >= filter.after! && value <= filter.before!
   }

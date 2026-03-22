@@ -3,7 +3,7 @@ import { Graph as CosmosGraph } from '@cosmos.gl/graph'
 import type { GraphConfigInterface } from '@cosmos.gl/graph'
 import type { CosmosGraphData, TooltipState } from '../types'
 import { useGraphStore } from '@/stores/useGraphStore'
-import { COLOR_DEFAULT, COLOR_EDGE_DEFAULT, COLOR_GRAYED } from '@/lib/colors'
+import { COLOR_DEFAULT, COLOR_EDGE_DEFAULT } from '@/lib/colors'
 
 /** Parse a hex color string to normalized [r, g, b, a] (all 0.0–1.0). */
 function hexToRgba(hex: string): [number, number, number, number] {
@@ -60,6 +60,8 @@ export interface UseCosmosReturn {
 export function useCosmos(
   data: CosmosGraphData | null,
   nodeColors: Map<string, string>,
+  matchingNodeIds: Set<string>,
+  hasActiveFilters: boolean,
 ): UseCosmosReturn {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const labelsRef = useRef<HTMLDivElement | null>(null)
@@ -83,6 +85,8 @@ export function useCosmos(
   // Refs for callback closures
   const dataRef = useRef(data)
   const nodeColorsRef = useRef(nodeColors)
+  const matchingNodeIdsRef = useRef(matchingNodeIds)
+  const hasActiveFiltersRef = useRef(hasActiveFilters)
   const isHighlightNeighborsRef = useRef(isHighlightNeighbors)
   const isNodeLabelsVisibleRef = useRef(isNodeLabelsVisible)
   const hoveredIndexRef = useRef<number | undefined>(undefined)
@@ -91,6 +95,8 @@ export function useCosmos(
 
   useEffect(() => { dataRef.current = data }, [data])
   useEffect(() => { nodeColorsRef.current = nodeColors }, [nodeColors])
+  useEffect(() => { matchingNodeIdsRef.current = matchingNodeIds }, [matchingNodeIds])
+  useEffect(() => { hasActiveFiltersRef.current = hasActiveFilters }, [hasActiveFilters])
   useEffect(() => { isHighlightNeighborsRef.current = isHighlightNeighbors }, [isHighlightNeighbors])
   useEffect(() => { isNodeLabelsVisibleRef.current = isNodeLabelsVisible }, [isNodeLabelsVisible])
 
@@ -306,8 +312,8 @@ export function useCosmos(
       // Links
       cosmos.setLinks(data.linkIndices)
 
-      // Colors
-      applyNodeColors(cosmos, data, nodeColorsRef.current)
+      // Colors and filter visibility
+      applyFilteredAppearance(cosmos, data, nodeColorsRef.current, matchingNodeIdsRef.current, hasActiveFiltersRef.current)
 
       // Render statically (alpha=0 = no physics forces).
       // fitViewOnInit zooms camera to frame all nodes.
@@ -436,14 +442,16 @@ export function useCosmos(
     cosmosRef.current?.setConfig({ linkWidthScale: edgeSize })
   }, [edgeSize])
 
-  // ── Sync node colors ──
+  // ── Sync node colors + filter visibility ──
+  // Must call render(0) — not create() — because render() runs
+  // this.graph.update() which processes input data before uploading to GPU.
   useEffect(() => {
     if (!data) return
     const cosmos = cosmosRef.current
     if (!cosmos) return
-    applyNodeColors(cosmos, data, nodeColors)
-    cosmos.create()
-  }, [data, nodeColors])
+    applyFilteredAppearance(cosmos, data, nodeColors, matchingNodeIds, hasActiveFilters)
+    cosmos.render(0)
+  }, [data, nodeColors, matchingNodeIds, hasActiveFilters])
 
   // ── Sync highlight neighbors ──
   useEffect(() => {
@@ -609,32 +617,71 @@ export function useCosmos(
   }
 }
 
-/** Build and apply a Float32Array of RGBA colors from the nodeColors map. */
-function applyNodeColors(
+/**
+ * Apply node colors, sizes, and link visibility based on filter state.
+ * Filtered-out nodes get alpha=0 (invisible) and size=0.
+ * Edges where either endpoint is filtered get alpha=0.
+ */
+function applyFilteredAppearance(
   cosmos: CosmosGraph,
   data: CosmosGraphData,
   nodeColors: Map<string, string>,
+  matchingNodeIds: Set<string>,
+  hasActiveFilters: boolean,
 ): void {
   const n = data.nodes.length
   const colors = new Float32Array(n * 4)
+  const sizes = new Float32Array(n)
   const defaultRgba = hexToRgba(COLOR_DEFAULT)
-  const grayedRgba = hexToRgba(COLOR_GRAYED)
 
   for (let i = 0; i < n; i++) {
-    const hex = nodeColors.get(data.nodes[i].id)
-    let rgba: [number, number, number, number]
-    if (!hex) {
-      rgba = defaultRgba
-    } else if (hex === COLOR_GRAYED) {
-      rgba = grayedRgba
+    const id = data.nodes[i].id
+    const isHidden = hasActiveFilters && !matchingNodeIds.has(id)
+
+    if (isHidden) {
+      // Invisible: alpha=0, size=0
+      colors[i * 4] = 0
+      colors[i * 4 + 1] = 0
+      colors[i * 4 + 2] = 0
+      colors[i * 4 + 3] = 0
+      sizes[i] = 0
     } else {
-      rgba = hexToRgba(hex)
+      const hex = nodeColors.get(id)
+      const rgba = hex ? hexToRgba(hex) : defaultRgba
+      colors[i * 4] = rgba[0]
+      colors[i * 4 + 1] = rgba[1]
+      colors[i * 4 + 2] = rgba[2]
+      colors[i * 4 + 3] = rgba[3]
+      sizes[i] = 4 // base size (pointSizeScale handles the slider)
     }
-    colors[i * 4] = rgba[0]
-    colors[i * 4 + 1] = rgba[1]
-    colors[i * 4 + 2] = rgba[2]
-    colors[i * 4 + 3] = rgba[3]
   }
   cosmos.setPointColors(colors)
+  cosmos.setPointSizes(sizes)
+
+  // Link visibility: hide edges where either endpoint is filtered out
+  if (hasActiveFilters) {
+    const linkCount = data.linkIndices.length / 2
+    const linkColors = new Float32Array(linkCount * 4)
+    const edgeRgba = hexToRgba(COLOR_EDGE_DEFAULT)
+    for (let i = 0; i < linkCount; i++) {
+      const srcIdx = data.linkIndices[i * 2]
+      const tgtIdx = data.linkIndices[i * 2 + 1]
+      const srcId = data.nodes[srcIdx]?.id
+      const tgtId = data.nodes[tgtIdx]?.id
+      const isVisible = srcId !== undefined && tgtId !== undefined &&
+        matchingNodeIds.has(srcId) && matchingNodeIds.has(tgtId)
+      if (isVisible) {
+        linkColors[i * 4] = edgeRgba[0]
+        linkColors[i * 4 + 1] = edgeRgba[1]
+        linkColors[i * 4 + 2] = edgeRgba[2]
+        linkColors[i * 4 + 3] = edgeRgba[3]
+      }
+      // else: stays 0,0,0,0 (transparent)
+    }
+    cosmos.setLinkColors(linkColors)
+  } else {
+    // Reset to default — clear per-link colors so config default applies
+    cosmos.setLinkColors(new Float32Array(0))
+  }
 }
 

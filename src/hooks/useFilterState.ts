@@ -168,18 +168,53 @@ function computeMatchingNodeIds(
   filters: FilterMap,
   nodeValueIndex: NodeValueIndex,
 ): Set<string> {
+  // Pre-collect only enabled filters to avoid checking disabled ones per node
+  const enabledFilters: [string, FilterState][] = []
+  for (const [key, filter] of filters) {
+    if (filter.isEnabled) enabledFilters.push([key, filter])
+  }
+
+  // Fast path: no enabled filters → all nodes match
+  if (enabledFilters.length === 0) {
+    const matching = new Set<string>()
+    for (let i = 0; i < graphData.nodes.length; i++) {
+      matching.add(graphData.nodes[i].id)
+    }
+    return matching
+  }
+
+  // Pre-resolve value maps for enabled filters (avoid repeated Map.get per node)
+  const valueMaps = enabledFilters.map(([key]) => nodeValueIndex.get(key))
+
   const matching = new Set<string>()
-  for (const node of graphData.nodes) {
+  for (let i = 0; i < graphData.nodes.length; i++) {
+    const id = graphData.nodes[i].id
     let isPass = true
-    for (const [key, filter] of filters) {
-      if (!nodePassesFilter(node.id, filter, nodeValueIndex, key)) {
+    for (let f = 0; f < enabledFilters.length; f++) {
+      const filter = enabledFilters[f][1]
+      const value = valueMaps[f]?.get(id)
+      if (!passesFilter(value, filter)) {
         isPass = false
         break
       }
     }
-    if (isPass) matching.add(node.id)
+    if (isPass) matching.add(id)
   }
   return matching
+}
+
+/** Inlined filter check — avoids function call overhead + redundant isEnabled check. */
+function passesFilter(value: unknown, filter: FilterState): boolean {
+  switch (filter.type) {
+    case 'number':
+      return typeof value === 'number' && value >= filter.min && value <= filter.max
+    case 'boolean':
+      return value === filter.selected
+    case 'string':
+      return filter.selectedValues.size === 0 || (typeof value === 'string' && filter.selectedValues.has(value))
+    case 'date':
+      return typeof value === 'string' && value >= filter.after && value <= filter.before
+  }
 }
 
 /**

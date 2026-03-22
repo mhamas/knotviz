@@ -5,13 +5,18 @@ import type { CosmosGraphData, TooltipState } from '../types'
 import { useGraphStore } from '@/stores/useGraphStore'
 import { COLOR_DEFAULT, COLOR_EDGE_DEFAULT } from '@/lib/colors'
 
-/** Parse a hex color string to normalized [r, g, b, a] (all 0.0–1.0). */
+/** Parse a hex color string to normalized [r, g, b, a] (all 0.0–1.0). Cached. */
+const rgbaCache = new Map<string, [number, number, number, number]>()
 function hexToRgba(hex: string): [number, number, number, number] {
+  let cached = rgbaCache.get(hex)
+  if (cached) return cached
   const h = hex.replace('#', '')
   const r = parseInt(h.substring(0, 2), 16) / 255
   const g = parseInt(h.substring(2, 4), 16) / 255
   const b = parseInt(h.substring(4, 6), 16) / 255
-  return [r, g, b, 1]
+  cached = [r, g, b, 1]
+  rgbaCache.set(hex, cached)
+  return cached
 }
 
 /** Generate random positions for n nodes in [-2048, 2048] range. */
@@ -621,6 +626,9 @@ export function useCosmos(
  * Apply node colors, sizes, and link visibility based on filter state.
  * Filtered-out nodes get alpha=0 (invisible) and size=0.
  * Edges where either endpoint is filtered get alpha=0.
+ *
+ * Performance: uses Uint8Array bitmask for O(1) index-based visibility checks
+ * instead of Set<string>.has() for each of N nodes + E edges.
  */
 function applyFilteredAppearance(
   cosmos: CosmosGraph,
@@ -634,53 +642,51 @@ function applyFilteredAppearance(
   const sizes = new Float32Array(n)
   const defaultRgba = hexToRgba(COLOR_DEFAULT)
 
-  for (let i = 0; i < n; i++) {
-    const id = data.nodes[i].id
-    const isHidden = hasActiveFilters && !matchingNodeIds.has(id)
-
-    if (isHidden) {
-      // Invisible: alpha=0, size=0
-      colors[i * 4] = 0
-      colors[i * 4 + 1] = 0
-      colors[i * 4 + 2] = 0
-      colors[i * 4 + 3] = 0
-      sizes[i] = 0
-    } else {
-      const hex = nodeColors.get(id)
-      const rgba = hex ? hexToRgba(hex) : defaultRgba
-      colors[i * 4] = rgba[0]
-      colors[i * 4 + 1] = rgba[1]
-      colors[i * 4 + 2] = rgba[2]
-      colors[i * 4 + 3] = rgba[3]
-      sizes[i] = 4 // base size (pointSizeScale handles the slider)
+  // Build index-based visibility bitmask once (avoids repeated Set.has(string) in edge loop)
+  // visible[i] = 1 if node i is visible, 0 if hidden
+  let visible: Uint8Array | null = null
+  if (hasActiveFilters) {
+    visible = new Uint8Array(n)
+    for (let i = 0; i < n; i++) {
+      visible[i] = matchingNodeIds.has(data.nodes[i].id) ? 1 : 0
     }
+  }
+
+  for (let i = 0; i < n; i++) {
+    if (visible && !visible[i]) {
+      // Hidden: alpha=0, size=0 — leave Float32Array default (0)
+      continue
+    }
+    const hex = nodeColors.get(data.nodes[i].id)
+    const rgba = hex ? hexToRgba(hex) : defaultRgba
+    const off = i * 4
+    colors[off] = rgba[0]
+    colors[off + 1] = rgba[1]
+    colors[off + 2] = rgba[2]
+    colors[off + 3] = rgba[3]
+    sizes[i] = 4
   }
   cosmos.setPointColors(colors)
   cosmos.setPointSizes(sizes)
 
-  // Link visibility: hide edges where either endpoint is filtered out
-  if (hasActiveFilters) {
+  // Link visibility: use the bitmask for O(1) checks per edge (no string lookups)
+  if (visible) {
     const linkCount = data.linkIndices.length / 2
     const linkColors = new Float32Array(linkCount * 4)
-    const edgeRgba = hexToRgba(COLOR_EDGE_DEFAULT)
+    const er = hexToRgba(COLOR_EDGE_DEFAULT)
+    const er0 = er[0], er1 = er[1], er2 = er[2], er3 = er[3]
+    const indices = data.linkIndices
     for (let i = 0; i < linkCount; i++) {
-      const srcIdx = data.linkIndices[i * 2]
-      const tgtIdx = data.linkIndices[i * 2 + 1]
-      const srcId = data.nodes[srcIdx]?.id
-      const tgtId = data.nodes[tgtIdx]?.id
-      const isVisible = srcId !== undefined && tgtId !== undefined &&
-        matchingNodeIds.has(srcId) && matchingNodeIds.has(tgtId)
-      if (isVisible) {
-        linkColors[i * 4] = edgeRgba[0]
-        linkColors[i * 4 + 1] = edgeRgba[1]
-        linkColors[i * 4 + 2] = edgeRgba[2]
-        linkColors[i * 4 + 3] = edgeRgba[3]
+      if (visible[indices[i * 2]] && visible[indices[i * 2 + 1]]) {
+        const off = i * 4
+        linkColors[off] = er0
+        linkColors[off + 1] = er1
+        linkColors[off + 2] = er2
+        linkColors[off + 3] = er3
       }
-      // else: stays 0,0,0,0 (transparent)
     }
     cosmos.setLinkColors(linkColors)
   } else {
-    // Reset to default — clear per-link colors so config default applies
     cosmos.setLinkColors(new Float32Array(0))
   }
 }

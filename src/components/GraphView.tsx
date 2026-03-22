@@ -81,7 +81,7 @@ export function GraphView({
     containerRef,
     labelsRef,
     tooltipState,
-    setTooltipState,
+    closeTooltip,
     hoverLabel,
     hoverRef,
     handleZoomIn,
@@ -153,7 +153,7 @@ export function GraphView({
             graphData={graphData}
             propertyMetas={propertyMetas}
             canvasBounds={tooltipState.canvasBounds}
-            onClose={(): void => setTooltipState(null)}
+            onClose={closeTooltip}
           />
         )}
         <div

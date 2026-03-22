@@ -32,7 +32,7 @@ export interface UseCosmosReturn {
   containerRef: React.RefObject<HTMLDivElement | null>
   labelsRef: React.RefObject<HTMLDivElement | null>
   tooltipState: TooltipState | null
-  setTooltipState: (state: TooltipState | null) => void
+  closeTooltip: () => void
   hoverLabel: HoverLabel | null
   hoverRef: React.RefObject<HTMLDivElement | null>
   handleZoomIn: () => void
@@ -84,6 +84,7 @@ export function useCosmos(
   const isHighlightNeighborsRef = useRef(isHighlightNeighbors)
   const isNodeLabelsVisibleRef = useRef(isNodeLabelsVisible)
   const hoveredIndexRef = useRef<number | undefined>(undefined)
+  const tooltipNodeIndexRef = useRef<number | undefined>(undefined)
 
   useEffect(() => { dataRef.current = data }, [data])
   useEffect(() => { nodeColorsRef.current = nodeColors }, [nodeColors])
@@ -210,20 +211,31 @@ export function useCosmos(
       onSimulationUnpause: () => setIsSimulationRunning(true),
       onPointClick: (index, _pointPosition, event) => {
         const d = dataRef.current
-        if (!d || index === undefined) return
+        const c = cosmosRef.current
+        if (!d || !c || index === undefined) return
         const node = d.nodes[index]
         if (!node) return
         const container = containerRef.current
         const bounds = container?.getBoundingClientRect() ?? new DOMRect()
+        tooltipNodeIndexRef.current = index
         setTooltipState({
           nodeId: node.id,
           x: event.clientX - bounds.left,
           y: event.clientY - bounds.top,
           canvasBounds: bounds,
         })
+        // Keep neighbors highlighted while tooltip is open
+        if (isHighlightNeighborsRef.current) {
+          c.selectPointByIndex(index, true)
+        }
       },
       onBackgroundClick: () => {
+        tooltipNodeIndexRef.current = undefined
         setTooltipState(null)
+        // Clear selection when tooltip closes
+        if (isHighlightNeighborsRef.current) {
+          cosmosRef.current?.unselectPoints()
+        }
       },
       onMouseMove: (_index, _pointPosition, event) => {
         updateHoverPosition(event.clientX, event.clientY)
@@ -252,6 +264,8 @@ export function useCosmos(
         setHoverLabel(null)
         const c = cosmosRef.current
         if (!c || !isHighlightNeighborsRef.current) return
+        // Don't clear selection if tooltip is pinned to a node
+        if (tooltipNodeIndexRef.current !== undefined) return
         c.unselectPoints()
       },
       onZoom: () => { updateLabels() },
@@ -404,6 +418,15 @@ export function useCosmos(
     }
   }, [isHighlightNeighbors])
 
+  // ── Close tooltip (also clears neighbor highlight) ──
+  const closeTooltip = useCallback((): void => {
+    tooltipNodeIndexRef.current = undefined
+    setTooltipState(null)
+    if (isHighlightNeighborsRef.current) {
+      cosmosRef.current?.unselectPoints()
+    }
+  }, [])
+
   // ── Camera controls ──
   const handleZoomIn = useCallback((): void => {
     const cosmos = cosmosRef.current
@@ -450,7 +473,7 @@ export function useCosmos(
     containerRef,
     labelsRef,
     tooltipState,
-    setTooltipState,
+    closeTooltip,
     hoverLabel,
     hoverRef,
     handleZoomIn,

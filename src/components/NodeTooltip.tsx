@@ -97,18 +97,27 @@ export function NodeTooltip({
   // Sort properties alphabetically
   const sortedMetas = [...propertyMetas].sort((a, b) => a.key.localeCompare(b.key))
 
-  // Flip logic
-  const isFlipRight = screenPosition.x + TOOLTIP_WIDTH + TOOLTIP_MARGIN > canvasBounds.width
-  const isFlipUp = screenPosition.y + tooltipHeight + TOOLTIP_MARGIN > canvasBounds.height
+  // Position with flip + clamp to stay fully within canvas bounds
+  const pad = TOOLTIP_MARGIN
+  let left = screenPosition.x + pad
+  let top = screenPosition.y + pad
+
+  // Flip right → left if overflowing right edge
+  if (left + TOOLTIP_WIDTH > canvasBounds.width) {
+    left = screenPosition.x - TOOLTIP_WIDTH - pad
+  }
+  // Flip down → up if overflowing bottom edge
+  if (top + tooltipHeight > canvasBounds.height) {
+    top = screenPosition.y - tooltipHeight - pad
+  }
+  // Clamp so it never goes off any edge
+  left = Math.max(pad, Math.min(left, canvasBounds.width - TOOLTIP_WIDTH - pad))
+  top = Math.max(pad, Math.min(top, canvasBounds.height - tooltipHeight - pad))
 
   const style: React.CSSProperties = {
     position: 'absolute',
-    left: isFlipRight
-      ? screenPosition.x - TOOLTIP_WIDTH - TOOLTIP_MARGIN
-      : screenPosition.x + TOOLTIP_MARGIN,
-    top: isFlipUp
-      ? screenPosition.y - tooltipHeight - TOOLTIP_MARGIN
-      : screenPosition.y + TOOLTIP_MARGIN,
+    left,
+    top,
     width: TOOLTIP_WIDTH,
   }
 

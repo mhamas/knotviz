@@ -38,7 +38,7 @@ test('renders node label as heading', async () => {
   await expect.element(screen.getByText('Alice')).toBeVisible()
 })
 
-test('shows id when node has a label', async () => {
+test('shows copy button for node ID', async () => {
   const screen = await render(
     <NodeTooltip
       nodeId="n1"
@@ -49,7 +49,7 @@ test('shows id when node has a label', async () => {
       onClose={vi.fn()}
     />,
   )
-  await expect.element(screen.getByText('id: n1')).toBeVisible()
+  await expect.element(screen.getByRole('button', { name: 'Copy node ID' })).toBeVisible()
 })
 
 test('shows formatted properties', async () => {

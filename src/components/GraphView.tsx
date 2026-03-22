@@ -153,7 +153,7 @@ export function GraphView({
         )}
         <div
           ref={hoverRef}
-          className="pointer-events-none absolute z-20 rounded bg-slate-800 px-2 py-1 text-xs text-white shadow"
+          className="pointer-events-none absolute z-20 max-w-64 break-words rounded-md border border-slate-200 bg-white px-2.5 py-1.5 font-sans text-xs font-medium text-slate-700 shadow-md"
           style={{ display: hoverLabel && !tooltipState ? 'block' : 'none' }}
         >
           {hoverLabel?.label}

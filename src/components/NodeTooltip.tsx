@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { Copy, Check } from 'lucide-react'
 import type { GraphData, PropertyMeta, PropertyValue } from '../types'
 
 interface Props {
@@ -12,30 +13,28 @@ interface Props {
 
 const TOOLTIP_WIDTH = 260
 const TOOLTIP_MARGIN = 12
+const PROP_NAME_MAX = 20
 
 /**
  * Formats a property value for display based on its detected type.
  *
  * @param value - The raw property value.
  * @param type - The detected property type.
- * @returns Formatted string(s).
+ * @returns Formatted string.
  */
 function formatValue(value: PropertyValue, type: string): string {
   if (type === 'number' && typeof value === 'number') {
     return value.toFixed(2)
   }
   if (type === 'date' && typeof value === 'string') {
-    const date = new Date(value)
-    if (isNaN(date.getTime())) return value
-    const daysAgo = Math.floor((Date.now() - date.getTime()) / 86_400_000)
-    return `${value} · ${daysAgo.toLocaleString()} days ago`
+    return value
   }
   return String(value)
 }
 
 /**
  * Floating tooltip anchored to a node's viewport position.
- * Shows node label, id, and all properties formatted by type.
+ * Shows node id (with copy button), and all properties formatted by type.
  * Flips position to stay within canvas bounds.
  *
  * @param props - Node data, position, and close callback.
@@ -51,6 +50,7 @@ export function NodeTooltip({
 }: Props): React.JSX.Element {
   const tooltipRef = useRef<HTMLDivElement>(null)
   const [tooltipHeight, setTooltipHeight] = useState(200)
+  const [isCopied, setIsCopied] = useState(false)
 
   // Measure tooltip height after initial render
   useEffect(() => {
@@ -112,6 +112,13 @@ export function NodeTooltip({
     width: TOOLTIP_WIDTH,
   }
 
+  const handleCopyId = (): void => {
+    navigator.clipboard.writeText(node.id).then(() => {
+      setIsCopied(true)
+      setTimeout(() => setIsCopied(false), 1500)
+    })
+  }
+
   return (
     <div
       ref={tooltipRef}
@@ -120,23 +127,35 @@ export function NodeTooltip({
       aria-modal="false"
       data-testid="node-tooltip"
       tabIndex={-1}
-      className="z-30 rounded-lg border border-slate-200 bg-white p-3 shadow-lg outline-none"
+      className="relative z-30 rounded-lg border border-slate-200 bg-white p-3 shadow-lg outline-none"
       style={style}
     >
-      {/* Header */}
-      <div className="mb-2 flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <h3 className="truncate text-sm font-semibold text-slate-900">{label}</h3>
-          {node.label && (
-            <p className="truncate text-[11px] text-slate-400">id: {node.id}</p>
-          )}
-        </div>
+      {/* Close button — top right corner */}
+      <button
+        aria-label="Close"
+        className="absolute right-1.5 top-1.5 cursor-pointer rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+        onClick={onClose}
+      >
+        ×
+      </button>
+
+      {/* Header: label + inline copy */}
+      <div className="mb-2 pr-5">
+        <h3 className="inline break-words text-sm font-semibold text-slate-900">{label}</h3>
         <button
-          aria-label="Close"
-          className="shrink-0 cursor-pointer rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-          onClick={onClose}
+          aria-label="Copy node ID"
+          title="Copy node ID"
+          className="ml-1 inline-flex translate-y-[1px] cursor-pointer rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+          onClick={handleCopyId}
         >
-          ×
+          {isCopied ? (
+            <span className="flex items-center gap-0.5 text-[10px] text-green-600">
+              <Check className="h-3 w-3" />
+              Copied
+            </span>
+          ) : (
+            <Copy className="h-3.5 w-3.5" />
+          )}
         </button>
       </div>
 
@@ -146,10 +165,19 @@ export function NodeTooltip({
           {sortedMetas.map((meta) => {
             const value = properties[meta.key]
             if (value === undefined || value === null) return null
+            const isTruncated = meta.key.length > PROP_NAME_MAX
+            const displayKey = isTruncated
+              ? meta.key.slice(0, PROP_NAME_MAX) + '…'
+              : meta.key
             return (
               <div key={meta.key} className="flex items-baseline justify-between gap-2">
-                <span className="text-[11px] font-medium text-slate-500">{meta.key}</span>
-                <span className="truncate text-right text-xs text-slate-800">
+                <span
+                  className="shrink-0 text-[11px] font-medium text-slate-500"
+                  title={isTruncated ? meta.key : undefined}
+                >
+                  {displayKey}
+                </span>
+                <span className="break-words text-right text-xs text-slate-800">
                   {formatValue(value, meta.type)}
                 </span>
               </div>

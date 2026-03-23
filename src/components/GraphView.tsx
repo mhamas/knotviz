@@ -66,7 +66,6 @@ export function GraphView({
     labelsRef,
     tooltipState,
     closeTooltip,
-    hoverLabel,
     hoverRef,
     handleZoomIn,
     handleZoomOut,
@@ -183,10 +182,8 @@ export function GraphView({
         <div
           ref={hoverRef}
           className="pointer-events-none absolute z-20 max-w-64 break-words rounded-md border border-slate-200 bg-white px-2.5 py-1.5 font-sans text-xs font-medium text-slate-700 shadow-md"
-          style={{ display: hoverLabel && !tooltipState ? 'block' : 'none' }}
-        >
-          {hoverLabel?.label}
-        </div>
+          style={{ display: 'none' }}
+        />
         {rotationCenter && (
           <div
             className="pointer-events-none absolute z-20 text-red-500"

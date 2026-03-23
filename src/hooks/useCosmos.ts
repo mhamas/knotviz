@@ -34,17 +34,11 @@ function generateRandomPositions(n: number): Float32Array {
   return positions
 }
 
-export interface HoverLabel {
-  nodeId: string
-  label: string
-}
-
 export interface UseCosmosReturn {
   containerRef: React.RefObject<HTMLDivElement | null>
   labelsRef: React.RefObject<HTMLDivElement | null>
   tooltipState: TooltipState | null
   closeTooltip: () => void
-  hoverLabel: HoverLabel | null
   hoverRef: React.RefObject<HTMLDivElement | null>
   handleZoomIn: () => void
   handleZoomOut: () => void
@@ -80,7 +74,6 @@ export function useCosmos(
   const labelsRef = useRef<HTMLDivElement | null>(null)
   const cosmosRef = useRef<CosmosGraph | null>(null)
   const [tooltipState, setTooltipState] = useState<TooltipState | null>(null)
-  const [hoverLabel, setHoverLabel] = useState<HoverLabel | null>(null)
   const hoverRef = useRef<HTMLDivElement | null>(null)
   const [isSimulationRunning, setIsSimulationRunning] = useState(false)
   const [matchingCount, setMatchingCount] = useState(0)
@@ -313,9 +306,11 @@ export function useCosmos(
         const c = cosmosRef.current
         if (!d || !c) return
 
-        const hNodeId = d.nodeIds[index]
-        if (hNodeId) {
-          setHoverLabel({ nodeId: hNodeId, label: d.nodeLabels[index] ?? hNodeId })
+        // Show hover label via DOM (no React state)
+        const el = hoverRef.current
+        if (el) {
+          el.textContent = d.nodeLabels[index] ?? d.nodeIds[index]
+          el.style.display = 'block'
         }
 
         if (isHighlightNeighborsRef.current) {
@@ -324,10 +319,12 @@ export function useCosmos(
       },
       onPointMouseOut: () => {
         hoveredIndexRef.current = undefined
-        setHoverLabel(null)
+        // Hide hover label via DOM
+        const el = hoverRef.current
+        if (el) el.style.display = 'none'
+
         const c = cosmosRef.current
         if (!c || !isHighlightNeighborsRef.current) return
-        // Don't clear selection if tooltip is pinned to a node
         if (tooltipNodeIndexRef.current !== undefined) return
         c.unselectPoints()
       },
@@ -612,7 +609,7 @@ export function useCosmos(
     cosmos.render(0)
 
     // Hide hover label during rotation
-    setHoverLabel(null)
+    if (hoverRef.current) hoverRef.current.style.display = 'none'
 
     // Show rotation center marker
     const [sx, sy] = cosmos.spaceToScreenPosition([cx, cy])
@@ -707,7 +704,6 @@ export function useCosmos(
     labelsRef,
     tooltipState,
     closeTooltip,
-    hoverLabel,
     hoverRef,
     handleZoomIn,
     handleZoomOut,

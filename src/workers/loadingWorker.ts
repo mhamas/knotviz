@@ -109,26 +109,32 @@ async function loadWithJsonParse(file: File): Promise<ProcessResult> {
 
 async function loadWithStreaming(file: File): Promise<ProcessResult> {
   const builder = new GraphBuilder()
+  const totalBytes = file.size
 
-  // Read the file as text first (this is unavoidable — we need the string),
-  // then feed it to the streaming parser in chunks. The streaming parser
-  // avoids building the full parsed object tree (~5× file size savings).
-  post({ type: 'progress', stage: 'Reading file…', percent: 0 })
-  const text = await file.text()
-  const totalChars = text.length
-
-  post({ type: 'progress', stage: 'Streaming parse…', percent: 10 })
+  post({ type: 'progress', stage: 'Streaming file…', percent: 0 })
   await yieldWorker()
 
   let nodeCount = 0
   let edgeCount = 0
 
-  // Feed text in 2MB chunks via an async generator so the parser
-  // can yield between chunks for progress updates
-  const CHUNK = 2_000_000
+  // Stream the file directly — never hold the full text in memory.
+  // Use File.stream() → ReadableStream<Uint8Array> → TextDecoder → parser
+  const stream = file.stream()
+  const reader = stream.getReader()
+  const decoder = new TextDecoder('utf-8')
+  let bytesRead = 0
+
   async function* textChunks(): AsyncGenerator<string> {
-    for (let offset = 0; offset < totalChars; offset += CHUNK) {
-      yield text.substring(offset, offset + CHUNK)
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) {
+        const remaining = decoder.decode(new Uint8Array(0), { stream: false })
+        if (remaining) yield remaining
+        break
+      }
+      bytesRead += value.byteLength
+      yield decoder.decode(value, { stream: true })
     }
   }
 
@@ -140,18 +146,23 @@ async function loadWithStreaming(file: File): Promise<ProcessResult> {
       builder.addNode(obj)
       nodeCount++
       if (nodeCount % 100_000 === 0) {
-        post({ type: 'progress', stage: `Processing nodes… ${nodeCount.toLocaleString()}`, percent: 10 + Math.round((nodeCount / (totalChars / 150)) * 40) })
+        const pct = Math.min(80, Math.round((bytesRead / totalBytes) * 80))
+        post({ type: 'progress', stage: `Streaming nodes… ${nodeCount.toLocaleString()}`, percent: pct })
       }
     },
     onEdge: (obj) => {
       builder.addEdge(obj)
       edgeCount++
       if (edgeCount % 100_000 === 0) {
-        post({ type: 'progress', stage: `Processing edges… ${edgeCount.toLocaleString()}`, percent: 50 + Math.round((edgeCount / (totalChars / 150)) * 40) })
+        const pct = Math.min(90, Math.round((bytesRead / totalBytes) * 90))
+        post({ type: 'progress', stage: `Streaming edges… ${edgeCount.toLocaleString()}`, percent: pct })
       }
     },
-    onProgress: () => {
-      // Byte-level progress handled by node/edge counts
+    onProgress: (processed) => {
+      if (nodeCount === 0 && edgeCount === 0) {
+        const pct = Math.round((processed / totalBytes) * 20)
+        post({ type: 'progress', stage: 'Streaming file…', percent: pct })
+      }
     },
   })
 

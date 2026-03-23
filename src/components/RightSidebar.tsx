@@ -53,6 +53,7 @@ export function RightSidebar({
               propertyMetas={propertyMetas}
               state={gradientState}
               propertyColumns={propertyColumns}
+              filters={filterHandle.filters}
               onChange={onGradientChange}
             />
           )}

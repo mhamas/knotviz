@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { X, RefreshCw } from 'lucide-react'
-import type { ColorGradientState, CustomPalette, PropertyMeta, PropertyType } from '@/types'
+import type { ColorGradientState, CustomPalette, FilterMap, FilterState, PropertyMeta, PropertyType } from '@/types'
 import type { PropertyColumns } from '@/hooks/useFilterState'
 import {
   PALETTE_NAMES,
@@ -22,6 +22,7 @@ interface Props {
   propertyMetas: PropertyMeta[]
   state: ColorGradientState
   propertyColumns: PropertyColumns
+  filters: FilterMap
   onChange: (s: ColorGradientState) => void
 }
 
@@ -59,6 +60,7 @@ export function ColorTab({
   propertyMetas,
   state,
   propertyColumns,
+  filters,
   onChange,
 }: Props): React.JSX.Element {
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -211,6 +213,7 @@ export function ColorTab({
             state={state}
             selectedType={selectedType ?? null}
             propertyColumns={propertyColumns}
+            filters={filters}
             stops={currentStops}
           />
         </div>
@@ -243,11 +246,12 @@ interface LegendProps {
   state: ColorGradientState
   selectedType: PropertyType | null
   propertyColumns: PropertyColumns
+  filters: FilterMap
   stops: string[]
 }
 
 /** Live legend showing the color mapping for the selected property. */
-function ColorLegend({ state, selectedType, propertyColumns, stops }: LegendProps): React.JSX.Element {
+function ColorLegend({ state, selectedType, propertyColumns, filters, stops }: LegendProps): React.JSX.Element {
   if (state.propertyKey === null) {
     return <p className="text-xs italic text-slate-400">Select a property to visualise node colors.</p>
   }
@@ -273,15 +277,17 @@ function ColorLegend({ state, selectedType, propertyColumns, stops }: LegendProp
   }
 
   if (selectedType === 'boolean') {
-    return <DiscreteLegend labels={['false', 'true']} stops={[stops[0], stops[stops.length - 1]]} />
+    const { labels, colorStops } = filterBooleanLegend(filters.get(state.propertyKey), stops)
+    return <DiscreteLegend labels={labels} stops={colorStops} />
   }
 
-  // string: collect distinct values
+  // string: collect distinct values, filtered to active selection if a filter is enabled
   const distinct = new Set<string>()
   for (let i = 0; i < col.length; i++) {
     if (typeof col[i] === 'string') distinct.add(col[i] as string)
   }
-  return <DiscreteLegend labels={Array.from(distinct).sort()} stops={stops} />
+  const filteredLabels = filterStringLegend(Array.from(distinct).sort(), filters.get(state.propertyKey))
+  return <DiscreteLegend labels={filteredLabels} stops={stops} />
 }
 
 /** Continuous gradient bar with min/max labels (for number/date). */
@@ -345,6 +351,45 @@ function ContinuousLegend({
       </div>
     </div>
   )
+}
+
+// ── Exported pure helpers for legend filtering (testable without rendering) ──
+
+/**
+ * Filter boolean legend labels based on an active boolean filter.
+ * @param filter - The filter state for the property, or undefined if none.
+ * @param stops - The palette color stops.
+ * @returns Labels and matching color stops for the discrete legend.
+ */
+export function filterBooleanLegend(
+  filter: FilterState | undefined,
+  stops: string[],
+): { labels: string[]; colorStops: string[] } {
+  const isFiltered = filter?.type === 'boolean' && filter.isEnabled
+  if (!isFiltered) {
+    return { labels: ['false', 'true'], colorStops: [stops[0], stops[stops.length - 1]] }
+  }
+  return {
+    labels: [String(filter.selected)],
+    colorStops: [filter.selected ? stops[stops.length - 1] : stops[0]],
+  }
+}
+
+/**
+ * Filter string legend labels based on an active string filter.
+ * Empty selectedValues means all values pass (no filtering).
+ * @param allLabels - All distinct sorted string values.
+ * @param filter - The filter state for the property, or undefined if none.
+ * @returns Filtered labels for the discrete legend.
+ */
+export function filterStringLegend(
+  allLabels: string[],
+  filter: FilterState | undefined,
+): string[] {
+  if (filter?.type === 'string' && filter.isEnabled && filter.selectedValues.size > 0) {
+    return allLabels.filter((v) => filter.selectedValues.has(v))
+  }
+  return allLabels
 }
 
 /** Discrete color chips with labels (for boolean/string). */

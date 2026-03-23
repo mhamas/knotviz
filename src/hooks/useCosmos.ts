@@ -463,7 +463,9 @@ export function useCosmos(
       c.setPointColors(pointColors)
       c.setPointSizes(pointSizes)
       c.setLinkColors(linkColors)
-      c.render(0)
+      // render() without alpha arg preserves current simulation state.
+      // render(0) would set alpha=0, killing a running simulation.
+      c.render()
       setMatchingCount(mc)
     }
     return () => { worker.terminate(); workerRef.current = null }

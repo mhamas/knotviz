@@ -96,6 +96,7 @@ export function buildGraph(nullDefaultResult: NullDefaultResult): CosmosGraphDat
     nodeCount,
     nodeIds,
     nodeLabels,
+    nodeIndexMap,
     initialPositions,
     linkIndices: skippedEdges > 0 ? linkIndices.subarray(0, validEdgeCount * 2) : linkIndices,
     positionMode,

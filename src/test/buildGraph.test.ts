@@ -87,14 +87,16 @@ describe('buildGraph', () => {
     expect(cosmosData.nodeLabels[0]).toBe('Alice')
   })
 
-  it('builds nodeIds correctly', () => {
+  it('builds nodeIndexMap correctly', () => {
     const result = makeResult({
       version: '1',
       nodes: [{ id: 'a' }, { id: 'b' }, { id: 'c' }],
       edges: [],
     })
     const cosmosData = buildGraph(result)
-    expect(cosmosData.nodeIds).toEqual(['a', 'b', 'c'])
+    expect(cosmosData.nodeIndexMap.get('a')).toBe(0)
+    expect(cosmosData.nodeIndexMap.get('b')).toBe(1)
+    expect(cosmosData.nodeIndexMap.get('c')).toBe(2)
   })
 
   it('preserves edge weight in compact store', () => {

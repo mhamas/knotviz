@@ -172,7 +172,7 @@ export function GraphView({
           <NodeTooltip
             nodeId={tooltipState.nodeId}
             screenPosition={{ x: tooltipState.x, y: tooltipState.y }}
-            nodeIds={cosmosData.nodeIds}
+            nodeIndexMap={cosmosData.nodeIndexMap}
             nodeLabels={cosmosData.nodeLabels}
             propertyColumns={propertyColumns}
             propertyMetas={propertyMetas}

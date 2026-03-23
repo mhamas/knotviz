@@ -89,10 +89,15 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
           worker.terminate()
           workerRef.current = null
 
+          const nodeIds = msg.nodeIds as string[]
+          const nodeIndexMap = new Map<string, number>()
+          for (let i = 0; i < nodeIds.length; i++) nodeIndexMap.set(nodeIds[i], i)
+
           const cosmosData: CosmosGraphData = {
             nodeCount: msg.nodeCount as number,
-            nodeIds: msg.nodeIds as string[],
+            nodeIds,
             nodeLabels: msg.nodeLabels as (string | undefined)[],
+            nodeIndexMap,
             initialPositions: msg.initialPositions as Float32Array | undefined,
             linkIndices: msg.linkIndices as Float32Array,
             positionMode: msg.positionMode as PositionMode,

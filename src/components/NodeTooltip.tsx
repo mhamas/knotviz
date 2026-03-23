@@ -6,7 +6,7 @@ import type { PropertyColumns } from '../hooks/useFilterState'
 interface Props {
   nodeId: string
   screenPosition: { x: number; y: number }
-  nodeIds: string[]
+  nodeIndexMap: Map<string, number>
   nodeLabels: (string | undefined)[]
   propertyColumns: PropertyColumns
   propertyMetas: PropertyMeta[]
@@ -47,7 +47,7 @@ function formatValue(value: PropertyValue, propertyType: string): string {
 export function NodeTooltip({
   nodeId,
   screenPosition,
-  nodeIds,
+  nodeIndexMap,
   nodeLabels,
   propertyColumns,
   propertyMetas,
@@ -94,9 +94,8 @@ export function NodeTooltip({
     tooltipRef.current?.focus()
   }, [])
 
-  // Linear scan — only runs on node click (rare), avoids 400MB Map on main thread
-  const nodeIndex = nodeIds.indexOf(nodeId)
-  if (nodeIndex === -1) return <></>
+  const nodeIndex = nodeIndexMap.get(nodeId)
+  if (nodeIndex === undefined) return <></>
 
   const label = nodeLabels[nodeIndex] ?? nodeId
 

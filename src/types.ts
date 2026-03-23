@@ -159,6 +159,8 @@ export interface CosmosGraphData {
   nodeIds: string[]
   /** Node labels indexed by node index (undefined = use nodeId). */
   nodeLabels: (string | undefined)[]
+  /** Fast lookup: nodeId → index. */
+  nodeIndexMap: Map<string, number>
   /** Initial positions as [x0,y0,x1,y1,…]. `undefined` when positions should be randomised by Cosmos. */
   initialPositions: Float32Array | undefined
   /** Links as [srcIdx0,tgtIdx0,srcIdx1,tgtIdx1,…] (index-based, ready for cosmos `setLinks`). */

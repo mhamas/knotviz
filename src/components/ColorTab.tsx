@@ -273,7 +273,8 @@ function ColorLegend({ state, selectedType, propertyColumns, filters, stops }: L
       if (values.length >= 100_000) break // cap for legend perf
     }
     if (values.length === 0) return <p className="text-xs italic text-slate-400">No data for selected property.</p>
-    return <ContinuousLegend values={values} type={selectedType} stops={stops} />
+    const range = filterContinuousRange(values, selectedType, filters.get(state.propertyKey))
+    return <ContinuousLegend range={range} stops={stops} />
   }
 
   if (selectedType === 'boolean') {
@@ -292,37 +293,13 @@ function ColorLegend({ state, selectedType, propertyColumns, filters, stops }: L
 
 /** Continuous gradient bar with min/max labels (for number/date). */
 function ContinuousLegend({
-  values,
-  type,
+  range,
   stops,
 }: {
-  values: unknown[]
-  type: 'number' | 'date'
+  range: { minLabel: string; maxLabel: string; isUniform: boolean }
   stops: string[]
 }): React.JSX.Element {
-  let minLabel: string
-  let maxLabel: string
-  let isUniform = false
-
-  if (type === 'number') {
-    const nums = values as number[]
-    let min = nums[0]
-    let max = nums[0]
-    for (let i = 1; i < nums.length; i++) {
-      if (nums[i] < min) min = nums[i]
-      if (nums[i] > max) max = nums[i]
-    }
-    isUniform = min === max
-    minLabel = String(min)
-    maxLabel = String(max)
-  } else {
-    const sorted = (values as string[]).sort()
-    const min = sorted[0]
-    const max = sorted[sorted.length - 1]
-    isUniform = min === max
-    minLabel = min
-    maxLabel = max
-  }
+  const { minLabel, maxLabel, isUniform } = range
 
   if (isUniform) {
     return (
@@ -354,6 +331,55 @@ function ContinuousLegend({
 }
 
 // ── Exported pure helpers for legend filtering (testable without rendering) ──
+
+/**
+ * Compute the visible min/max range for a continuous legend, clamped by an active filter.
+ * @param values - Raw data values from the property column.
+ * @param type - 'number' or 'date'.
+ * @param filter - The filter state for the property, or undefined if none.
+ * @returns Min/max labels and whether the range is uniform.
+ */
+export function filterContinuousRange(
+  values: unknown[],
+  type: 'number' | 'date',
+  filter: FilterState | undefined,
+): { minLabel: string; maxLabel: string; isUniform: boolean } {
+  let minLabel: string
+  let maxLabel: string
+  let isUniform = false
+
+  if (type === 'number') {
+    const nums = values as number[]
+    let min = nums[0]
+    let max = nums[0]
+    for (let i = 1; i < nums.length; i++) {
+      if (nums[i] < min) min = nums[i]
+      if (nums[i] > max) max = nums[i]
+    }
+    // Clamp to filter range if active
+    if (filter?.type === 'number' && filter.isEnabled) {
+      min = Math.max(min, filter.min)
+      max = Math.min(max, filter.max)
+    }
+    isUniform = min === max
+    minLabel = String(min)
+    maxLabel = String(max)
+  } else {
+    const sorted = (values as string[]).sort()
+    let min = sorted[0]
+    let max = sorted[sorted.length - 1]
+    // Clamp to filter range if active
+    if (filter?.type === 'date' && filter.isEnabled) {
+      if (filter.after > min) min = filter.after
+      if (filter.before < max) max = filter.before
+    }
+    isUniform = min === max
+    minLabel = min
+    maxLabel = max
+  }
+
+  return { minLabel, maxLabel, isUniform }
+}
 
 /**
  * Filter boolean legend labels based on an active boolean filter.

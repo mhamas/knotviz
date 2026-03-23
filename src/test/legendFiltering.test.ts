@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { filterBooleanLegend, filterStringLegend } from '@/components/ColorTab'
-import type { BooleanFilterState, StringFilterState } from '@/types'
+import { filterBooleanLegend, filterContinuousRange, filterStringLegend } from '@/components/ColorTab'
+import type { BooleanFilterState, DateFilterState, NumberFilterState, StringFilterState } from '@/types'
 
 const stops = ['#3b82f6', '#f97316']
 
@@ -77,5 +77,80 @@ describe('filterBooleanLegend', () => {
     const result = filterBooleanLegend(filter, stops)
     expect(result.labels).toEqual(['false'])
     expect(result.colorStops).toEqual([stops[0]])
+  })
+})
+
+describe('filterContinuousRange — number', () => {
+  const values = [10, 50, 100, 200, 500]
+
+  it('returns data min/max when no filter is provided', () => {
+    const result = filterContinuousRange(values, 'number', undefined)
+    expect(result.minLabel).toBe('10')
+    expect(result.maxLabel).toBe('500')
+    expect(result.isUniform).toBe(false)
+  })
+
+  it('returns data min/max when filter is disabled', () => {
+    const filter: NumberFilterState = {
+      type: 'number', isEnabled: false, min: 50, max: 200, domainMin: 10, domainMax: 500,
+    }
+    const result = filterContinuousRange(values, 'number', filter)
+    expect(result.minLabel).toBe('10')
+    expect(result.maxLabel).toBe('500')
+  })
+
+  it('clamps to filter range when filter is enabled', () => {
+    const filter: NumberFilterState = {
+      type: 'number', isEnabled: true, min: 50, max: 200, domainMin: 10, domainMax: 500,
+    }
+    const result = filterContinuousRange(values, 'number', filter)
+    expect(result.minLabel).toBe('50')
+    expect(result.maxLabel).toBe('200')
+  })
+
+  it('does not expand beyond data range even if filter is wider', () => {
+    const filter: NumberFilterState = {
+      type: 'number', isEnabled: true, min: 0, max: 1000, domainMin: 0, domainMax: 1000,
+    }
+    const result = filterContinuousRange(values, 'number', filter)
+    expect(result.minLabel).toBe('10')
+    expect(result.maxLabel).toBe('500')
+  })
+
+  it('reports uniform when filter narrows to single value', () => {
+    const result = filterContinuousRange([5, 5, 5], 'number', undefined)
+    expect(result.isUniform).toBe(true)
+  })
+})
+
+describe('filterContinuousRange — date', () => {
+  const values = ['2020-01-01', '2021-06-15', '2022-12-31']
+
+  it('returns data min/max when no filter is provided', () => {
+    const result = filterContinuousRange(values, 'date', undefined)
+    expect(result.minLabel).toBe('2020-01-01')
+    expect(result.maxLabel).toBe('2022-12-31')
+  })
+
+  it('clamps to filter range when filter is enabled', () => {
+    const filter: DateFilterState = {
+      type: 'date', isEnabled: true,
+      after: '2021-01-01', before: '2022-06-01',
+      domainMin: '2020-01-01', domainMax: '2022-12-31',
+    }
+    const result = filterContinuousRange(values, 'date', filter)
+    expect(result.minLabel).toBe('2021-01-01')
+    expect(result.maxLabel).toBe('2022-06-01')
+  })
+
+  it('does not expand beyond data range even if filter is wider', () => {
+    const filter: DateFilterState = {
+      type: 'date', isEnabled: true,
+      after: '2019-01-01', before: '2025-01-01',
+      domainMin: '2019-01-01', domainMax: '2025-01-01',
+    }
+    const result = filterContinuousRange(values, 'date', filter)
+    expect(result.minLabel).toBe('2020-01-01')
+    expect(result.maxLabel).toBe('2022-12-31')
   })
 })

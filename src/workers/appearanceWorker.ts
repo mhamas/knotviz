@@ -3,17 +3,8 @@
  * Runs the entire heavy appearance pipeline off the main thread.
  */
 
-interface SerializableFilter {
-  type: 'number' | 'boolean' | 'string' | 'date'
-  isEnabled: boolean
-  min?: number
-  max?: number
-  selected?: boolean
-  selectedValues?: string[]
-  after?: string
-  before?: string
-  _selectedSet?: Set<string>
-}
+import type { SerializableFilter } from '../lib/appearanceUtils'
+import { passesFilter, hexToRgbNorm, interpolateStops } from '../lib/appearanceUtils'
 
 interface GradientConfig {
   propertyKey: string | null
@@ -142,46 +133,7 @@ self.onmessage = (e: MessageEvent<InitMessage | UpdateMessage>): void => {
   ])
 }
 
-function passesFilter(value: unknown, filter: SerializableFilter): boolean {
-  switch (filter.type) {
-    case 'number':
-      return typeof value === 'number' && value >= filter.min! && value <= filter.max!
-    case 'boolean':
-      return value === filter.selected
-    case 'string': {
-      const set = filter._selectedSet as Set<string> | undefined
-      return !set || set.size === 0 || (typeof value === 'string' && set.has(value))
-    }
-    case 'date':
-      return typeof value === 'string' && value >= filter.after! && value <= filter.before!
-  }
-}
-
-/** Parse hex to normalized [r, g, b] (0-1). */
-function hexToRgbNorm(hex: string): [number, number, number] {
-  const h = hex.replace('#', '')
-  return [
-    parseInt(h.substring(0, 2), 16) / 255,
-    parseInt(h.substring(2, 4), 16) / 255,
-    parseInt(h.substring(4, 6), 16) / 255,
-  ]
-}
-
-/** Interpolate between palette stops at parameter t ∈ [0,1]. */
-function interpolateStops(stops: [number, number, number][], t: number): [number, number, number] {
-  if (t <= 0) return stops[0]
-  if (t >= 1) return stops[stops.length - 1]
-  const segment = t * (stops.length - 1)
-  const i = Math.floor(segment)
-  const f = segment - i
-  const a = stops[i]
-  const b = stops[Math.min(i + 1, stops.length - 1)]
-  return [
-    a[0] + (b[0] - a[0]) * f,
-    a[1] + (b[1] - a[1]) * f,
-    a[2] + (b[2] - a[2]) * f,
-  ]
-}
+// passesFilter, hexToRgbNorm, interpolateStops imported from ../lib/appearanceUtils
 
 /** Apply gradient colors directly into pointColors for visible nodes. */
 function applyGradient(

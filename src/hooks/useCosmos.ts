@@ -183,7 +183,10 @@ export function useCosmos(
     }
 
     const config: GraphConfigInterface = {
-      spaceSize: 8192,
+      // Request max space. Cosmos clamps to maxTextureSize/2 if spaceSize >= maxTextureSize.
+      // Most GPUs: maxTextureSize=16384 → spaceSize stays 16383.
+      // Weaker GPUs: maxTextureSize=8192 → clamped to 4096.
+      spaceSize: 16383,
       backgroundColor: '#ffffff',
       pointDefaultColor: COLOR_DEFAULT,
       linkDefaultColor: COLOR_EDGE_DEFAULT,

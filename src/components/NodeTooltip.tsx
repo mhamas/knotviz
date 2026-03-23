@@ -84,9 +84,16 @@ export function NodeTooltip({
     [onClose],
   )
 
+  // Delay listener registration so the same click that opened the tooltip
+  // doesn't immediately close it (mousedown bubbles to document).
   useEffect(() => {
-    document.addEventListener('mousedown', handleClickOutside)
-    return (): void => document.removeEventListener('mousedown', handleClickOutside)
+    const id = requestAnimationFrame(() => {
+      document.addEventListener('mousedown', handleClickOutside)
+    })
+    return (): void => {
+      cancelAnimationFrame(id)
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
   }, [handleClickOutside])
 
   // Auto-focus tooltip on open

@@ -8,6 +8,9 @@ import { useGraphStore } from '@/stores/useGraphStore'
 import { COLOR_DEFAULT, COLOR_EDGE_DEFAULT } from '@/lib/colors'
 import AppearanceWorker from '@/workers/appearanceWorker?worker'
 
+/** Max number of node labels rendered as HTML overlays. */
+const MAX_LABELS = 300
+
 /** Parse a hex color string to normalized [r, g, b, a] (all 0.0–1.0). Cached. */
 const rgbaCache = new Map<string, [number, number, number, number]>()
 function hexToRgba(hex: string): [number, number, number, number] {
@@ -121,9 +124,13 @@ export function useCosmos(
     let cosmos: CosmosGraph | null = null
     let observer: ResizeObserver | null = null
 
-    const MAX_LABELS = 300
+    // MAX_LABELS defined at module level
 
-    /** Update node labels overlay. Direct DOM manipulation for performance. */
+    /**
+     * Update node labels overlay. Uses GPU-sampled visible points when available
+     * (avoids reading all 2M floats from getPointPositions). Falls back to stride
+     * sampling for headless/SwiftShader environments.
+     */
     const updateLabels = (): void => {
       const container = labelsRef.current
       const c = cosmosRef.current
@@ -134,39 +141,64 @@ export function useCosmos(
         return
       }
       container.style.display = ''
-      const positions = c.getPointPositions()
-      if (!positions || positions.length === 0) return
 
-      const canvasW = containerRef.current?.clientWidth ?? 0
-      const canvasH = containerRef.current?.clientHeight ?? 0
-
-      // Collect on-screen nodes (space→screen), cap at MAX_LABELS
+      // Try GPU-sampled positions first (fast: only returns visible, pre-sampled points)
+      const sampled = c.getSampledPointPositionsMap()
       const children = container.children
       let count = 0
-      for (let idx = 0; idx < d.nodeCount && count < MAX_LABELS; idx++) {
-        const sx = positions[idx * 2]
-        const sy = positions[idx * 2 + 1]
-        if (sx === undefined || sy === undefined) continue
-        const [screenX, screenY] = c.spaceToScreenPosition([sx, sy])
-        // Skip off-screen
-        if (screenX < -50 || screenX > canvasW + 50 || screenY < -50 || screenY > canvasH + 50) continue
 
-        let el: HTMLElement
-        if (count < children.length) {
-          el = children[count] as HTMLElement
-        } else {
-          el = document.createElement('div')
-          el.className = 'pointer-events-none absolute font-sans text-[10px] text-slate-600'
-          el.style.whiteSpace = 'nowrap'
-          container.appendChild(el)
+      if (sampled.size > 0) {
+        // GPU sampling works — use it directly (screen coordinates)
+        for (const [index, [screenX, screenY]] of sampled) {
+          if (count >= MAX_LABELS) break
+          let el: HTMLElement
+          if (count < children.length) {
+            el = children[count] as HTMLElement
+          } else {
+            el = document.createElement('div')
+            el.className = 'pointer-events-none absolute font-sans text-[10px] text-slate-600'
+            el.style.whiteSpace = 'nowrap'
+            container.appendChild(el)
+          }
+          el.style.left = `${screenX + 8}px`
+          el.style.top = `${screenY - 6}px`
+          el.style.display = ''
+          el.textContent = d.nodeLabels[index] ?? d.nodeIds[index]
+          count++
         }
-        el.style.left = `${screenX + 8}px`
-        el.style.top = `${screenY - 6}px`
-        el.style.display = ''
-        el.textContent = d.nodeLabels[idx] ?? d.nodeIds[idx]
-        count++
+      } else {
+        // Fallback: stride sampling (skip every N nodes to avoid scanning all 1M)
+        const stride = Math.max(1, Math.floor(d.nodeCount / MAX_LABELS))
+        const positions = c.getPointPositions()
+        if (!positions || positions.length === 0) return
+        const canvasW = containerRef.current?.clientWidth ?? 0
+        const canvasH = containerRef.current?.clientHeight ?? 0
+
+        for (let idx = 0; idx < d.nodeCount && count < MAX_LABELS; idx += stride) {
+          const sx = positions[idx * 2]
+          const sy = positions[idx * 2 + 1]
+          if (sx === undefined || sy === undefined) continue
+          const [screenX, screenY] = c.spaceToScreenPosition([sx, sy])
+          if (screenX < -50 || screenX > canvasW + 50 || screenY < -50 || screenY > canvasH + 50) continue
+
+          let el: HTMLElement
+          if (count < children.length) {
+            el = children[count] as HTMLElement
+          } else {
+            el = document.createElement('div')
+            el.className = 'pointer-events-none absolute font-sans text-[10px] text-slate-600'
+            el.style.whiteSpace = 'nowrap'
+            container.appendChild(el)
+          }
+          el.style.left = `${screenX + 8}px`
+          el.style.top = `${screenY - 6}px`
+          el.style.display = ''
+          el.textContent = d.nodeLabels[idx] ?? d.nodeIds[idx]
+          count++
+        }
       }
-      // Hide excess
+
+      // Hide excess DOM elements
       for (let i = count; i < children.length; i++) {
         (children[i] as HTMLElement).style.display = 'none'
       }
@@ -221,7 +253,10 @@ export function useCosmos(
       },
       onSimulationTick: () => {
         cosmosRef.current?.fitView(0)
-        updateLabels()
+        // Skip label updates during simulation for large graphs (>50K nodes) —
+        // labels are illegible when millions of nodes are moving, and updateLabels
+        // would read positions from GPU every frame.
+        if (data.nodeCount <= 50_000) updateLabels()
       },
       onSimulationEnd: () => {
         isSimRunningRef.current = false
@@ -395,9 +430,9 @@ export function useCosmos(
   }, [isEdgesVisible])
 
   // ── Sync node labels ──
-  // The updateLabels function lives inside the init effect closure, so we
-  // trigger a label refresh by toggling the container visibility and
-  // re-reading positions. We use a micro-delay to let the ref update settle.
+  // When toggled on, trigger an immediate label update via the init closure's updateLabels.
+  // The label display is managed entirely through updateLabels() which runs on tick/zoom/drag.
+  // This effect just handles the initial toggle-on render.
   useEffect(() => {
     const container = labelsRef.current
     if (!container) return
@@ -405,30 +440,23 @@ export function useCosmos(
       container.style.display = 'none'
       return
     }
-    // Show container, then update positions
-    container.style.display = ''
+    // Trigger a one-time label render after toggle
     const cosmos = cosmosRef.current
     if (!cosmos || !data) return
-    const positions = cosmos.getPointPositions()
-    if (!positions || positions.length === 0) return
-
-    const canvasW = containerRef.current?.clientWidth ?? 0
-    const canvasH = containerRef.current?.clientHeight ?? 0
+    container.style.display = ''
     container.innerHTML = ''
-    const maxLabels = 300
+
+    // Use GPU-sampled points (fast)
+    const sampled = cosmos.getSampledPointPositionsMap()
     let count = 0
-    for (let idx = 0; idx < data.nodeCount && count < maxLabels; idx++) {
-      const sx = positions[idx * 2]
-      const sy = positions[idx * 2 + 1]
-      if (sx === undefined || sy === undefined) continue
-      const [screenX, screenY] = cosmos.spaceToScreenPosition([sx, sy])
-      if (screenX < -50 || screenX > canvasW + 50 || screenY < -50 || screenY > canvasH + 50) continue
+    for (const [index, [screenX, screenY]] of sampled) {
+      if (count >= MAX_LABELS) break
       const el = document.createElement('div')
       el.className = 'pointer-events-none absolute font-sans text-[10px] text-slate-600'
       el.style.whiteSpace = 'nowrap'
       el.style.left = `${screenX + 8}px`
       el.style.top = `${screenY - 6}px`
-      el.textContent = data.nodeLabels[idx] ?? data.nodeIds[idx]
+      el.textContent = data.nodeLabels[index] ?? data.nodeIds[index]
       container.appendChild(el)
       count++
     }

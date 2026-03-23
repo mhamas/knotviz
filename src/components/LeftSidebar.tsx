@@ -72,11 +72,12 @@ export function LeftSidebar({
 
   const isDisabled = !isGraphLoaded
 
-  const debouncedRepulsionChange = useDebounce(setRepulsion, 150)
-  const debouncedFrictionChange = useDebounce(setFriction, 150)
-  const debouncedLinkSpringChange = useDebounce(setLinkSpring, 150)
-  const debouncedNodeSizeChange = useDebounce(setNodeSize, 150)
-  const debouncedEdgeSizeChange = useDebounce(setEdgeSize, 150)
+  const debouncedRepulsionChange = useDebounce(setRepulsion, 100)
+  const debouncedFrictionChange = useDebounce(setFriction, 100)
+  const debouncedLinkSpringChange = useDebounce(setLinkSpring, 100)
+  // Display sliders use short debounce — they only change GPU uniforms, no worker involved
+  const debouncedNodeSizeChange = useDebounce(setNodeSize, 30)
+  const debouncedEdgeSizeChange = useDebounce(setEdgeSize, 30)
 
   return (
     <div className="flex h-screen w-60 shrink-0 flex-col gap-4 border-r border-slate-200 bg-white p-4">

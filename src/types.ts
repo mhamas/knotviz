@@ -149,13 +149,17 @@ export type PositionMode = 'all' | 'none' | 'partial'
 
 // ─── Cosmos graph data ────────────────────────────────────────────────────
 
-/** Pre-processed graph data optimised for @cosmos.gl/graph (index-based, Float32Array). */
+/** Pre-processed graph data optimised for @cosmos.gl/graph (index-based, Float32Array).
+ *  Uses compact stores (parallel arrays indexed by node index) instead of full NodeInput/EdgeInput
+ *  objects to minimise memory for 1M+ node graphs. */
 export interface CosmosGraphData {
-  /** Original validated nodes (properties, labels live here). */
-  nodes: NodeInput[]
-  /** Original validated edges. */
-  edges: EdgeInput[]
-  /** Fast lookup: nodeId → index in the `nodes` array. */
+  /** Total number of nodes. */
+  nodeCount: number
+  /** Node IDs indexed by node index. */
+  nodeIds: string[]
+  /** Node labels indexed by node index (undefined = use nodeId). */
+  nodeLabels: (string | undefined)[]
+  /** Fast lookup: nodeId → index. */
   nodeIndexMap: Map<string, number>
   /** Initial positions as [x0,y0,x1,y1,…]. `undefined` when positions should be randomised by Cosmos. */
   initialPositions: Float32Array | undefined
@@ -163,4 +167,12 @@ export interface CosmosGraphData {
   linkIndices: Float32Array
   /** Position mode detected from input. */
   positionMode: PositionMode
+  /** Edge source node indices (for export). */
+  edgeSources: Uint32Array
+  /** Edge target node indices (for export). */
+  edgeTargets: Uint32Array
+  /** Edge labels (for export). */
+  edgeLabels: (string | undefined)[]
+  /** Edge weights (for export, undefined if no edges have weight). */
+  edgeWeights: Float32Array | undefined
 }

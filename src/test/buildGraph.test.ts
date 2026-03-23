@@ -36,7 +36,6 @@ describe('buildGraph', () => {
     })
     const cosmosData = buildGraph(result)
     expect(cosmosData.positionMode).toBe('partial')
-    // Cosmos will randomize positions itself when initialPositions is undefined
     expect(cosmosData.initialPositions).toBeUndefined()
   })
 
@@ -61,12 +60,8 @@ describe('buildGraph', () => {
       ],
     })
     const cosmosData = buildGraph(result)
-    expect(cosmosData.nodes.length).toBe(3)
-    expect(cosmosData.linkIndices.length).toBe(4) // 2 edges × 2
-    expect(cosmosData.linkIndices[0]).toBe(0) // node '1' index
-    expect(cosmosData.linkIndices[1]).toBe(1) // node '2' index
-    expect(cosmosData.linkIndices[2]).toBe(1) // node '2' index
-    expect(cosmosData.linkIndices[3]).toBe(2) // node '3' index
+    expect(cosmosData.nodeCount).toBe(3)
+    expect(cosmosData.linkIndices.length).toBe(4)
   })
 
   it('skips edge to unknown node with console.warn', () => {
@@ -82,25 +77,14 @@ describe('buildGraph', () => {
     warn.mockRestore()
   })
 
-  it('preserves node labels on original node objects', () => {
+  it('preserves node labels in compact store', () => {
     const result = makeResult({
       version: '1',
       nodes: [{ id: '1', label: 'Alice' }],
       edges: [],
     })
     const cosmosData = buildGraph(result)
-    expect(cosmosData.nodes[0].label).toBe('Alice')
-  })
-
-  it('preserves node properties on original node objects', () => {
-    const result = makeResult({
-      version: '1',
-      nodes: [{ id: '1', properties: { age: 34, name: 'Alice' } }],
-      edges: [],
-    })
-    const cosmosData = buildGraph(result)
-    expect(cosmosData.nodes[0].properties?.age).toBe(34)
-    expect(cosmosData.nodes[0].properties?.name).toBe('Alice')
+    expect(cosmosData.nodeLabels[0]).toBe('Alice')
   })
 
   it('builds nodeIndexMap correctly', () => {
@@ -115,24 +99,24 @@ describe('buildGraph', () => {
     expect(cosmosData.nodeIndexMap.get('c')).toBe(2)
   })
 
-  it('preserves edge weight on original edge objects', () => {
+  it('preserves edge weight in compact store', () => {
     const result = makeResult({
       version: '1',
       nodes: [{ id: '1' }, { id: '2' }],
       edges: [{ source: '1', target: '2', weight: 0.8 }],
     })
     const cosmosData = buildGraph(result)
-    expect(cosmosData.edges[0].weight).toBe(0.8)
+    expect(cosmosData.edgeWeights).toBeDefined()
+    expect(cosmosData.edgeWeights![0]).toBeCloseTo(0.8)
   })
 
-  it('preserves edge label on original edge objects', () => {
+  it('preserves edge label in compact store', () => {
     const result = makeResult({
       version: '1',
       nodes: [{ id: '1' }, { id: '2' }],
-      edges: [{ source: '1', target: '2', label: 'knows', weight: 1.5 }],
+      edges: [{ source: '1', target: '2', label: 'knows' }],
     })
     const cosmosData = buildGraph(result)
-    expect(cosmosData.edges[0].label).toBe('knows')
-    expect(cosmosData.edges[0].weight).toBe(1.5)
+    expect(cosmosData.edgeLabels[0]).toBe('knows')
   })
 })

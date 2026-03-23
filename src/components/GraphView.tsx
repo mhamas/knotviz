@@ -1,11 +1,10 @@
-import { useCallback, useMemo, useState } from 'react'
-import type { CosmosGraphData, ColorGradientState, GraphData, PropertyMeta, PropertyType } from '../types'
+import { useCallback, useState } from 'react'
+import type { CosmosGraphData, ColorGradientState, PropertyMeta, PropertyType, PropertyValue } from '../types'
 import type { PropertyColumns } from '../hooks/useFilterState'
 import { useCosmos } from '../hooks/useCosmos'
 import { useFileDrop } from '../hooks/useFileDrop'
 import { useSpacebarToggle } from '../hooks/useSpacebarToggle'
 import { useFilterState } from '../hooks/useFilterState'
-import { detectPropertyTypes } from '../lib/detectPropertyTypes'
 import { FilenameLabel } from './FilenameLabel'
 import { CanvasControls } from './CanvasControls'
 import { LeftSidebar } from './LeftSidebar'
@@ -24,8 +23,9 @@ import {
 } from '@/components/ui/alert-dialog'
 
 interface Props {
-  graphData: GraphData
   cosmosData: CosmosGraphData
+  propertyColumns: PropertyColumns
+  propertyMetas: PropertyMeta[]
   filename: string
   onLoadNewFile: (file?: File) => void
 }
@@ -38,37 +38,15 @@ interface Props {
  * @returns Graph canvas view element.
  */
 export function GraphView({
-  graphData,
   cosmosData,
+  propertyColumns,
+  propertyMetas,
   filename,
   onLoadNewFile,
 }: Props): React.JSX.Element {
-  const propertyMetas: PropertyMeta[] = useMemo(() => {
-    const typeMap = detectPropertyTypes(graphData.nodes)
-    return Array.from(typeMap.entries()).map(([key, type]) => ({ key, type }))
-  }, [graphData.nodes])
-
-  const propertyTypeMap = useMemo<Map<string, PropertyType>>(
-    () => new Map(propertyMetas.map((m) => [m.key, m.type])),
-    [propertyMetas],
+  const propertyTypeMap = new Map<string, PropertyType>(
+    propertyMetas.map((m) => [m.key, m.type]),
   )
-
-  // Build columnar property arrays once per graph (shared by filters + worker)
-  const propertyColumns = useMemo<PropertyColumns>(() => {
-    const columns: PropertyColumns = {}
-    const n = graphData.nodes.length
-    for (let i = 0; i < n; i++) {
-      const props = graphData.nodes[i].properties
-      if (!props) continue
-      for (const k of Object.keys(props)) {
-        if (!(k in columns)) {
-          columns[k] = new Array(n).fill(undefined)
-        }
-        columns[k][i] = props[k] as number | string | boolean | undefined
-      }
-    }
-    return columns
-  }, [graphData.nodes])
 
   // Filter system (UI state only — matching computed in worker)
   const filterHandle = useFilterState(propertyMetas, propertyColumns)
@@ -118,15 +96,38 @@ export function GraphView({
     const cosmos = cosmosRef.current
     if (!cosmos) return
     const positions = cosmos.getPointPositions()
-    const exported: GraphData = {
-      version: '1',
-      nodes: graphData.nodes.map((n, i) => ({
-        ...n,
+
+    // Reconstruct nodes lazily from compact stores + property columns
+    const nodes = []
+    for (let i = 0; i < cosmosData.nodeCount; i++) {
+      const node: Record<string, unknown> = {
+        id: cosmosData.nodeIds[i],
         x: positions[i * 2] ?? 0,
         y: positions[i * 2 + 1] ?? 0,
-      })),
-      edges: graphData.edges,
+      }
+      if (cosmosData.nodeLabels[i]) node.label = cosmosData.nodeLabels[i]
+      const props: Record<string, PropertyValue> = {}
+      for (const meta of propertyMetas) {
+        const v = propertyColumns[meta.key]?.[i]
+        if (v !== undefined) props[meta.key] = v
+      }
+      if (Object.keys(props).length > 0) node.properties = props
+      nodes.push(node)
     }
+
+    // Reconstruct edges from compact stores
+    const edges = []
+    for (let i = 0; i < cosmosData.edgeSources.length; i++) {
+      const edge: Record<string, unknown> = {
+        source: cosmosData.nodeIds[cosmosData.edgeSources[i]],
+        target: cosmosData.nodeIds[cosmosData.edgeTargets[i]],
+      }
+      if (cosmosData.edgeLabels[i]) edge.label = cosmosData.edgeLabels[i]
+      if (cosmosData.edgeWeights?.[i]) edge.weight = cosmosData.edgeWeights[i]
+      edges.push(edge)
+    }
+
+    const exported = { version: '1', nodes, edges }
     const blob = new Blob([JSON.stringify(exported)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -134,7 +135,7 @@ export function GraphView({
     a.download = filename
     a.click()
     URL.revokeObjectURL(url)
-  }, [cosmosRef, graphData, filename])
+  }, [cosmosRef, cosmosData, propertyMetas, propertyColumns, filename])
 
   return (
     <div className="flex h-screen w-screen">
@@ -171,7 +172,9 @@ export function GraphView({
           <NodeTooltip
             nodeId={tooltipState.nodeId}
             screenPosition={{ x: tooltipState.x, y: tooltipState.y }}
-            graphData={graphData}
+            nodeIndexMap={cosmosData.nodeIndexMap}
+            nodeLabels={cosmosData.nodeLabels}
+            propertyColumns={propertyColumns}
             propertyMetas={propertyMetas}
             canvasBounds={tooltipState.canvasBounds}
             onClose={closeTooltip}
@@ -216,7 +219,7 @@ export function GraphView({
         onGradientChange={setGradientState}
         cosmosData={cosmosData}
         matchingCount={matchingCount}
-        nodeCount={graphData.nodes.length}
+        nodeCount={cosmosData.nodeCount}
         propertyColumns={propertyColumns}
       />
 

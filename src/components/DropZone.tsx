@@ -1,9 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import type { CosmosGraphData, GraphData, PositionMode, NullDefaultResult } from '../types'
-import { parseJSON } from '../lib/parseJSON'
-import { validateGraph } from '../lib/validateGraph'
-import { applyNullDefaults } from '../lib/applyNullDefaults'
-import { buildGraph } from '../lib/buildGraph'
+import type { CosmosGraphData, PropertyMeta, PositionMode } from '../types'
+import type { PropertyColumns } from '../hooks/useFilterState'
+import LoadingWorker from '@/workers/loadingWorker?worker'
 import { SchemaDialog } from './SchemaDialog'
 import {
   AlertDialog,
@@ -17,16 +15,20 @@ import {
 } from '@/components/ui/alert-dialog'
 
 interface Props {
-  onLoad: (data: GraphData, cosmosData: CosmosGraphData, positionMode: PositionMode, filename: string) => void
+  onLoad: (
+    cosmosData: CosmosGraphData,
+    propertyColumns: PropertyColumns,
+    propertyMetas: PropertyMeta[],
+    replacementCount: number,
+    filename: string,
+  ) => void
   fileInputRef?: React.RefObject<HTMLInputElement | null>
-  /** If set, this file will be auto-processed on mount (e.g. from a drag-drop on loaded graph). */
   pendingFile?: File | null
 }
 
 /**
  * Full-screen file drop target for initial graph load.
- * Accepts .json via drag-and-drop or click-to-browse.
- * Runs the full data pipeline on drop — including buildGraph.
+ * Uses a Web Worker with streaming JSON parser for large files.
  *
  * @param props - Component props with onLoad callback.
  * @returns Drop zone UI element.
@@ -38,8 +40,9 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
   const [error, setError] = useState<string | null>(null)
   const [isSchemaOpen, setIsSchemaOpen] = useState(false)
   const [pendingLoad, setPendingLoad] = useState<{
-    data: GraphData
     cosmosData: CosmosGraphData
+    propertyColumns: PropertyColumns
+    propertyMetas: PropertyMeta[]
     positionMode: PositionMode
     filename: string
     replacementCount: number
@@ -47,65 +50,94 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
 
   const internalFileInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = externalFileInputRef ?? internalFileInputRef
+  const workerRef = useRef<Worker | null>(null)
 
-  /** Yield to the browser so the UI can update (spinner, status text). */
-  const yieldToUI = (): Promise<void> => new Promise((r) => setTimeout(r, 0))
+  // Clean up worker on unmount
+  useEffect(() => {
+    return () => { workerRef.current?.terminate() }
+  }, [])
 
   const processFile = useCallback(
     (file: File): void => {
       setError(null)
       setIsLoading(true)
-      setLoadingStatus('Reading file…')
+      setLoadingStatus('Starting…')
 
-      const reader = new FileReader()
-      reader.onload = async (e): Promise<void> => {
-        try {
-          let text = e.target?.result as string
+      // Terminate any previous worker
+      workerRef.current?.terminate()
 
-          setLoadingStatus('Parsing JSON…')
-          await yieldToUI()
-          let raw = parseJSON(text)
-          // Release the text string to free ~2× file size of RAM
-          text = null as unknown as string
+      const worker = new LoadingWorker()
+      workerRef.current = worker
 
-          setLoadingStatus('Validating…')
-          await yieldToUI()
-          const validated = validateGraph(raw)
-          // Release parsed JSON — validated now holds references to the same objects
-          raw = null as unknown as ReturnType<typeof parseJSON>
+      worker.onmessage = (e: MessageEvent): void => {
+        const msg = e.data
 
-          setLoadingStatus('Processing properties…')
-          await yieldToUI()
-          const nullResult: NullDefaultResult = applyNullDefaults(validated)
+        if (msg.type === 'progress') {
+          const { stage, count, percent } = msg as { stage: string; count: number; percent: number }
+          setLoadingStatus(`${stage}… ${count.toLocaleString()} items (${percent}%)`)
+          return
+        }
 
-          setLoadingStatus('Building graph…')
-          await yieldToUI()
-          const cosmosData = buildGraph(nullResult)
+        if (msg.type === 'error') {
+          setError(msg.message as string)
+          setIsLoading(false)
+          worker.terminate()
+          return
+        }
 
-          if (nullResult.replacementCount > 0) {
+        if (msg.type === 'complete') {
+          worker.terminate()
+          workerRef.current = null
+
+          // Build nodeIndexMap on main thread (Map can't be transferred from worker)
+          const nodeIds = msg.nodeIds as string[]
+          const nodeIndexMap = new Map<string, number>()
+          for (let i = 0; i < nodeIds.length; i++) {
+            nodeIndexMap.set(nodeIds[i], i)
+          }
+
+          const cosmosData: CosmosGraphData = {
+            nodeCount: msg.nodeCount as number,
+            nodeIds,
+            nodeLabels: msg.nodeLabels as (string | undefined)[],
+            nodeIndexMap,
+            initialPositions: msg.initialPositions as Float32Array | undefined,
+            linkIndices: msg.linkIndices as Float32Array,
+            positionMode: msg.positionMode as PositionMode,
+            edgeSources: msg.edgeSources as Uint32Array,
+            edgeTargets: msg.edgeTargets as Uint32Array,
+            edgeLabels: msg.edgeLabels as (string | undefined)[],
+            edgeWeights: msg.edgeWeights as Float32Array | undefined,
+          }
+
+          const propertyColumns = msg.propertyColumns as PropertyColumns
+          const propertyMetas = msg.propertyMetas as PropertyMeta[]
+          const replacementCount = msg.replacementCount as number
+
+          if (replacementCount > 0) {
             setPendingLoad({
-              data: nullResult.data,
               cosmosData,
+              propertyColumns,
+              propertyMetas,
               positionMode: cosmosData.positionMode,
               filename: file.name,
-              replacementCount: nullResult.replacementCount,
+              replacementCount,
             })
             setIsLoading(false)
           } else {
-            onLoad(nullResult.data, cosmosData, cosmosData.positionMode, file.name)
+            onLoad(cosmosData, propertyColumns, propertyMetas, replacementCount, file.name)
           }
-        } catch (err) {
-          setError(err instanceof Error ? err.message : 'Unknown error')
-          setIsLoading(false)
         }
       }
-      reader.onerror = (): void => {
-        setError('Failed to read file')
+
+      worker.onerror = (): void => {
+        setError('Loading worker failed')
         setIsLoading(false)
       }
-      reader.readAsText(file)
+
+      worker.postMessage({ type: 'load', file })
     },
-    [onLoad]
+    [onLoad],
   )
 
   // Auto-process a file passed from drag-drop on loaded graph
@@ -134,7 +166,7 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
       const file = e.dataTransfer.files[0]
       if (file) processFile(file)
     },
-    [processFile]
+    [processFile],
   )
 
   const handleClick = (): void => {
@@ -145,15 +177,14 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
     (e: React.ChangeEvent<HTMLInputElement>): void => {
       const file = e.target.files?.[0]
       if (file) processFile(file)
-      // Reset input so the same file can be re-selected
       e.target.value = ''
     },
-    [processFile]
+    [processFile],
   )
 
   const handleConfirmLoad = useCallback((): void => {
     if (pendingLoad) {
-      onLoad(pendingLoad.data, pendingLoad.cosmosData, pendingLoad.positionMode, pendingLoad.filename)
+      onLoad(pendingLoad.cosmosData, pendingLoad.propertyColumns, pendingLoad.propertyMetas, pendingLoad.replacementCount, pendingLoad.filename)
       setPendingLoad(null)
     }
   }, [pendingLoad, onLoad])

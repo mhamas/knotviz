@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Copy, Check, X } from 'lucide-react'
-import type { GraphData, PropertyMeta, PropertyValue } from '../types'
+import type { PropertyMeta, PropertyValue } from '../types'
+import type { PropertyColumns } from '../hooks/useFilterState'
 
 interface Props {
   nodeId: string
   screenPosition: { x: number; y: number }
-  graphData: GraphData
+  nodeIndexMap: Map<string, number>
+  nodeLabels: (string | undefined)[]
+  propertyColumns: PropertyColumns
   propertyMetas: PropertyMeta[]
   canvasBounds: DOMRect
   onClose: () => void
@@ -19,14 +22,14 @@ const PROP_NAME_MAX = 20
  * Formats a property value for display based on its detected type.
  *
  * @param value - The raw property value.
- * @param type - The detected property type.
+ * @param propertyType - The detected property type.
  * @returns Formatted string.
  */
-function formatValue(value: PropertyValue, type: string): string {
-  if (type === 'number' && typeof value === 'number') {
+function formatValue(value: PropertyValue, propertyType: string): string {
+  if (propertyType === 'number' && typeof value === 'number') {
     return value.toFixed(2)
   }
-  if (type === 'date' && typeof value === 'string') {
+  if (propertyType === 'date' && typeof value === 'string') {
     return value
   }
   return String(value)
@@ -35,7 +38,8 @@ function formatValue(value: PropertyValue, type: string): string {
 /**
  * Floating tooltip anchored to a node's viewport position.
  * Shows node id (with copy button), and all properties formatted by type.
- * Flips position to stay within canvas bounds.
+ * Reads property values from columnar arrays for O(1) lookup.
+ * Flips and clamps position to stay within canvas bounds.
  *
  * @param props - Node data, position, and close callback.
  * @returns Tooltip dialog element.
@@ -43,7 +47,9 @@ function formatValue(value: PropertyValue, type: string): string {
 export function NodeTooltip({
   nodeId,
   screenPosition,
-  graphData,
+  nodeIndexMap,
+  nodeLabels,
+  propertyColumns,
   propertyMetas,
   canvasBounds,
   onClose,
@@ -88,11 +94,11 @@ export function NodeTooltip({
     tooltipRef.current?.focus()
   }, [])
 
-  const node = graphData.nodes.find((n) => n.id === nodeId)
-  if (!node) return <></>
+  // O(1) node lookup via index
+  const nodeIndex = nodeIndexMap.get(nodeId)
+  if (nodeIndex === undefined) return <></>
 
-  const label = node.label ?? node.id
-  const properties = node.properties ?? {}
+  const label = nodeLabels[nodeIndex] ?? nodeId
 
   // Sort properties alphabetically
   const sortedMetas = [...propertyMetas].sort((a, b) => a.key.localeCompare(b.key))
@@ -102,15 +108,12 @@ export function NodeTooltip({
   let left = screenPosition.x + pad
   let top = screenPosition.y + pad
 
-  // Flip right → left if overflowing right edge
   if (left + TOOLTIP_WIDTH > canvasBounds.width) {
     left = screenPosition.x - TOOLTIP_WIDTH - pad
   }
-  // Flip down → up if overflowing bottom edge
   if (top + tooltipHeight > canvasBounds.height) {
     top = screenPosition.y - tooltipHeight - pad
   }
-  // Clamp so it never goes off any edge
   left = Math.max(pad, Math.min(left, canvasBounds.width - TOOLTIP_WIDTH - pad))
   top = Math.max(pad, Math.min(top, canvasBounds.height - tooltipHeight - pad))
 
@@ -122,7 +125,7 @@ export function NodeTooltip({
   }
 
   const handleCopyId = (): void => {
-    navigator.clipboard.writeText(node.id).then(() => {
+    navigator.clipboard.writeText(nodeId).then(() => {
       setIsCopied(true)
       setTimeout(() => setIsCopied(false), 1500)
     })
@@ -168,11 +171,11 @@ export function NodeTooltip({
         </button>
       </div>
 
-      {/* Properties */}
+      {/* Properties — read from columnar arrays by index */}
       {sortedMetas.length > 0 ? (
         <div className="space-y-1.5">
           {sortedMetas.map((meta) => {
-            const value = properties[meta.key]
+            const value = propertyColumns[meta.key]?.[nodeIndex] as PropertyValue | undefined
             if (value === undefined || value === null) return null
             const isTruncated = meta.key.length > PROP_NAME_MAX
             const displayKey = isTruncated

@@ -1,19 +1,15 @@
 import { expect, test, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { NodeTooltip } from '@/components/NodeTooltip'
-import type { GraphData, PropertyMeta } from '@/types'
+import type { PropertyMeta } from '@/types'
+import type { PropertyColumns } from '@/hooks/useFilterState'
 
-const graphData: GraphData = {
-  version: '1',
-  nodes: [
-    {
-      id: 'n1',
-      label: 'Alice',
-      properties: { age: 30, role: 'admin', active: true },
-    },
-    { id: 'n2' },
-  ],
-  edges: [],
+const nodeIndexMap = new Map([['n1', 0], ['n2', 1]])
+const nodeLabels: (string | undefined)[] = ['Alice', undefined]
+const propertyColumns: PropertyColumns = {
+  age: [30, undefined],
+  role: ['admin', undefined],
+  active: [true, undefined],
 }
 
 const metas: PropertyMeta[] = [
@@ -29,7 +25,9 @@ test('renders node label as heading', async () => {
     <NodeTooltip
       nodeId="n1"
       screenPosition={{ x: 100, y: 100 }}
-      graphData={graphData}
+      nodeIndexMap={nodeIndexMap}
+      nodeLabels={nodeLabels}
+      propertyColumns={propertyColumns}
       propertyMetas={metas}
       canvasBounds={canvasBounds}
       onClose={vi.fn()}
@@ -43,7 +41,9 @@ test('shows copy button for node ID', async () => {
     <NodeTooltip
       nodeId="n1"
       screenPosition={{ x: 100, y: 100 }}
-      graphData={graphData}
+      nodeIndexMap={nodeIndexMap}
+      nodeLabels={nodeLabels}
+      propertyColumns={propertyColumns}
       propertyMetas={metas}
       canvasBounds={canvasBounds}
       onClose={vi.fn()}
@@ -57,7 +57,9 @@ test('shows formatted properties', async () => {
     <NodeTooltip
       nodeId="n1"
       screenPosition={{ x: 100, y: 100 }}
-      graphData={graphData}
+      nodeIndexMap={nodeIndexMap}
+      nodeLabels={nodeLabels}
+      propertyColumns={propertyColumns}
       propertyMetas={metas}
       canvasBounds={canvasBounds}
       onClose={vi.fn()}
@@ -75,7 +77,9 @@ test('close button calls onClose', async () => {
     <NodeTooltip
       nodeId="n1"
       screenPosition={{ x: 100, y: 100 }}
-      graphData={graphData}
+      nodeIndexMap={nodeIndexMap}
+      nodeLabels={nodeLabels}
+      propertyColumns={propertyColumns}
       propertyMetas={metas}
       canvasBounds={canvasBounds}
       onClose={handler}
@@ -90,7 +94,9 @@ test('shows No properties when no metas', async () => {
     <NodeTooltip
       nodeId="n2"
       screenPosition={{ x: 100, y: 100 }}
-      graphData={graphData}
+      nodeIndexMap={nodeIndexMap}
+      nodeLabels={nodeLabels}
+      propertyColumns={propertyColumns}
       propertyMetas={[]}
       canvasBounds={canvasBounds}
       onClose={vi.fn()}

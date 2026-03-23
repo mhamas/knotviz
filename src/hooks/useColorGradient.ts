@@ -1,5 +1,4 @@
-import { useMemo } from 'react'
-import type { CosmosGraphData, ColorGradientState, CustomPalette, PropertyType } from '@/types'
+import type { ColorGradientState, CustomPalette, PropertyType } from '@/types'
 import { interpolateColors, isBuiltinPalette, getPaletteColors } from '@/lib/colorScales'
 
 /** Entry pairing a node ID with its raw property value. */
@@ -22,12 +21,12 @@ function resolveColors(
   }
   const custom = customPalettes.find((p) => p.id === palette)
   if (custom) return [...custom.colors, ...customColors]
-  // Fallback to Viridis
   return getPaletteColors('Viridis', customColors)
 }
 
 /**
  * Pure computation: derives a per-node hex color from property values and palette.
+ * Used by unit tests. Production gradient computation happens in the appearance worker.
  *
  * @param entries - Active node IDs with their property values.
  * @param propType - Detected type of the property.
@@ -75,50 +74,25 @@ export function computeGradientColors(
       result.set(e.id, isTrue ? colors[colors.length - 1] : colors[0])
     }
   } else {
-    // string: discrete, round-robin on overflow
-    const distinct = Array.from(new Set(entries.map((e) => e.value as string))).sort()
+    // string: discrete, round-robin
+    const distinctMap = new Map<string, number>()
+    const distinctValues: string[] = []
     for (const e of entries) {
-      const idx = distinct.indexOf(e.value as string)
+      if (!distinctMap.has(e.value as string)) {
+        distinctMap.set(e.value as string, distinctValues.length)
+        distinctValues.push(e.value as string)
+      }
+    }
+    distinctValues.sort()
+    distinctMap.clear()
+    for (let i = 0; i < distinctValues.length; i++) {
+      distinctMap.set(distinctValues[i], i)
+    }
+    for (const e of entries) {
+      const idx = distinctMap.get(e.value as string)!
       result.set(e.id, colors[idx % colors.length])
     }
   }
 
   return result
-}
-
-/**
- * Derives a per-node hex color from the selected property and palette,
- * applied only to active (matching) nodes.
- *
- * @param data - The CosmosGraphData (used to read node properties).
- * @param matchingNodeIds - Set of node IDs that pass all active filters.
- * @param state - Current color gradient UI state (property, palette, custom colors).
- * @param propertyTypes - Map of property key to detected type.
- * @returns `null` when no property is selected; a `Map<nodeId, hexColor>` otherwise.
- */
-export function useColorGradient(
-  data: CosmosGraphData | null,
-  matchingNodeIds: Set<string>,
-  state: ColorGradientState,
-  propertyTypes: Map<string, PropertyType>,
-): Map<string, string> | null {
-  return useMemo(() => {
-    if (state.propertyKey === null || !data) return null
-
-    const propType = propertyTypes.get(state.propertyKey)
-    if (!propType) return new Map<string, string>()
-
-    // Collect values for active nodes (properties are on the original NodeInput objects)
-    const entries: NodeValueEntry[] = []
-    for (const id of matchingNodeIds) {
-      const idx = data.nodeIndexMap.get(id)
-      if (idx === undefined) continue
-      const value = data.nodes[idx].properties?.[state.propertyKey]
-      if (value !== undefined) {
-        entries.push({ id, value })
-      }
-    }
-
-    return computeGradientColors(entries, propType, state)
-  }, [data, matchingNodeIds, state, propertyTypes])
 }

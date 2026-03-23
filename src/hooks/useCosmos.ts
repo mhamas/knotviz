@@ -108,7 +108,7 @@ export function useCosmos(
   // Mark graph as loaded
   useEffect(() => {
     if (data) {
-      useGraphStore.getState().setGraphLoaded(data.nodes.length, data.linkIndices.length / 2)
+      useGraphStore.getState().setGraphLoaded(data.nodeCount, data.linkIndices.length / 2)
     }
   }, [data])
 
@@ -143,7 +143,7 @@ export function useCosmos(
       // Collect on-screen nodes (space→screen), cap at MAX_LABELS
       const children = container.children
       let count = 0
-      for (let idx = 0; idx < d.nodes.length && count < MAX_LABELS; idx++) {
+      for (let idx = 0; idx < d.nodeCount && count < MAX_LABELS; idx++) {
         const sx = positions[idx * 2]
         const sy = positions[idx * 2 + 1]
         if (sx === undefined || sy === undefined) continue
@@ -163,7 +163,7 @@ export function useCosmos(
         el.style.left = `${screenX + 8}px`
         el.style.top = `${screenY - 6}px`
         el.style.display = ''
-        el.textContent = d.nodes[idx].label ?? d.nodes[idx].id
+        el.textContent = d.nodeLabels[idx] ?? d.nodeIds[idx]
         count++
       }
       // Hide excess
@@ -238,13 +238,13 @@ export function useCosmos(
         const d = dataRef.current
         const c = cosmosRef.current
         if (!d || !c || index === undefined) return
-        const node = d.nodes[index]
-        if (!node) return
+        const nodeId = d.nodeIds[index]
+        if (!nodeId) return
         const container = containerRef.current
         const bounds = container?.getBoundingClientRect() ?? new DOMRect()
         tooltipNodeIndexRef.current = index
         setTooltipState({
-          nodeId: node.id,
+          nodeId,
           x: event.clientX - bounds.left,
           y: event.clientY - bounds.top,
           canvasBounds: bounds,
@@ -275,9 +275,9 @@ export function useCosmos(
         const c = cosmosRef.current
         if (!d || !c) return
 
-        const node = d.nodes[index]
-        if (node) {
-          setHoverLabel({ nodeId: node.id, label: node.label ?? node.id })
+        const hNodeId = d.nodeIds[index]
+        if (hNodeId) {
+          setHoverLabel({ nodeId: hNodeId, label: d.nodeLabels[index] ?? hNodeId })
         }
 
         if (isHighlightNeighborsRef.current) {
@@ -312,7 +312,7 @@ export function useCosmos(
       cosmosRef.current = cosmos
 
       // Positions: use provided or generate random
-      const positions = data.initialPositions ?? generateRandomPositions(data.nodes.length)
+      const positions = data.initialPositions ?? generateRandomPositions(data.nodeCount)
       cosmos.setPointPositions(positions)
 
       // Links
@@ -414,7 +414,7 @@ export function useCosmos(
     container.innerHTML = ''
     const maxLabels = 300
     let count = 0
-    for (let idx = 0; idx < data.nodes.length && count < maxLabels; idx++) {
+    for (let idx = 0; idx < data.nodeCount && count < maxLabels; idx++) {
       const sx = positions[idx * 2]
       const sy = positions[idx * 2 + 1]
       if (sx === undefined || sy === undefined) continue
@@ -425,7 +425,7 @@ export function useCosmos(
       el.style.whiteSpace = 'nowrap'
       el.style.left = `${screenX + 8}px`
       el.style.top = `${screenY - 6}px`
-      el.textContent = data.nodes[idx].label ?? data.nodes[idx].id
+      el.textContent = data.nodeLabels[idx] ?? data.nodeIds[idx]
       container.appendChild(el)
       count++
     }
@@ -482,7 +482,7 @@ export function useCosmos(
       linkIndices: data.linkIndices,
     })
     // Also trigger initial appearance
-    setMatchingCount(data.nodes.length)
+    setMatchingCount(data.nodeCount)
   }, [data, propertyColumns])
 
   // Send lightweight update on filter/gradient change (no columns cloned)
@@ -517,7 +517,7 @@ export function useCosmos(
 
     worker.postMessage({
       type: 'update',
-      nodeCount: data.nodes.length,
+      nodeCount: data.nodeCount,
       filters: serializedFilters,
       gradientConfig: {
         propertyKey: gradientState.propertyKey,
@@ -666,7 +666,7 @@ export function useCosmos(
     if (!data) return
     const cosmos = cosmosRef.current
     if (!cosmos) return
-    cosmos.setPointPositions(generateRandomPositions(data.nodes.length))
+    cosmos.setPointPositions(generateRandomPositions(data.nodeCount))
     cosmos.render(0)
     cosmos.fitView(0)
   }, [data])

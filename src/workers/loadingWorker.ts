@@ -2,19 +2,18 @@
  * Web Worker: loads a JSON graph file off the main thread, builds compact
  * output structures, and transfers them back with zero-copy typed arrays.
  *
+ * Uses two loading strategies:
+ * - Small files (<200MB): JSON.parse (fast, simple)
+ * - Large files (>=200MB): streaming parser (low memory — never holds full JSON in memory)
+ *
  * Protocol:
  * - Input:  { type: 'load', file: File }
  * - Output: { type: 'progress', stage, percent }
  *           { type: 'complete', ...result }
  *           { type: 'error', message }
- *
- * Architecture supports future format adapters by swapping the parser.
- * Currently implements the JSON graph format (version "1").
- *
- * Memory strategy: uses JSON.parse in the worker (separate heap from main thread).
- * After extracting data into compact columnar structures, the parsed object tree
- * is released. Peak memory: ~3× file size, but only in the worker's heap.
  */
+
+import { parseStreamingJsonGraph } from '../lib/streamingJsonGraphParser'
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -35,7 +34,6 @@ const TYPE_DEFAULTS: Record<string, PropertyValue> = {
   date: '1970-01-01',
 }
 
-/** Incremental type detection state per property key. */
 interface TypeState {
   nonNullCount: number
   isAllBoolean: boolean
@@ -43,42 +41,31 @@ interface TypeState {
   isAllDate: boolean
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const post = self.postMessage as any
-
-/** Yield the worker thread so queued postMessage calls are delivered. */
 const yieldWorker = (): Promise<void> => new Promise((r) => setTimeout(r, 0))
+
+/** Threshold above which streaming parser is used instead of JSON.parse. */
+const STREAMING_THRESHOLD = 200 * 1024 * 1024 // 200MB
+
+// ─── Main ─────────────────────────────────────────────────────────────────
 
 self.onmessage = async (e: MessageEvent): Promise<void> => {
   const { file } = e.data as { type: 'load'; file: File }
 
   try {
-    post({ type: 'progress', stage: 'Reading file…', percent: 0 })
-    const text = await file.text()
+    let result: ProcessResult
 
-    post({ type: 'progress', stage: 'Parsing JSON…', percent: 20 })
-    // Yield so the progress message is delivered before the blocking JSON.parse
-    await yieldWorker()
-    let raw: unknown
-    try {
-      raw = JSON.parse(text)
-    } catch (parseErr) {
-      const msg = parseErr instanceof Error ? parseErr.message : ''
-      if (msg.includes('memory') || msg.includes('allocation') || msg.includes('OOM')) {
-        throw new Error(`File too large to parse (${Math.round(file.size / 1024 / 1024)}MB). Try a smaller graph.`)
-      }
-      throw new Error('Invalid JSON file')
+    if (file.size < STREAMING_THRESHOLD) {
+      result = await loadWithJsonParse(file)
+    } else {
+      result = await loadWithStreaming(file)
     }
-
-    post({ type: 'progress', stage: 'Building graph…', percent: 40 })
-    await yieldWorker()
-    const result = await processRawGraph(raw)
 
     const msg = { type: 'complete', ...result }
 
-    // Transfer typed arrays (zero-copy)
     const transferables: ArrayBuffer[] = [
       result.linkIndices.buffer as ArrayBuffer,
       result.edgeSources.buffer as ArrayBuffer,
@@ -93,7 +80,94 @@ self.onmessage = async (e: MessageEvent): Promise<void> => {
   }
 }
 
-// ─── Graph Processing ─────────────────────────────────────────────────────
+// ─── Strategy 1: JSON.parse (small/medium files) ─────────────────────────
+
+async function loadWithJsonParse(file: File): Promise<ProcessResult> {
+  post({ type: 'progress', stage: 'Reading file…', percent: 0 })
+  const text = await file.text()
+
+  post({ type: 'progress', stage: 'Parsing JSON…', percent: 20 })
+  await yieldWorker()
+
+  let raw: unknown
+  try {
+    raw = JSON.parse(text)
+  } catch (parseErr) {
+    const msg = parseErr instanceof Error ? parseErr.message : ''
+    if (msg.includes('memory') || msg.includes('allocation')) {
+      throw new Error(`File too large to parse (${Math.round(file.size / 1024 / 1024)}MB). Try a smaller graph.`)
+    }
+    throw new Error('Invalid JSON file')
+  }
+
+  post({ type: 'progress', stage: 'Building graph…', percent: 40 })
+  await yieldWorker()
+  return await processRawGraph(raw)
+}
+
+// ─── Strategy 2: Streaming parser (large files) ──────────────────────────
+
+async function loadWithStreaming(file: File): Promise<ProcessResult> {
+  const builder = new GraphBuilder()
+  const totalBytes = file.size
+
+  post({ type: 'progress', stage: 'Streaming file…', percent: 0 })
+
+  // Create an async iterable of text chunks from the file stream
+  const stream = file.stream()
+  const reader = stream.getReader()
+  const decoder = new TextDecoder('utf-8')
+
+  async function* textChunks(): AsyncGenerator<string> {
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) {
+        const remaining = decoder.decode(new Uint8Array(0), { stream: false })
+        if (remaining) yield remaining
+        break
+      }
+      yield decoder.decode(value, { stream: true })
+    }
+  }
+
+  let nodeCount = 0
+  let edgeCount = 0
+
+  await parseStreamingJsonGraph(textChunks(), {
+    onVersion: (version) => {
+      if (version !== '1') throw new Error('Unsupported schema version')
+    },
+    onNode: (obj) => {
+      builder.addNode(obj)
+      nodeCount++
+      if (nodeCount % 100_000 === 0) {
+        post({ type: 'progress', stage: `Streaming nodes… ${nodeCount.toLocaleString()}`, percent: Math.round((nodeCount / (totalBytes / 100)) * 30) })
+      }
+    },
+    onEdge: (obj) => {
+      builder.addEdge(obj)
+      edgeCount++
+      if (edgeCount % 100_000 === 0) {
+        post({ type: 'progress', stage: `Streaming edges… ${edgeCount.toLocaleString()}`, percent: 50 + Math.round((edgeCount / (totalBytes / 50)) * 25) })
+      }
+    },
+    onProgress: (bytesProcessed) => {
+      const pct = Math.round((bytesProcessed / totalBytes) * 100)
+      // Don't override more specific node/edge messages
+      if (nodeCount === 0 && edgeCount === 0) {
+        post({ type: 'progress', stage: `Streaming file…`, percent: pct })
+      }
+    },
+  })
+
+  post({ type: 'progress', stage: 'Finalizing…', percent: 90 })
+  await yieldWorker()
+
+  return builder.finalize()
+}
+
+// ─── Shared graph building logic ──────────────────────────────────────────
 
 interface ProcessResult {
   nodeCount: number
@@ -112,10 +186,163 @@ interface ProcessResult {
   replacementCount: number
 }
 
+/**
+ * Incremental graph builder: accepts nodes/edges one at a time,
+ * builds compact output structures. Used by both loading strategies.
+ */
+class GraphBuilder {
+  nodeIds: string[] = []
+  nodeLabels: (string | undefined)[] = []
+  nodeIndexMap = new Map<string, number>()
+  propertyColumns: Record<string, (PropertyValue | undefined)[]> = {}
+  typeStates: Record<string, TypeState> = {}
+  xPositions: number[] = []
+  yPositions: number[] = []
+  hasPosition: boolean[] = []
+  nodesWithPositions = 0
+  skippedNodes = 0
+
+  edgeSrcIndices: number[] = []
+  edgeTgtIndices: number[] = []
+  edgeLabelList: (string | undefined)[] = []
+  edgeWeightList: number[] = []
+  hasAnyWeight = false
+  skippedEdges = 0
+
+  addNode(n: Record<string, unknown>): void {
+    if (typeof n.id !== 'string' || n.id === '') { this.skippedNodes++; return }
+
+    const index = this.nodeIds.length
+    this.nodeIds.push(n.id)
+    this.nodeIndexMap.set(n.id, index)
+    this.nodeLabels.push(typeof n.label === 'string' ? n.label : undefined)
+
+    const hasX = typeof n.x === 'number'
+    const hasY = typeof n.y === 'number'
+    this.xPositions.push(hasX ? (n.x as number) : 0)
+    this.yPositions.push(hasY ? (n.y as number) : 0)
+    this.hasPosition.push(hasX && hasY)
+    if (hasX && hasY) this.nodesWithPositions++
+
+    if (typeof n.properties === 'object' && n.properties !== null && !Array.isArray(n.properties)) {
+      const props = n.properties as Record<string, unknown>
+      for (const key of Object.keys(props)) {
+        const val = props[key]
+        if (typeof val !== 'number' && typeof val !== 'string' && typeof val !== 'boolean') continue
+
+        if (!(key in this.propertyColumns)) {
+          this.propertyColumns[key] = new Array(index).fill(undefined)
+          this.typeStates[key] = { nonNullCount: 0, isAllBoolean: true, isAllNumber: true, isAllDate: true }
+        }
+        this.propertyColumns[key].push(val)
+
+        const ts = this.typeStates[key]
+        ts.nonNullCount++
+        if (ts.isAllBoolean && typeof val !== 'boolean') ts.isAllBoolean = false
+        if (ts.isAllNumber && typeof val !== 'number') ts.isAllNumber = false
+        if (ts.isAllDate && !(typeof val === 'string' && ISO_DATE_RE.test(val))) ts.isAllDate = false
+      }
+    }
+
+    // Pad columns this node didn't have
+    for (const key of Object.keys(this.propertyColumns)) {
+      if (this.propertyColumns[key].length <= index) {
+        this.propertyColumns[key].push(undefined)
+      }
+    }
+  }
+
+  addEdge(e: Record<string, unknown>): void {
+    if (typeof e.source !== 'string' || typeof e.target !== 'string') { this.skippedEdges++; return }
+    const srcIdx = this.nodeIndexMap.get(e.source)
+    const tgtIdx = this.nodeIndexMap.get(e.target)
+    if (srcIdx === undefined || tgtIdx === undefined) { this.skippedEdges++; return }
+
+    this.edgeSrcIndices.push(srcIdx)
+    this.edgeTgtIndices.push(tgtIdx)
+    this.edgeLabelList.push(typeof e.label === 'string' ? e.label : undefined)
+    if (typeof e.weight === 'number') {
+      this.edgeWeightList.push(e.weight)
+      this.hasAnyWeight = true
+    } else {
+      this.edgeWeightList.push(0)
+    }
+  }
+
+  finalize(): ProcessResult {
+    const nodeCount = this.nodeIds.length
+    if (nodeCount === 0) throw new Error('Graph has no nodes to display')
+    if (this.skippedNodes > 0) console.warn(`Skipped ${this.skippedNodes} invalid nodes`)
+    if (this.skippedEdges > 0) console.warn(`Skipped ${this.skippedEdges} invalid edges`)
+
+    // Null defaults backfill + type detection
+    const propertyMetas: PropertyMeta[] = []
+    let replacementCount = 0
+
+    for (const [key, ts] of Object.entries(this.typeStates)) {
+      let type: PropertyMeta['type']
+      if (ts.nonNullCount === 0) type = 'number'
+      else if (ts.isAllBoolean) type = 'boolean'
+      else if (ts.isAllNumber) type = 'number'
+      else if (ts.isAllDate) type = 'date'
+      else type = 'string'
+      propertyMetas.push({ key, type })
+
+      const col = this.propertyColumns[key]
+      const defaultVal = TYPE_DEFAULTS[type]
+      while (col.length < nodeCount) col.push(undefined)
+      for (let i = 0; i < col.length; i++) {
+        if (col[i] === undefined) { col[i] = defaultVal; replacementCount++ }
+      }
+    }
+
+    // Build typed arrays
+    const edgeCount = this.edgeSrcIndices.length
+
+    let positionMode: 'all' | 'partial' | 'none'
+    if (this.nodesWithPositions === nodeCount) positionMode = 'all'
+    else if (this.nodesWithPositions > 0) positionMode = 'partial'
+    else positionMode = 'none'
+
+    let initialPositions: Float32Array | undefined
+    if (positionMode === 'all') {
+      initialPositions = new Float32Array(nodeCount * 2)
+      for (let i = 0; i < nodeCount; i++) {
+        initialPositions[i * 2] = this.xPositions[i]
+        initialPositions[i * 2 + 1] = this.yPositions[i]
+      }
+    }
+
+    const linkIndices = new Float32Array(edgeCount * 2)
+    for (let i = 0; i < edgeCount; i++) {
+      linkIndices[i * 2] = this.edgeSrcIndices[i]
+      linkIndices[i * 2 + 1] = this.edgeTgtIndices[i]
+    }
+
+    return {
+      nodeCount,
+      edgeCount,
+      linkIndices,
+      initialPositions,
+      positionMode,
+      nodeIds: this.nodeIds,
+      nodeLabels: this.nodeLabels,
+      edgeSources: new Uint32Array(this.edgeSrcIndices),
+      edgeTargets: new Uint32Array(this.edgeTgtIndices),
+      edgeLabels: this.edgeLabelList,
+      edgeWeights: this.hasAnyWeight ? new Float32Array(this.edgeWeightList) : undefined,
+      propertyColumns: this.propertyColumns as Record<string, (number | string | boolean | undefined)[]>,
+      propertyMetas,
+      replacementCount,
+    }
+  }
+}
+
+// ─── JSON.parse path: reuses GraphBuilder ─────────────────────────────────
+
 const PROGRESS_BATCH = 100_000
 
 async function processRawGraph(raw: unknown): Promise<ProcessResult> {
-  // ── Structural validation ──
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
     throw new Error('File must contain nodes and edges arrays')
   }
@@ -127,177 +354,34 @@ async function processRawGraph(raw: unknown): Promise<ProcessResult> {
   const rawNodes = obj.nodes as unknown[]
   const rawEdges = obj.edges as unknown[]
 
-  if (rawNodes.length === 0) {
-    throw new Error('Graph has no nodes to display')
-  }
+  if (rawNodes.length === 0) throw new Error('Graph has no nodes to display')
 
-  // ── Process nodes → compact stores + property columns ──
-  const nodeIds: string[] = []
-  const nodeLabels: (string | undefined)[] = []
-  const nodeIndexMap = new Map<string, number>()
-  const propertyColumns: Record<string, (PropertyValue | undefined)[]> = {}
-  const typeStates: Record<string, TypeState> = {}
-  let nodesWithPositions = 0
-  const xPositions: number[] = []
-  const yPositions: number[] = []
-  const hasPosition: boolean[] = []
-  let skippedNodes = 0
+  const builder = new GraphBuilder()
 
   for (let i = 0; i < rawNodes.length; i++) {
     if (i > 0 && i % PROGRESS_BATCH === 0) {
-      const pct = 40 + Math.round((i / rawNodes.length) * 25)
-      post({ type: 'progress', stage: `Processing nodes… ${i.toLocaleString()} / ${rawNodes.length.toLocaleString()}`, percent: pct })
+      post({ type: 'progress', stage: `Processing nodes… ${i.toLocaleString()} / ${rawNodes.length.toLocaleString()}`, percent: 40 + Math.round((i / rawNodes.length) * 25) })
       await yieldWorker()
     }
     const node = rawNodes[i]
-    if (typeof node !== 'object' || node === null) { skippedNodes++; continue }
-    const n = node as Record<string, unknown>
-    if (typeof n.id !== 'string' || n.id === '') { skippedNodes++; continue }
-
-    const index = nodeIds.length
-    nodeIds.push(n.id)
-    nodeIndexMap.set(n.id, index)
-    nodeLabels.push(typeof n.label === 'string' ? n.label : undefined)
-
-    const hasX = typeof n.x === 'number'
-    const hasY = typeof n.y === 'number'
-    xPositions.push(hasX ? (n.x as number) : 0)
-    yPositions.push(hasY ? (n.y as number) : 0)
-    hasPosition.push(hasX && hasY)
-    if (hasX && hasY) nodesWithPositions++
-
-    // Properties → columnar + type detection
-    if (typeof n.properties === 'object' && n.properties !== null && !Array.isArray(n.properties)) {
-      const props = n.properties as Record<string, unknown>
-      for (const key of Object.keys(props)) {
-        const val = props[key]
-        if (typeof val !== 'number' && typeof val !== 'string' && typeof val !== 'boolean') continue
-
-        if (!(key in propertyColumns)) {
-          propertyColumns[key] = new Array(index).fill(undefined)
-          typeStates[key] = { nonNullCount: 0, isAllBoolean: true, isAllNumber: true, isAllDate: true }
-        }
-        propertyColumns[key].push(val)
-
-        const ts = typeStates[key]
-        ts.nonNullCount++
-        if (ts.isAllBoolean && typeof val !== 'boolean') ts.isAllBoolean = false
-        if (ts.isAllNumber && typeof val !== 'number') ts.isAllNumber = false
-        if (ts.isAllDate && !(typeof val === 'string' && ISO_DATE_RE.test(val))) ts.isAllDate = false
-      }
-    }
-
-    // Pad columns this node didn't have
-    for (const key of Object.keys(propertyColumns)) {
-      if (propertyColumns[key].length <= index) {
-        propertyColumns[key].push(undefined)
-      }
+    if (typeof node === 'object' && node !== null) {
+      builder.addNode(node as Record<string, unknown>)
     }
   }
-
-  if (nodeIds.length === 0) throw new Error('Graph has no nodes to display')
-  if (skippedNodes > 0) console.warn(`Skipped ${skippedNodes} invalid nodes`)
-
-  // ── Process edges → link indices + compact edge stores ──
-  const edgeSrcIndices: number[] = []
-  const edgeTgtIndices: number[] = []
-  const edgeLabelList: (string | undefined)[] = []
-  const edgeWeightList: number[] = []
-  let hasAnyWeight = false
-  let skippedEdges = 0
 
   for (let i = 0; i < rawEdges.length; i++) {
     if (i > 0 && i % PROGRESS_BATCH === 0) {
-      const pct = 65 + Math.round((i / rawEdges.length) * 25)
-      post({ type: 'progress', stage: `Processing edges… ${i.toLocaleString()} / ${rawEdges.length.toLocaleString()}`, percent: pct })
+      post({ type: 'progress', stage: `Processing edges… ${i.toLocaleString()} / ${rawEdges.length.toLocaleString()}`, percent: 65 + Math.round((i / rawEdges.length) * 25) })
       await yieldWorker()
     }
     const edge = rawEdges[i]
-    if (typeof edge !== 'object' || edge === null) { skippedEdges++; continue }
-    const e = edge as Record<string, unknown>
-    if (typeof e.source !== 'string' || typeof e.target !== 'string') { skippedEdges++; continue }
-
-    const srcIdx = nodeIndexMap.get(e.source)
-    const tgtIdx = nodeIndexMap.get(e.target)
-    if (srcIdx === undefined || tgtIdx === undefined) { skippedEdges++; continue }
-
-    edgeSrcIndices.push(srcIdx)
-    edgeTgtIndices.push(tgtIdx)
-    edgeLabelList.push(typeof e.label === 'string' ? e.label : undefined)
-    if (typeof e.weight === 'number') {
-      edgeWeightList.push(e.weight)
-      hasAnyWeight = true
-    } else {
-      edgeWeightList.push(0)
+    if (typeof edge === 'object' && edge !== null) {
+      builder.addEdge(edge as Record<string, unknown>)
     }
   }
 
-  if (skippedEdges > 0) console.warn(`Skipped ${skippedEdges} invalid edges`)
-
-  // ── Finalize: null defaults backfill + type detection ──
-  post({ type: 'progress', stage: 'Finalizing properties…', percent: 90 })
+  post({ type: 'progress', stage: 'Finalizing…', percent: 90 })
   await yieldWorker()
-  const nodeCount = nodeIds.length
-  const propertyMetas: PropertyMeta[] = []
-  let replacementCount = 0
 
-  for (const [key, ts] of Object.entries(typeStates)) {
-    let type: PropertyMeta['type']
-    if (ts.nonNullCount === 0) type = 'number'
-    else if (ts.isAllBoolean) type = 'boolean'
-    else if (ts.isAllNumber) type = 'number'
-    else if (ts.isAllDate) type = 'date'
-    else type = 'string'
-    propertyMetas.push({ key, type })
-
-    const col = propertyColumns[key]
-    const defaultVal = TYPE_DEFAULTS[type]
-    while (col.length < nodeCount) col.push(undefined)
-    for (let i = 0; i < col.length; i++) {
-      if (col[i] === undefined) {
-        col[i] = defaultVal
-        replacementCount++
-      }
-    }
-  }
-
-  // ── Build typed arrays ──
-  const edgeCount = edgeSrcIndices.length
-
-  let positionMode: 'all' | 'partial' | 'none'
-  if (nodesWithPositions === nodeCount) positionMode = 'all'
-  else if (nodesWithPositions > 0) positionMode = 'partial'
-  else positionMode = 'none'
-
-  let initialPositions: Float32Array | undefined
-  if (positionMode === 'all') {
-    initialPositions = new Float32Array(nodeCount * 2)
-    for (let i = 0; i < nodeCount; i++) {
-      initialPositions[i * 2] = xPositions[i]
-      initialPositions[i * 2 + 1] = yPositions[i]
-    }
-  }
-
-  const linkIndices = new Float32Array(edgeCount * 2)
-  for (let i = 0; i < edgeCount; i++) {
-    linkIndices[i * 2] = edgeSrcIndices[i]
-    linkIndices[i * 2 + 1] = edgeTgtIndices[i]
-  }
-
-  return {
-    nodeCount,
-    edgeCount,
-    linkIndices,
-    initialPositions,
-    positionMode,
-    nodeIds,
-    nodeLabels,
-    edgeSources: new Uint32Array(edgeSrcIndices),
-    edgeTargets: new Uint32Array(edgeTgtIndices),
-    edgeLabels: edgeLabelList,
-    edgeWeights: hasAnyWeight ? new Float32Array(edgeWeightList) : undefined,
-    propertyColumns: propertyColumns as Record<string, (number | string | boolean | undefined)[]>,
-    propertyMetas,
-    replacementCount,
-  }
+  return builder.finalize()
 }

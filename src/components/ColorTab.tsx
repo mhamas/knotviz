@@ -119,6 +119,20 @@ export function ColorTab({
           >
             <SelectTrigger className="w-full" data-testid="color-property-select">
               <span className="flex flex-1 text-left">{state.propertyKey ?? 'None'}</span>
+              {state.propertyKey && (
+                <button
+                  type="button"
+                  className="shrink-0 cursor-pointer rounded p-0.5 text-slate-400 [&_svg]:pointer-events-auto hover:text-slate-700"
+                  onPointerDown={(e): void => {
+                    e.stopPropagation()
+                    e.preventDefault()
+                    onChange({ ...state, propertyKey: null })
+                  }}
+                  aria-label="Clear property"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
             </SelectTrigger>
             <SelectContent alignItemWithTrigger={false}>
               <SelectItem value="__none__">None</SelectItem>

@@ -217,6 +217,7 @@ export function LeftSidebar({
           label="Show node labels"
           checked={isNodeLabelsVisible}
           onCheckedChange={setIsNodeLabelsVisible}
+          help="Displays up to 300 labels sampled from visible nodes. Labels update as you pan and zoom."
         />
 
         <SidebarCheckbox

@@ -135,15 +135,20 @@ export function useCosmos(
       }
       container.style.display = ''
 
-      // Try GPU-sampled positions first (fast: only returns visible, pre-sampled points)
+      // GPU-sampled points: only visible, pre-sampled subset (fast for 1M+ graphs).
+      // Returns space coordinates — must convert to screen via spaceToScreenPosition.
       const sampled = c.getSampledPointPositionsMap()
       const children = container.children
       let count = 0
+      const canvasW = containerRef.current?.clientWidth ?? 0
+      const canvasH = containerRef.current?.clientHeight ?? 0
 
       if (sampled.size > 0) {
-        // GPU sampling works — use it directly (screen coordinates)
-        for (const [index, [screenX, screenY]] of sampled) {
+        for (const [index, [spaceX, spaceY]] of sampled) {
           if (count >= MAX_LABELS) break
+          const [screenX, screenY] = c.spaceToScreenPosition([spaceX, spaceY])
+          if (screenX < -50 || screenX > canvasW + 50 || screenY < -50 || screenY > canvasH + 50) continue
+
           let el: HTMLElement
           if (count < children.length) {
             el = children[count] as HTMLElement
@@ -164,8 +169,6 @@ export function useCosmos(
         const stride = Math.max(1, Math.floor(d.nodeCount / MAX_LABELS))
         const positions = c.getPointPositions()
         if (!positions || positions.length === 0) return
-        const canvasW = containerRef.current?.clientWidth ?? 0
-        const canvasH = containerRef.current?.clientHeight ?? 0
 
         for (let idx = 0; idx < d.nodeCount && count < MAX_LABELS; idx += stride) {
           const sx = positions[idx * 2]
@@ -376,7 +379,24 @@ export function useCosmos(
       observer.observe(div)
     }
 
+    // ── Update labels during canvas panning ──
+    // onZoom handles zoom, onDragEnd handles node drag end, but background
+    // click-and-drag (pan) has no cosmos callback — track it via DOM.
+    let panFrameId = 0
+    const handlePanMove = (e: PointerEvent): void => {
+      if (!(e.buttons & 1)) return // left button not held = not panning
+      if (!isNodeLabelsVisibleRef.current) return
+      if (panFrameId) return // already scheduled for this frame
+      panFrameId = requestAnimationFrame(() => {
+        panFrameId = 0
+        updateLabels()
+      })
+    }
+    div.addEventListener('pointermove', handlePanMove)
+
     return (): void => {
+      div.removeEventListener('pointermove', handlePanMove)
+      if (panFrameId) cancelAnimationFrame(panFrameId)
       observer?.disconnect()
       if (cosmos) {
         try { cosmos.destroy() } catch { /* ignore */ }

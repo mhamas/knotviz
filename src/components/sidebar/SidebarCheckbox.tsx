@@ -1,22 +1,25 @@
 import { Checkbox } from '@/components/ui/checkbox'
+import { HelpPopover } from './HelpPopover'
 
 interface Props {
   label: string
   checked: boolean
   disabled?: boolean
+  help?: React.ReactNode
   onCheckedChange: (checked: boolean) => void
 }
 
 /**
- * Styled sidebar checkbox with label.
+ * Styled sidebar checkbox with label and optional help popover.
  *
- * @param props - Label text, checked state, optional disabled, and change handler.
+ * @param props - Label text, checked state, optional disabled/help, and change handler.
  * @returns Sidebar checkbox element.
  */
 export function SidebarCheckbox({
   label,
   checked,
   disabled = false,
+  help,
   onCheckedChange,
 }: Props): React.JSX.Element {
   return (
@@ -28,6 +31,7 @@ export function SidebarCheckbox({
         onCheckedChange={(v): void => onCheckedChange(v === true)}
       />
       {label}
+      {help && <HelpPopover>{help}</HelpPopover>}
     </label>
   )
 }

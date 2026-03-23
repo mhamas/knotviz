@@ -48,27 +48,29 @@ interface TypeState {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const post = self.postMessage as any
 
+/** Yield the worker thread so queued postMessage calls are delivered. */
+const yieldWorker = (): Promise<void> => new Promise((r) => setTimeout(r, 0))
+
 self.onmessage = async (e: MessageEvent): Promise<void> => {
   const { file } = e.data as { type: 'load'; file: File }
 
   try {
-    post({ type: 'progress', stage: 'Reading file', percent: 0 })
+    post({ type: 'progress', stage: 'Reading file…', percent: 0 })
     const text = await file.text()
 
-    post({ type: 'progress', stage: 'Parsing JSON', percent: 25 })
+    post({ type: 'progress', stage: 'Parsing JSON…', percent: 20 })
+    // Yield so the progress message is delivered before the blocking JSON.parse
+    await yieldWorker()
     let raw: unknown
     try {
       raw = JSON.parse(text)
     } catch {
       throw new Error('Invalid JSON file')
     }
-    // Release text string to free ~2× file size of RAM
-    // (text variable goes out of scope naturally, but explicitly nulling helps GC)
 
-    post({ type: 'progress', stage: 'Processing graph', percent: 50 })
-    const result = processRawGraph(raw)
-
-    post({ type: 'progress', stage: 'Finalizing', percent: 90 })
+    post({ type: 'progress', stage: 'Building graph…', percent: 40 })
+    await yieldWorker()
+    const result = await processRawGraph(raw)
 
     const msg = { type: 'complete', ...result }
 
@@ -106,7 +108,9 @@ interface ProcessResult {
   replacementCount: number
 }
 
-function processRawGraph(raw: unknown): ProcessResult {
+const PROGRESS_BATCH = 100_000
+
+async function processRawGraph(raw: unknown): Promise<ProcessResult> {
   // ── Structural validation ──
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
     throw new Error('File must contain nodes and edges arrays')
@@ -136,6 +140,11 @@ function processRawGraph(raw: unknown): ProcessResult {
   let skippedNodes = 0
 
   for (let i = 0; i < rawNodes.length; i++) {
+    if (i > 0 && i % PROGRESS_BATCH === 0) {
+      const pct = 40 + Math.round((i / rawNodes.length) * 25)
+      post({ type: 'progress', stage: `Processing nodes… ${i.toLocaleString()} / ${rawNodes.length.toLocaleString()}`, percent: pct })
+      await yieldWorker()
+    }
     const node = rawNodes[i]
     if (typeof node !== 'object' || node === null) { skippedNodes++; continue }
     const n = node as Record<string, unknown>
@@ -194,6 +203,11 @@ function processRawGraph(raw: unknown): ProcessResult {
   let skippedEdges = 0
 
   for (let i = 0; i < rawEdges.length; i++) {
+    if (i > 0 && i % PROGRESS_BATCH === 0) {
+      const pct = 65 + Math.round((i / rawEdges.length) * 25)
+      post({ type: 'progress', stage: `Processing edges… ${i.toLocaleString()} / ${rawEdges.length.toLocaleString()}`, percent: pct })
+      await yieldWorker()
+    }
     const edge = rawEdges[i]
     if (typeof edge !== 'object' || edge === null) { skippedEdges++; continue }
     const e = edge as Record<string, unknown>
@@ -217,6 +231,8 @@ function processRawGraph(raw: unknown): ProcessResult {
   if (skippedEdges > 0) console.warn(`Skipped ${skippedEdges} invalid edges`)
 
   // ── Finalize: null defaults backfill + type detection ──
+  post({ type: 'progress', stage: 'Finalizing properties…', percent: 90 })
+  await yieldWorker()
   const nodeCount = nodeIds.length
   const propertyMetas: PropertyMeta[] = []
   let replacementCount = 0

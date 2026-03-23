@@ -73,8 +73,8 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
         const msg = e.data
 
         if (msg.type === 'progress') {
-          const { stage, count, percent } = msg as { stage: string; count: number; percent: number }
-          setLoadingStatus(`${stage}… ${count.toLocaleString()} items (${percent}%)`)
+          const { stage, percent } = msg as { stage: string; percent: number }
+          setLoadingStatus(`${stage} (${percent}%)`)
           return
         }
 

@@ -3,7 +3,7 @@
  * { "version": "1", "nodes": [ {...}, {...}, ... ], "edges": [ {...}, {...}, ... ] }
  *
  * Parses one node/edge object at a time using bracket counting + JSON.parse
- * on each individual item. Never holds the full JSON string in memory.
+ * on each individual item. Never holds the full parsed JSON tree in memory.
  *
  * Memory: only the current item string buffer (~1KB) + accumulated results.
  */
@@ -27,145 +27,169 @@ type State =
   | 'DONE'
 
 /**
- * Parse a graph JSON file streamed as text chunks. Calls onNode/onEdge
- * for each complete object without holding the full file in memory.
- *
- * @param chunks - AsyncIterable of string chunks (from File.stream() + TextDecoder)
- * @param callbacks - Handlers for each parsed element
+ * Stateful parser that can be fed text chunks incrementally.
+ * Call write() with each chunk, then done() at end.
+ */
+class GraphJsonParser {
+  private state: State = 'BEFORE_ROOT'
+  private currentKey = ''
+  private itemBuffer = ''
+  private braceDepth = 0
+  private inString = false
+  private isEscaped = false
+  private keyBuffer = ''
+  private bytesProcessed = 0
+  private lastProgressAt = 0
+  private callbacks: StreamCallbacks
+
+  constructor(callbacks: StreamCallbacks) {
+    this.callbacks = callbacks
+  }
+
+  write(chunk: string): void {
+    this.bytesProcessed += chunk.length
+
+    if (this.bytesProcessed - this.lastProgressAt > 500_000) {
+      this.lastProgressAt = this.bytesProcessed
+      this.callbacks.onProgress(this.bytesProcessed)
+    }
+
+    for (let i = 0; i < chunk.length; i++) {
+      const ch = chunk[i]
+      this.processChar(ch)
+    }
+  }
+
+  private processChar(ch: string): void {
+    // Inside a string literal — accumulate until closing quote
+    if (this.inString) {
+      if (this.isEscaped) {
+        this.isEscaped = false
+        this.appendChar(ch)
+        return
+      }
+      if (ch === '\\') {
+        this.isEscaped = true
+        this.appendChar(ch)
+        return
+      }
+      if (ch === '"') {
+        this.inString = false
+        if (this.state === 'IN_ITEM') {
+          this.itemBuffer += ch
+        } else if (this.state === 'IN_KEY') {
+          this.currentKey = this.keyBuffer
+          this.keyBuffer = ''
+          this.state = 'AFTER_KEY'
+        } else if (this.state === 'IN_VERSION_VALUE') {
+          this.callbacks.onVersion(this.keyBuffer)
+          this.keyBuffer = ''
+          this.state = 'IN_ROOT'
+        }
+        return
+      }
+      this.appendChar(ch)
+      return
+    }
+
+    // Not inside a string
+    switch (this.state) {
+      case 'BEFORE_ROOT':
+        if (ch === '{') this.state = 'IN_ROOT'
+        break
+
+      case 'IN_ROOT':
+        if (ch === '"') { this.state = 'IN_KEY'; this.keyBuffer = ''; this.inString = true }
+        else if (ch === '}') this.state = 'DONE'
+        break
+
+      case 'AFTER_KEY':
+        if (ch === ':') {
+          if (this.currentKey === 'version') {
+            this.state = 'IN_VERSION_VALUE'
+          } else if (this.currentKey === 'nodes' || this.currentKey === 'edges') {
+            this.state = 'IN_ARRAY'
+          } else {
+            this.state = 'IN_ROOT'
+          }
+        }
+        break
+
+      case 'IN_VERSION_VALUE':
+        if (ch === '"') { this.inString = true; this.keyBuffer = '' }
+        else if (ch === ',' || ch === '}') this.state = 'IN_ROOT'
+        break
+
+      case 'IN_ARRAY':
+        if (ch === '[') this.state = 'BETWEEN_ITEMS'
+        break
+
+      case 'BETWEEN_ITEMS':
+        if (ch === '{') {
+          this.state = 'IN_ITEM'
+          this.itemBuffer = '{'
+          this.braceDepth = 1
+        } else if (ch === ']') {
+          this.state = 'IN_ROOT'
+        }
+        break
+
+      case 'IN_ITEM':
+        this.itemBuffer += ch
+        if (ch === '"') {
+          this.inString = true
+        } else if (ch === '{') {
+          this.braceDepth++
+        } else if (ch === '}') {
+          this.braceDepth--
+          if (this.braceDepth === 0) {
+            this.emitItem()
+            this.itemBuffer = ''
+            this.state = 'BETWEEN_ITEMS'
+          }
+        }
+        break
+
+      case 'DONE':
+        break
+    }
+  }
+
+  private appendChar(ch: string): void {
+    if (this.state === 'IN_ITEM') this.itemBuffer += ch
+    else if (this.state === 'IN_KEY') this.keyBuffer += ch
+    else if (this.state === 'IN_VERSION_VALUE') this.keyBuffer += ch
+  }
+
+  private emitItem(): void {
+    try {
+      const obj = JSON.parse(this.itemBuffer) as Record<string, unknown>
+      if (this.currentKey === 'nodes') this.callbacks.onNode(obj)
+      else if (this.currentKey === 'edges') this.callbacks.onEdge(obj)
+    } catch {
+      // Skip malformed items
+    }
+  }
+}
+
+/**
+ * Synchronous parse — processes entire text at once. Used for testing.
+ */
+export function parseJsonGraphSync(text: string, callbacks: StreamCallbacks): void {
+  const parser = new GraphJsonParser(callbacks)
+  parser.write(text)
+}
+
+/**
+ * Async streaming parse — processes text chunks from an AsyncIterable.
+ * Used in the loading worker with File.stream() or chunked file.text().
  */
 export async function parseStreamingJsonGraph(
   chunks: AsyncIterable<string>,
   callbacks: StreamCallbacks,
 ): Promise<void> {
-  let state: State = 'BEFORE_ROOT'
-  let currentKey = '' // "version", "nodes", or "edges"
-  let itemBuffer = '' // accumulates characters for the current node/edge object
-  let braceDepth = 0
-  let inString = false
-  let isEscaped = false
-  let bytesProcessed = 0
-  let keyBuffer = ''
-
-  const PROGRESS_INTERVAL = 500_000 // report progress every ~500KB
-  let lastProgressAt = 0
-
+  const parser = new GraphJsonParser(callbacks)
   for await (const chunk of chunks) {
-    bytesProcessed += chunk.length
-
-    if (bytesProcessed - lastProgressAt > PROGRESS_INTERVAL) {
-      lastProgressAt = bytesProcessed
-      callbacks.onProgress(bytesProcessed)
-    }
-
-    for (let i = 0; i < chunk.length; i++) {
-      const ch = chunk[i]
-
-      // Track string boundaries (for correct brace counting)
-      if (inString) {
-        if (isEscaped) {
-          isEscaped = false
-          if (state === 'IN_ITEM') itemBuffer += ch
-          else if (state === 'IN_KEY') keyBuffer += ch
-          else if (state === 'IN_VERSION_VALUE') keyBuffer += ch
-          continue
-        }
-        if (ch === '\\') {
-          isEscaped = true
-          if (state === 'IN_ITEM') itemBuffer += ch
-          else if (state === 'IN_KEY') keyBuffer += ch
-          else if (state === 'IN_VERSION_VALUE') keyBuffer += ch
-          continue
-        }
-        if (ch === '"') {
-          inString = false
-          if (state === 'IN_ITEM') {
-            itemBuffer += ch
-          } else if (state === 'IN_KEY') {
-            currentKey = keyBuffer
-            keyBuffer = ''
-            state = 'AFTER_KEY'
-          } else if (state === 'IN_VERSION_VALUE') {
-            callbacks.onVersion(keyBuffer)
-            keyBuffer = ''
-            state = 'IN_ROOT'
-          }
-          continue
-        }
-        if (state === 'IN_ITEM') itemBuffer += ch
-        else if (state === 'IN_KEY') keyBuffer += ch
-        else if (state === 'IN_VERSION_VALUE') keyBuffer += ch
-        continue
-      }
-
-      // Not inside a string
-      switch (state) {
-        case 'BEFORE_ROOT':
-          if (ch === '{') state = 'IN_ROOT'
-          break
-
-        case 'IN_ROOT':
-          if (ch === '"') { state = 'IN_KEY'; keyBuffer = '' }
-          else if (ch === '}') state = 'DONE'
-          break
-
-        case 'AFTER_KEY':
-          if (ch === ':') {
-            if (currentKey === 'version') {
-              state = 'IN_VERSION_VALUE'
-            } else if (currentKey === 'nodes' || currentKey === 'edges') {
-              state = 'IN_ARRAY' // wait for '['
-            } else {
-              // Skip unknown keys — scan until we find the next key or end
-              state = 'IN_ROOT'
-            }
-          }
-          break
-
-        case 'IN_VERSION_VALUE':
-          if (ch === '"') { inString = true; keyBuffer = '' }
-          else if (ch === ',' || ch === '}') state = 'IN_ROOT'
-          break
-
-        case 'IN_ARRAY':
-          if (ch === '[') state = 'BETWEEN_ITEMS'
-          break
-
-        case 'BETWEEN_ITEMS':
-          if (ch === '{') {
-            state = 'IN_ITEM'
-            itemBuffer = '{'
-            braceDepth = 1
-          } else if (ch === ']') {
-            state = 'IN_ROOT'
-          }
-          break
-
-        case 'IN_ITEM':
-          itemBuffer += ch
-          if (ch === '"') {
-            inString = true
-          } else if (ch === '{') {
-            braceDepth++
-          } else if (ch === '}') {
-            braceDepth--
-            if (braceDepth === 0) {
-              // Complete item — parse and emit
-              try {
-                const obj = JSON.parse(itemBuffer) as Record<string, unknown>
-                if (currentKey === 'nodes') callbacks.onNode(obj)
-                else if (currentKey === 'edges') callbacks.onEdge(obj)
-              } catch {
-                // Skip malformed items
-              }
-              itemBuffer = ''
-              state = 'BETWEEN_ITEMS'
-            }
-          }
-          break
-
-        case 'DONE':
-          break
-      }
-    }
+    parser.write(chunk)
   }
 }

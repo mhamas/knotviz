@@ -1,19 +1,20 @@
 /**
- * Web Worker: streams a JSON graph file and builds all output structures
- * incrementally. Never holds the full JSON string or parsed object tree
- * in memory — only the columnar output structures.
+ * Web Worker: loads a JSON graph file off the main thread, builds compact
+ * output structures, and transfers them back with zero-copy typed arrays.
  *
  * Protocol:
  * - Input:  { type: 'load', file: File }
- * - Output: { type: 'progress', stage, count, percent }
- *           { type: 'complete', ...StreamedGraphResult }
+ * - Output: { type: 'progress', stage, percent }
+ *           { type: 'complete', ...result }
  *           { type: 'error', message }
  *
  * Architecture supports future format adapters by swapping the parser.
  * Currently implements the JSON graph format (version "1").
+ *
+ * Memory strategy: uses JSON.parse in the worker (separate heap from main thread).
+ * After extracting data into compact columnar structures, the parsed object tree
+ * is released. Peak memory: ~3× file size, but only in the worker's heap.
  */
-
-import JSONParser from '@streamparser/json/jsonparser.js'
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -23,14 +24,6 @@ interface PropertyMeta {
 }
 
 type PropertyValue = number | string | boolean
-
-/** Incremental type detection state per property key. */
-interface TypeState {
-  nonNullCount: number
-  isAllBoolean: boolean
-  isAllNumber: boolean
-  isAllDate: boolean
-}
 
 const ISO_DATE_RE =
   /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})?)?$/
@@ -42,62 +35,61 @@ const TYPE_DEFAULTS: Record<string, PropertyValue> = {
   date: '1970-01-01',
 }
 
-// ─── Progress ─────────────────────────────────────────────────────────────
-
-const PROGRESS_INTERVAL = 10_000
-let lastProgressCount = 0
-let totalBytes = 0
-let bytesRead = 0
-
-function postProgress(stage: string, count: number): void {
-  if (count - lastProgressCount < PROGRESS_INTERVAL) return
-  lastProgressCount = count
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(self.postMessage as any)({
-    type: 'progress',
-    stage,
-    count,
-    percent: totalBytes > 0 ? Math.round((bytesRead / totalBytes) * 100) : 0,
-  })
+/** Incremental type detection state per property key. */
+interface TypeState {
+  nonNullCount: number
+  isAllBoolean: boolean
+  isAllNumber: boolean
+  isAllDate: boolean
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const post = self.postMessage as any
+
 self.onmessage = async (e: MessageEvent): Promise<void> => {
   const { file } = e.data as { type: 'load'; file: File }
-  totalBytes = file.size
-  bytesRead = 0
-  lastProgressCount = 0
 
   try {
-    const result = await parseJsonGraph(file)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const msg = result as any
-    msg.type = 'complete'
+    post({ type: 'progress', stage: 'Reading file', percent: 0 })
+    const text = await file.text()
+
+    post({ type: 'progress', stage: 'Parsing JSON', percent: 25 })
+    let raw: unknown
+    try {
+      raw = JSON.parse(text)
+    } catch {
+      throw new Error('Invalid JSON file')
+    }
+    // Release text string to free ~2× file size of RAM
+    // (text variable goes out of scope naturally, but explicitly nulling helps GC)
+
+    post({ type: 'progress', stage: 'Processing graph', percent: 50 })
+    const result = processRawGraph(raw)
+
+    post({ type: 'progress', stage: 'Finalizing', percent: 90 })
+
+    const msg = { type: 'complete', ...result }
 
     // Transfer typed arrays (zero-copy)
-    const transferables = [
-      msg.linkIndices.buffer,
-      msg.edgeSources.buffer,
-      msg.edgeTargets.buffer,
-    ].filter(Boolean) as ArrayBuffer[]
-    if (msg.initialPositions) transferables.push(msg.initialPositions.buffer)
-    if (msg.edgeWeights) transferables.push(msg.edgeWeights.buffer)
+    const transferables: ArrayBuffer[] = [
+      result.linkIndices.buffer as ArrayBuffer,
+      result.edgeSources.buffer as ArrayBuffer,
+      result.edgeTargets.buffer as ArrayBuffer,
+    ]
+    if (result.initialPositions) transferables.push(result.initialPositions.buffer as ArrayBuffer)
+    if (result.edgeWeights) transferables.push(result.edgeWeights.buffer as ArrayBuffer)
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(self.postMessage as any)(msg, transferables)
+    post(msg, transferables)
   } catch (err) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ;(self.postMessage as any)({
-      type: 'error',
-      message: err instanceof Error ? err.message : 'Unknown error',
-    })
+    post({ type: 'error', message: err instanceof Error ? err.message : 'Unknown error' })
   }
 }
 
-// ─── JSON Graph Parser ────────────────────────────────────────────────────
+// ─── Graph Processing ─────────────────────────────────────────────────────
 
-interface ParseResult {
+interface ProcessResult {
   nodeCount: number
   edgeCount: number
   linkIndices: Float32Array
@@ -114,92 +106,66 @@ interface ParseResult {
   replacementCount: number
 }
 
-async function parseJsonGraph(file: File): Promise<ParseResult> {
-  // Output accumulators
-  const nodeIds: string[] = []
-  const nodeLabels: (string | undefined)[] = []
-  const nodeXs: number[] = []
-  const nodeYs: number[] = []
-  const nodeHasPosition: boolean[] = []
-  const nodeIndexMap = new Map<string, number>()
-
-  // Property columns (grown dynamically as keys are discovered)
-  const propertyColumns: Record<string, (PropertyValue | undefined)[]> = {}
-  const typeStates: Record<string, TypeState> = {}
-
-  // Edge accumulators
-  const edgeSrcIndices: number[] = []
-  const edgeTgtIndices: number[] = []
-  const edgeLabelList: (string | undefined)[] = []
-  const edgeWeightList: number[] = []
-  let hasAnyWeight = false
-
-  let versionSeen = false
-  let skippedNodes = 0
-  let skippedEdges = 0
-
-  // Set up streaming JSON parser — emit complete objects for nodes.* and edges.*
-  const parser = new JSONParser({ paths: ['$.version', '$.nodes.*', '$.edges.*'], keepStack: false })
-
-  parser.onValue = ({ value }): void => {
-    // Determine which top-level key we're in from the stack path
-    // stack is empty with keepStack=false, but path is encoded differently.
-    // With paths filter, we get values at the matched paths.
-    // Check which path matched by examining the value context.
-    if (typeof value === 'string' && !versionSeen) {
-      // Must be $.version
-      if (value !== '1') throw new Error('Unsupported schema version')
-      versionSeen = true
-      return
-    }
-
-    // Node or edge — determine by checking if we're still in nodes or edges
-    // The parser with paths emits values in document order.
-    // We determine context by the presence of 'id' (node) vs 'source'+'target' (edge).
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return
-
-    const obj = value as Record<string, unknown>
-
-    if (typeof obj.id === 'string') {
-      // ── Process node ──
-      processNode(obj)
-    } else if (typeof obj.source === 'string' && typeof obj.target === 'string') {
-      // ── Process edge ──
-      processEdge(obj)
-    }
+function processRawGraph(raw: unknown): ProcessResult {
+  // ── Structural validation ──
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
+    throw new Error('File must contain nodes and edges arrays')
+  }
+  const obj = raw as Record<string, unknown>
+  if (!Array.isArray(obj.nodes) || !Array.isArray(obj.edges)) {
+    throw new Error('File must contain nodes and edges arrays')
   }
 
-  function processNode(n: Record<string, unknown>): void {
-    const id = n.id as string
-    if (!id) { skippedNodes++; return }
+  const rawNodes = obj.nodes as unknown[]
+  const rawEdges = obj.edges as unknown[]
+
+  if (rawNodes.length === 0) {
+    throw new Error('Graph has no nodes to display')
+  }
+
+  // ── Process nodes → compact stores + property columns ──
+  const nodeIds: string[] = []
+  const nodeLabels: (string | undefined)[] = []
+  const nodeIndexMap = new Map<string, number>()
+  const propertyColumns: Record<string, (PropertyValue | undefined)[]> = {}
+  const typeStates: Record<string, TypeState> = {}
+  let nodesWithPositions = 0
+  const xPositions: number[] = []
+  const yPositions: number[] = []
+  const hasPosition: boolean[] = []
+  let skippedNodes = 0
+
+  for (let i = 0; i < rawNodes.length; i++) {
+    const node = rawNodes[i]
+    if (typeof node !== 'object' || node === null) { skippedNodes++; continue }
+    const n = node as Record<string, unknown>
+    if (typeof n.id !== 'string' || n.id === '') { skippedNodes++; continue }
 
     const index = nodeIds.length
-    nodeIds.push(id)
-    nodeIndexMap.set(id, index)
+    nodeIds.push(n.id)
+    nodeIndexMap.set(n.id, index)
     nodeLabels.push(typeof n.label === 'string' ? n.label : undefined)
 
     const hasX = typeof n.x === 'number'
     const hasY = typeof n.y === 'number'
-    nodeXs.push(hasX ? (n.x as number) : 0)
-    nodeYs.push(hasY ? (n.y as number) : 0)
-    nodeHasPosition.push(hasX && hasY)
+    xPositions.push(hasX ? (n.x as number) : 0)
+    yPositions.push(hasY ? (n.y as number) : 0)
+    hasPosition.push(hasX && hasY)
+    if (hasX && hasY) nodesWithPositions++
 
-    // Properties → columnar storage + type detection
+    // Properties → columnar + type detection
     if (typeof n.properties === 'object' && n.properties !== null && !Array.isArray(n.properties)) {
       const props = n.properties as Record<string, unknown>
       for (const key of Object.keys(props)) {
         const val = props[key]
         if (typeof val !== 'number' && typeof val !== 'string' && typeof val !== 'boolean') continue
 
-        // Ensure column exists
         if (!(key in propertyColumns)) {
-          // Backfill with undefined for all previous nodes
           propertyColumns[key] = new Array(index).fill(undefined)
           typeStates[key] = { nonNullCount: 0, isAllBoolean: true, isAllNumber: true, isAllDate: true }
         }
         propertyColumns[key].push(val)
 
-        // Update type detection
         const ts = typeStates[key]
         ts.nonNullCount++
         if (ts.isAllBoolean && typeof val !== 'boolean') ts.isAllBoolean = false
@@ -208,65 +174,50 @@ async function parseJsonGraph(file: File): Promise<ParseResult> {
       }
     }
 
-    // Pad columns that this node didn't have
+    // Pad columns this node didn't have
     for (const key of Object.keys(propertyColumns)) {
       if (propertyColumns[key].length <= index) {
         propertyColumns[key].push(undefined)
       }
     }
-
-    postProgress('Loading nodes', nodeIds.length)
   }
 
-  function processEdge(e: Record<string, unknown>): void {
-    const source = e.source as string
-    const target = e.target as string
-    const srcIdx = nodeIndexMap.get(source)
-    const tgtIdx = nodeIndexMap.get(target)
+  if (nodeIds.length === 0) throw new Error('Graph has no nodes to display')
+  if (skippedNodes > 0) console.warn(`Skipped ${skippedNodes} invalid nodes`)
 
-    if (srcIdx === undefined || tgtIdx === undefined) {
-      skippedEdges++
-      return
-    }
+  // ── Process edges → link indices + compact edge stores ──
+  const edgeSrcIndices: number[] = []
+  const edgeTgtIndices: number[] = []
+  const edgeLabelList: (string | undefined)[] = []
+  const edgeWeightList: number[] = []
+  let hasAnyWeight = false
+  let skippedEdges = 0
+
+  for (let i = 0; i < rawEdges.length; i++) {
+    const edge = rawEdges[i]
+    if (typeof edge !== 'object' || edge === null) { skippedEdges++; continue }
+    const e = edge as Record<string, unknown>
+    if (typeof e.source !== 'string' || typeof e.target !== 'string') { skippedEdges++; continue }
+
+    const srcIdx = nodeIndexMap.get(e.source)
+    const tgtIdx = nodeIndexMap.get(e.target)
+    if (srcIdx === undefined || tgtIdx === undefined) { skippedEdges++; continue }
 
     edgeSrcIndices.push(srcIdx)
     edgeTgtIndices.push(tgtIdx)
     edgeLabelList.push(typeof e.label === 'string' ? e.label : undefined)
-
     if (typeof e.weight === 'number') {
       edgeWeightList.push(e.weight)
       hasAnyWeight = true
     } else {
       edgeWeightList.push(0)
     }
-
-    postProgress('Loading edges', edgeSrcIndices.length)
   }
 
-  // ── Stream the file through the parser ──
-  postProgress('Reading file', 0)
-  const stream = file.stream()
-  const reader = stream.getReader()
+  if (skippedEdges > 0) console.warn(`Skipped ${skippedEdges} invalid edges`)
 
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    bytesRead += value.byteLength
-    // Decode chunk to string and feed to parser
-    const text = new TextDecoder().decode(value, { stream: true })
-    parser.write(text)
-  }
-  parser.end()
-
-  // ── Validation ──
-  if (nodeIds.length === 0) throw new Error('Graph has no nodes to display')
-  if (skippedNodes > 0) console.warn(`Skipped ${skippedNodes} invalid nodes`)
-  if (skippedEdges > 0) console.warn(`Skipped ${skippedEdges} edges referencing unknown node ids`)
-
-  // ── Finalize: null defaults backfill ──
-  postProgress('Finalizing', 0)
-
+  // ── Finalize: null defaults backfill + type detection ──
+  const nodeCount = nodeIds.length
   const propertyMetas: PropertyMeta[] = []
   let replacementCount = 0
 
@@ -279,13 +230,9 @@ async function parseJsonGraph(file: File): Promise<ParseResult> {
     else type = 'string'
     propertyMetas.push({ key, type })
 
-    // Backfill undefined values with type defaults
     const col = propertyColumns[key]
     const defaultVal = TYPE_DEFAULTS[type]
-    // Ensure column is padded to full node count
-    while (col.length < nodeIds.length) {
-      col.push(undefined)
-    }
+    while (col.length < nodeCount) col.push(undefined)
     for (let i = 0; i < col.length; i++) {
       if (col[i] === undefined) {
         col[i] = defaultVal
@@ -295,39 +242,27 @@ async function parseJsonGraph(file: File): Promise<ParseResult> {
   }
 
   // ── Build typed arrays ──
-  const nodeCount = nodeIds.length
   const edgeCount = edgeSrcIndices.length
 
-  // Position mode
-  let posWithPos = 0
-  for (let i = 0; i < nodeCount; i++) {
-    if (nodeHasPosition[i]) posWithPos++
-  }
   let positionMode: 'all' | 'partial' | 'none'
-  if (posWithPos === nodeCount) positionMode = 'all'
-  else if (posWithPos > 0) positionMode = 'partial'
+  if (nodesWithPositions === nodeCount) positionMode = 'all'
+  else if (nodesWithPositions > 0) positionMode = 'partial'
   else positionMode = 'none'
 
   let initialPositions: Float32Array | undefined
   if (positionMode === 'all') {
     initialPositions = new Float32Array(nodeCount * 2)
     for (let i = 0; i < nodeCount; i++) {
-      initialPositions[i * 2] = nodeXs[i]
-      initialPositions[i * 2 + 1] = nodeYs[i]
+      initialPositions[i * 2] = xPositions[i]
+      initialPositions[i * 2 + 1] = yPositions[i]
     }
   }
 
-  // Link indices
   const linkIndices = new Float32Array(edgeCount * 2)
   for (let i = 0; i < edgeCount; i++) {
     linkIndices[i * 2] = edgeSrcIndices[i]
     linkIndices[i * 2 + 1] = edgeTgtIndices[i]
   }
-
-  // Edge compact stores
-  const edgeSources = new Uint32Array(edgeSrcIndices)
-  const edgeTargets = new Uint32Array(edgeTgtIndices)
-  const edgeWeights = hasAnyWeight ? new Float32Array(edgeWeightList) : undefined
 
   return {
     nodeCount,
@@ -337,10 +272,10 @@ async function parseJsonGraph(file: File): Promise<ParseResult> {
     positionMode,
     nodeIds,
     nodeLabels,
-    edgeSources,
-    edgeTargets,
+    edgeSources: new Uint32Array(edgeSrcIndices),
+    edgeTargets: new Uint32Array(edgeTgtIndices),
     edgeLabels: edgeLabelList,
-    edgeWeights,
+    edgeWeights: hasAnyWeight ? new Float32Array(edgeWeightList) : undefined,
     propertyColumns: propertyColumns as Record<string, (number | string | boolean | undefined)[]>,
     propertyMetas,
     replacementCount,

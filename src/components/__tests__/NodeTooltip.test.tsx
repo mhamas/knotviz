@@ -4,7 +4,7 @@ import { NodeTooltip } from '@/components/NodeTooltip'
 import type { PropertyMeta } from '@/types'
 import type { PropertyColumns } from '@/hooks/useFilterState'
 
-const nodeIndexMap = new Map([['n1', 0], ['n2', 1]])
+const nodeIds = ['n1', 'n2']
 const nodeLabels: (string | undefined)[] = ['Alice', undefined]
 const propertyColumns: PropertyColumns = {
   age: [30, undefined],
@@ -25,7 +25,7 @@ test('renders node label as heading', async () => {
     <NodeTooltip
       nodeId="n1"
       screenPosition={{ x: 100, y: 100 }}
-      nodeIndexMap={nodeIndexMap}
+      nodeIds={nodeIds}
       nodeLabels={nodeLabels}
       propertyColumns={propertyColumns}
       propertyMetas={metas}
@@ -41,7 +41,7 @@ test('shows copy button for node ID', async () => {
     <NodeTooltip
       nodeId="n1"
       screenPosition={{ x: 100, y: 100 }}
-      nodeIndexMap={nodeIndexMap}
+      nodeIds={nodeIds}
       nodeLabels={nodeLabels}
       propertyColumns={propertyColumns}
       propertyMetas={metas}
@@ -57,7 +57,7 @@ test('shows formatted properties', async () => {
     <NodeTooltip
       nodeId="n1"
       screenPosition={{ x: 100, y: 100 }}
-      nodeIndexMap={nodeIndexMap}
+      nodeIds={nodeIds}
       nodeLabels={nodeLabels}
       propertyColumns={propertyColumns}
       propertyMetas={metas}
@@ -77,7 +77,7 @@ test('close button calls onClose', async () => {
     <NodeTooltip
       nodeId="n1"
       screenPosition={{ x: 100, y: 100 }}
-      nodeIndexMap={nodeIndexMap}
+      nodeIds={nodeIds}
       nodeLabels={nodeLabels}
       propertyColumns={propertyColumns}
       propertyMetas={metas}
@@ -94,7 +94,7 @@ test('shows No properties when no metas', async () => {
     <NodeTooltip
       nodeId="n2"
       screenPosition={{ x: 100, y: 100 }}
-      nodeIndexMap={nodeIndexMap}
+      nodeIds={nodeIds}
       nodeLabels={nodeLabels}
       propertyColumns={propertyColumns}
       propertyMetas={[]}

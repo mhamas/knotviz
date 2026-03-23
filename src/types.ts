@@ -111,6 +111,9 @@ export type PaletteName =
   | 'RdBu'
   | 'RdYlGn'
   | 'PiYG'
+  | 'BlueOrange'
+  | 'TealRose'
+  | 'IndigoAmber'
 
 export interface CustomPalette {
   id: string

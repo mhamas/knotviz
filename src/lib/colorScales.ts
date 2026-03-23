@@ -17,6 +17,9 @@ export const PALETTE_STOPS: Record<PaletteName, string[]> = {
   RdBu: ['#67001f', '#d6604d', '#f7f7f7', '#4393c3', '#053061'],
   RdYlGn: ['#a50026', '#d73027', '#f46d43', '#fdae61', '#fee08b', '#d9ef8b', '#a6d96a', '#66bd63', '#1a9850', '#006837'],
   PiYG: ['#8e0152', '#c51b7d', '#de77ae', '#f1b6da', '#fde0ef', '#e6f5d0', '#b8e186', '#7fbc41', '#4d9221', '#276419'],
+  BlueOrange: ['#3b82f6', '#f97316'],
+  TealRose: ['#14b8a6', '#f43f5e'],
+  IndigoAmber: ['#6366f1', '#f59e0b'],
 }
 
 /** Ordered list of all built-in palette names for UI rendering. */

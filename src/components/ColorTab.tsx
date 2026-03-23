@@ -147,14 +147,22 @@ export function ColorTab({
               </span>
             </SelectTrigger>
             <SelectContent>
-              {PALETTE_NAMES.map((name) => (
-                <SelectItem key={name} value={name}>
-                  <span className="flex items-center gap-2">
-                    <GradientSwatch stops={getPaletteColors(name)} />
-                    {name}
-                  </span>
-                </SelectItem>
-              ))}
+              {PALETTE_NAMES.map((name) => {
+                const stops = getPaletteColors(name)
+                return (
+                  <SelectItem key={name} value={name}>
+                    <span className="flex items-center gap-2">
+                      <GradientSwatch stops={stops} />
+                      {name}
+                      {stops.length === 2 && (
+                        <span className="rounded bg-slate-100 px-1 py-0.5 text-[9px] font-medium leading-none text-slate-400">
+                          binary
+                        </span>
+                      )}
+                    </span>
+                  </SelectItem>
+                )
+              })}
               {state.customPalettes.length > 0 && <SelectSeparator />}
               {state.customPalettes.map((cp) => (
                 <SelectItem key={cp.id} value={cp.id}>
@@ -217,13 +225,16 @@ export function ColorTab({
   )
 }
 
-/** Small horizontal gradient swatch from an array of color stops. */
+/** Small horizontal swatch — smooth gradient for 3+ stops, hard split for 2 stops. */
 function GradientSwatch({ stops }: { stops: string[] }): React.JSX.Element {
-  const gradient = stops.map((c, i) => `${c} ${(i / (stops.length - 1)) * 100}%`).join(', ')
+  const isBinary = stops.length === 2
+  const bg = isBinary
+    ? `linear-gradient(to right, ${stops[0]} 50%, ${stops[1]} 50%)`
+    : `linear-gradient(to right, ${stops.map((c, i) => `${c} ${(i / (stops.length - 1)) * 100}%`).join(', ')})`
   return (
     <span
       className="inline-block h-3 w-6 shrink-0 rounded-sm"
-      style={{ background: `linear-gradient(to right, ${gradient})` }}
+      style={{ background: bg }}
     />
   )
 }

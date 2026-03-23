@@ -131,7 +131,7 @@ describe('isBuiltinPalette', () => {
 })
 
 describe('PALETTE_NAMES', () => {
-  it('contains all 15 built-in palettes', () => {
-    expect(PALETTE_NAMES).toHaveLength(15)
+  it('contains all 18 built-in palettes', () => {
+    expect(PALETTE_NAMES).toHaveLength(18)
   })
 })

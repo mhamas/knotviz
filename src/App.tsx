@@ -5,6 +5,7 @@ import { useGraphStore } from '@/stores/useGraphStore'
 import { DropZone } from './components/DropZone'
 import { GraphView } from './components/GraphView'
 import { LeftSidebar } from './components/LeftSidebar'
+import { RightSidebar } from './components/RightSidebar'
 import { ErrorBoundary } from './components/ErrorBoundary'
 
 interface LoadedData {
@@ -17,7 +18,7 @@ interface LoadedData {
 
 /**
  * Root component. Manages top-level graph load state.
- * Always renders layout with sidebars; center area shows DropZone or GraphView.
+ * Always renders layout with both sidebars; center area shows DropZone or GraphView.
  *
  * @returns App root element.
  */
@@ -50,6 +51,16 @@ function App(): React.JSX.Element {
             }}
           />
         </div>
+        <RightSidebar
+          propertyMetas={[]}
+          filterHandle={null}
+          gradientState={null}
+          onGradientChange={() => {}}
+          cosmosData={null}
+          matchingCount={0}
+          nodeCount={0}
+          propertyColumns={{}}
+        />
       </div>
     )
   }

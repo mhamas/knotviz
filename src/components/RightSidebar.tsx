@@ -6,8 +6,8 @@ import { FiltersTab } from './FiltersTab'
 
 interface Props {
   propertyMetas: PropertyMeta[]
-  filterHandle: FilterStateHandle
-  gradientState: ColorGradientState
+  filterHandle: FilterStateHandle | null
+  gradientState: ColorGradientState | null
   onGradientChange: (s: ColorGradientState) => void
   cosmosData: CosmosGraphData | null
   matchingCount: number
@@ -17,6 +17,7 @@ interface Props {
 
 /**
  * Right sidebar with collapsible Color and Filters sections.
+ * Shows empty states when no graph is loaded or graph has no properties.
  *
  * @param props - Property metadata, filter state, and color gradient props.
  * @returns Right sidebar element.
@@ -30,6 +31,9 @@ export function RightSidebar({
   nodeCount,
   propertyColumns,
 }: Props): React.JSX.Element {
+  const hasProperties = propertyMetas.length > 0
+  const isLoaded = filterHandle !== null && gradientState !== null
+
   return (
     <div
       className="flex h-screen w-[300px] shrink-0 flex-col border-l border-slate-200 bg-white"
@@ -40,12 +44,18 @@ export function RightSidebar({
           label="Colors"
           help="Map a node property to a color palette. Nodes are colored by their property values — continuously for numbers/dates, or with distinct colors for strings/booleans."
         >
-          <ColorTab
-            propertyMetas={propertyMetas}
-            state={gradientState}
-            propertyColumns={propertyColumns}
-            onChange={onGradientChange}
-          />
+          {!isLoaded ? (
+            <p className="text-xs italic text-slate-400">Load a graph to use color mapping.</p>
+          ) : !hasProperties ? (
+            <p className="text-xs italic text-slate-400">This graph has no node properties to color by.</p>
+          ) : (
+            <ColorTab
+              propertyMetas={propertyMetas}
+              state={gradientState}
+              propertyColumns={propertyColumns}
+              onChange={onGradientChange}
+            />
+          )}
         </CollapsibleSection>
 
         <div className="my-3 border-t border-slate-200" />
@@ -54,12 +64,18 @@ export function RightSidebar({
           label="Filters"
           help="Enable filters to show only nodes matching certain property values. Multiple filters combine with AND logic — a node must pass all enabled filters to be visible."
         >
-          <FiltersTab
-            propertyMetas={propertyMetas}
-            filterHandle={filterHandle}
-            matchingCount={matchingCount}
-            totalNodeCount={nodeCount}
-          />
+          {!isLoaded || !filterHandle ? (
+            <p className="text-xs italic text-slate-400">Load a graph to use filters.</p>
+          ) : !hasProperties ? (
+            <p className="text-xs italic text-slate-400">This graph has no node properties to filter by.</p>
+          ) : (
+            <FiltersTab
+              propertyMetas={propertyMetas}
+              filterHandle={filterHandle}
+              matchingCount={matchingCount}
+              totalNodeCount={nodeCount}
+            />
+          )}
         </CollapsibleSection>
       </div>
     </div>

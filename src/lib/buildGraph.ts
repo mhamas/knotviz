@@ -4,9 +4,9 @@ import type { CosmosGraphData, NullDefaultResult, PositionMode } from '../types'
  * Converts validated, normalised GraphData into a CosmosGraphData structure
  * optimised for @cosmos.gl/graph (Float32Arrays, index maps).
  *
- * NOTE: For production use with large graphs, the loading worker builds
- * CosmosGraphData incrementally via streaming. This function is used for
- * small graphs and unit tests.
+ * NOTE: The loading worker (loadingWorker.ts) builds CosmosGraphData
+ * incrementally for large files. This function is used by unit tests
+ * and as a reference implementation.
  *
  * @param nullDefaultResult - The full result from applyNullDefaults.
  * @returns CosmosGraphData ready for the Cosmos renderer.

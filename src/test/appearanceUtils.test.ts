@@ -31,18 +31,18 @@ describe('passesFilter', () => {
   })
 
   it('string filter with empty set passes all', () => {
-    const f: SerializableFilter = { type: 'string', isEnabled: true, _selectedSet: new Set() }
+    const f: SerializableFilter = { type: 'string', isEnabled: true, selectedSet: new Set() }
     expect(passesFilter('anything', f)).toBe(true)
   })
 
   it('string filter with values only passes matching', () => {
-    const f: SerializableFilter = { type: 'string', isEnabled: true, _selectedSet: new Set(['a', 'b']) }
+    const f: SerializableFilter = { type: 'string', isEnabled: true, selectedSet: new Set(['a', 'b']) }
     expect(passesFilter('a', f)).toBe(true)
     expect(passesFilter('c', f)).toBe(false)
   })
 
   it('string filter fails for non-string value', () => {
-    const f: SerializableFilter = { type: 'string', isEnabled: true, _selectedSet: new Set(['a']) }
+    const f: SerializableFilter = { type: 'string', isEnabled: true, selectedSet: new Set(['a']) }
     expect(passesFilter(123, f)).toBe(false)
   })
 

@@ -6,6 +6,9 @@
 import type { SerializableFilter } from '../lib/appearanceUtils'
 import { passesFilter, hexToRgbNorm, interpolateStops } from '../lib/appearanceUtils'
 
+/** Base point size before pointSizeScale is applied by the GPU shader. */
+const BASE_POINT_SIZE = 4
+
 interface GradientConfig {
   propertyKey: string | null
   paletteStops: string[]
@@ -52,7 +55,7 @@ self.onmessage = (e: MessageEvent<InitMessage | UpdateMessage>): void => {
   // Convert string filter selectedValues from arrays to Sets for O(1) lookup
   for (const [, f] of enabledFilters) {
     if (f.type === 'string' && f.selectedValues && Array.isArray(f.selectedValues)) {
-      f._selectedSet = new Set(f.selectedValues)
+      f.selectedSet = new Set(f.selectedValues)
     }
   }
 
@@ -89,7 +92,7 @@ self.onmessage = (e: MessageEvent<InitMessage | UpdateMessage>): void => {
     pointColors[off + 1] = dg
     pointColors[off + 2] = db
     pointColors[off + 3] = da
-    pointSizes[i] = 4
+    pointSizes[i] = BASE_POINT_SIZE
   }
 
   // Step 3: Gradient coloring (computed here, no hex intermediary)
@@ -133,7 +136,6 @@ self.onmessage = (e: MessageEvent<InitMessage | UpdateMessage>): void => {
   ])
 }
 
-// passesFilter, hexToRgbNorm, interpolateStops imported from ../lib/appearanceUtils
 
 /** Apply gradient colors directly into pointColors for visible nodes. */
 function applyGradient(

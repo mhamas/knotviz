@@ -13,7 +13,8 @@ export interface SerializableFilter {
   selectedValues?: string[]
   after?: string
   before?: string
-  _selectedSet?: Set<string>
+  /** Runtime-only: Set built from selectedValues array in the worker for O(1) lookup. */
+  selectedSet?: Set<string>
 }
 
 /**
@@ -30,7 +31,7 @@ export function passesFilter(value: unknown, filter: SerializableFilter): boolea
     case 'boolean':
       return value === filter.selected
     case 'string': {
-      const set = filter._selectedSet as Set<string> | undefined
+      const set = filter.selectedSet as Set<string> | undefined
       return !set || set.size === 0 || (typeof value === 'string' && set.has(value))
     }
     case 'date':

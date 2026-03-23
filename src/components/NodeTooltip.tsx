@@ -134,6 +134,8 @@ export function NodeTooltip({
     navigator.clipboard.writeText(nodeId).then(() => {
       setIsCopied(true)
       setTimeout(() => setIsCopied(false), 1500)
+    }).catch(() => {
+      // Clipboard API may fail in insecure contexts — fail silently
     })
   }
 

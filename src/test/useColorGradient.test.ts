@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { computeGradientColors } from '@/hooks/useColorGradient'
+import { computeGradientColors } from '@/lib/gradientColors'
 import type { ColorGradientState } from '@/types'
 
 const baseState: ColorGradientState = {

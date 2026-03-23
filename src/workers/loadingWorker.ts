@@ -64,7 +64,11 @@ self.onmessage = async (e: MessageEvent): Promise<void> => {
     let raw: unknown
     try {
       raw = JSON.parse(text)
-    } catch {
+    } catch (parseErr) {
+      const msg = parseErr instanceof Error ? parseErr.message : ''
+      if (msg.includes('memory') || msg.includes('allocation') || msg.includes('OOM')) {
+        throw new Error(`File too large to parse (${Math.round(file.size / 1024 / 1024)}MB). Try a smaller graph.`)
+      }
       throw new Error('Invalid JSON file')
     }
 

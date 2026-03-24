@@ -35,9 +35,9 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 
 ## R3: Stats + Export
 
-- [ ] 22 — Stats Library
+- [x] 22 — Stats Library
 - [ ] 23 — Histogram
-- [ ] 24 — StatsTab
+- [x] 24 — StatsTab
 - [x] 25 — Graph Export
 
 ## R4: Color
@@ -54,4 +54,4 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 
 ## Next task
 
-**22 — Stats Library** (prereq: none)
+**23 — Histogram** (prereq: 22)

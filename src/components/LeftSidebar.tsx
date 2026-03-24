@@ -91,7 +91,7 @@ export function LeftSidebar({
           className="flex h-8 w-8 cursor-pointer items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600"
           onClick={onToggle}
           aria-label="Open left panel"
-          title="Open panel"
+          title="Open simulation & display controls"
         >
           <PanelLeftOpen className="h-4 w-4" />
         </button>
@@ -112,6 +112,7 @@ export function LeftSidebar({
               className="flex h-5 w-5 cursor-pointer items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600"
               onClick={(e): void => { e.preventDefault(); onToggle() }}
               aria-label="Close left panel"
+              title="Collapse panel"
             >
               <PanelLeftClose className="h-3.5 w-3.5" />
             </button>

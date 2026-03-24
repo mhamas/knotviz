@@ -30,7 +30,7 @@ export function RightTabStrip({
         }`}
         onClick={onToggleColors}
         aria-label="Toggle Colors panel"
-        title="Colors & Stats"
+        title={isColorsOpen ? 'Close colors & stats' : 'Open colors & stats'}
       >
         <Palette className="h-4 w-4" />
       </button>
@@ -42,7 +42,7 @@ export function RightTabStrip({
         }`}
         onClick={onToggleFilters}
         aria-label="Toggle Filters panel"
-        title="Filters"
+        title={isFiltersOpen ? 'Close filters' : 'Open filters'}
       >
         <SlidersHorizontal className="h-4 w-4" />
       </button>

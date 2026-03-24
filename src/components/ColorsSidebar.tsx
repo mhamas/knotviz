@@ -45,6 +45,7 @@ export function ColorsSidebar({
               className="flex h-5 w-5 cursor-pointer items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600"
               onClick={(e): void => { e.preventDefault(); onClose() }}
               aria-label="Close Colors panel"
+              title="Collapse colors & stats"
             >
               <PanelRightClose className="h-3.5 w-3.5" />
             </button>

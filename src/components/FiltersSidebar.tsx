@@ -38,6 +38,7 @@ export function FiltersSidebar({
             className="flex h-5 w-5 cursor-pointer items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             onClick={onClose}
             aria-label="Close Filters panel"
+            title="Collapse filters"
           >
             <PanelRightClose className="h-3.5 w-3.5" />
           </button>

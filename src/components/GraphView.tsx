@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { CosmosGraphData, ColorGradientState, PropertyMeta, PropertyType, PropertyValue } from '../types'
 import type { PropertyColumns } from '../hooks/useFilterState'
 import { useCosmos } from '../hooks/useCosmos'
@@ -92,8 +92,55 @@ export function GraphView({
   )
 
   // Right sidebar tab state
-  const [isColorsOpen, setIsColorsOpen] = useState(true)
-  const [isFiltersOpen, setIsFiltersOpen] = useState(true)
+  const [wantsColorsOpen, setWantsColorsOpen] = useState(true)
+  const [wantsFiltersOpen, setWantsFiltersOpen] = useState(true)
+  const [maxTabs, setMaxTabs] = useState(2)
+
+  // Left sidebar 240px + tab strip ~36px + each right sidebar 300px + min canvas 100px
+  useEffect(() => {
+    const update = (): void => {
+      const w = window.innerWidth
+      if (w >= 976) setMaxTabs(2)
+      else if (w >= 676) setMaxTabs(1)
+      else setMaxTabs(0)
+    }
+    update()
+    window.addEventListener('resize', update)
+    return (): void => window.removeEventListener('resize', update)
+  }, [])
+
+  // Derive effective open state: collapse leftmost (Colors) first when constrained
+  let isColorsOpen = wantsColorsOpen
+  let isFiltersOpen = wantsFiltersOpen
+  const wantedCount = (wantsColorsOpen ? 1 : 0) + (wantsFiltersOpen ? 1 : 0)
+  if (wantedCount > maxTabs) {
+    if (maxTabs === 0) {
+      isColorsOpen = false
+      isFiltersOpen = false
+    } else {
+      isColorsOpen = false
+      if (!wantsFiltersOpen) isFiltersOpen = false
+    }
+  }
+
+  // Toggle with displacement: opening a tab may close the leftmost other tab
+  const toggleColors = useCallback((): void => {
+    setWantsColorsOpen((prev) => {
+      if (prev) return false
+      // Opening Colors — if no room, close Filters to make space
+      if (maxTabs <= 1 && wantsFiltersOpen) setWantsFiltersOpen(false)
+      return true
+    })
+  }, [wantsFiltersOpen, maxTabs])
+
+  const toggleFilters = useCallback((): void => {
+    setWantsFiltersOpen((prev) => {
+      if (prev) return false
+      // Opening Filters — if no room, close Colors (leftmost)
+      if (maxTabs <= 1 && wantsColorsOpen) setWantsColorsOpen(false)
+      return true
+    })
+  }, [wantsColorsOpen, maxTabs])
 
   const { isDragOver, isConfirmOpen, handleConfirm, handleCancel } = useFileDrop(onLoadNewFile)
 
@@ -225,7 +272,7 @@ export function GraphView({
           propertyColumns={propertyColumns}
           filters={filterHandle.filters}
           propertyStats={propertyStats}
-          onClose={(): void => setIsColorsOpen(false)}
+          onClose={(): void => setWantsColorsOpen(false)}
         />
       )}
       {isFiltersOpen && (
@@ -234,14 +281,14 @@ export function GraphView({
           filterHandle={filterHandle}
           matchingCount={matchingCount}
           nodeCount={cosmosData.nodeCount}
-          onClose={(): void => setIsFiltersOpen(false)}
+          onClose={(): void => setWantsFiltersOpen(false)}
         />
       )}
       <RightTabStrip
         isColorsOpen={isColorsOpen}
         isFiltersOpen={isFiltersOpen}
-        onToggleColors={(): void => setIsColorsOpen((v) => !v)}
-        onToggleFilters={(): void => setIsFiltersOpen((v) => !v)}
+        onToggleColors={toggleColors}
+        onToggleFilters={toggleFilters}
       />
 
       <AlertDialog open={isConfirmOpen} onOpenChange={(isOpen): void => { if (!isOpen) handleCancel() }}>

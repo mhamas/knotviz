@@ -96,7 +96,7 @@ export function GraphView({
 
   // Right sidebar tab state
   const [wantsColorsOpen, setWantsColorsOpen] = useState(false)
-  const [wantsFiltersOpen, setWantsFiltersOpen] = useState(false)
+  const [wantsFiltersOpen, setWantsFiltersOpen] = useState(true)
   const [maxTabs, setMaxTabs] = useState(2)
 
   // Left sidebar 240px + tab strip ~36px + each right sidebar 300px + min canvas 100px

@@ -15,23 +15,12 @@ function fmt(v: number): string {
 function NumericStatsTable({ stats }: { stats: NumericStats }): React.JSX.Element {
   return (
     <div className="space-y-0.5">
-      <StatRow label="Count" value={fmt(stats.count)} />
-      <StatRow label="Min" value={fmt(stats.min)} />
-      <StatRow label="Max" value={fmt(stats.max)} />
+      <StatRow label="Total" value={fmt(stats.count)} />
       <StatRow label="Mean" value={fmt(stats.mean)} />
-      <StatRow label="Median" value={fmt(stats.median)} />
       <div className="my-1 border-t border-slate-100" />
-      <StatRow label="p10" value={fmt(stats.p10)} />
-      <StatRow label="p20" value={fmt(stats.p20)} />
       <StatRow label="p25" value={fmt(stats.p25)} />
-      <StatRow label="p30" value={fmt(stats.p30)} />
-      <StatRow label="p40" value={fmt(stats.p40)} />
       <StatRow label="p50" value={fmt(stats.p50)} />
-      <StatRow label="p60" value={fmt(stats.p60)} />
-      <StatRow label="p70" value={fmt(stats.p70)} />
       <StatRow label="p75" value={fmt(stats.p75)} />
-      <StatRow label="p80" value={fmt(stats.p80)} />
-      <StatRow label="p90" value={fmt(stats.p90)} />
     </div>
   )
 }
@@ -40,34 +29,29 @@ function NumericStatsTable({ stats }: { stats: NumericStats }): React.JSX.Elemen
 function DateStatsTable({ stats }: { stats: DateStats }): React.JSX.Element {
   return (
     <div className="space-y-0.5">
-      <StatRow label="Count" value={fmt(stats.count)} />
-      <StatRow label="Min" value={stats.min} />
-      <StatRow label="Max" value={stats.max} />
+      <StatRow label="Total" value={fmt(stats.count)} />
       <StatRow label="Mean" value={stats.mean} />
-      <StatRow label="Median" value={stats.median} />
       <div className="my-1 border-t border-slate-100" />
-      <StatRow label="p10" value={stats.p10} />
-      <StatRow label="p20" value={stats.p20} />
       <StatRow label="p25" value={stats.p25} />
-      <StatRow label="p30" value={stats.p30} />
-      <StatRow label="p40" value={stats.p40} />
       <StatRow label="p50" value={stats.p50} />
-      <StatRow label="p60" value={stats.p60} />
-      <StatRow label="p70" value={stats.p70} />
       <StatRow label="p75" value={stats.p75} />
-      <StatRow label="p80" value={stats.p80} />
-      <StatRow label="p90" value={stats.p90} />
     </div>
   )
 }
 
 /** Categorical frequency table (string/boolean). */
 function CategoricalStatsTable({ stats }: { stats: SerializableCategoricalStats }): React.JSX.Element {
+  let total = 0
+  for (const [, count] of stats) total += count
   return (
-    <div className="max-h-[60vh] space-y-0.5 overflow-y-auto">
-      {stats.map(([value, count]) => (
-        <StatRow key={String(value)} label={String(value)} value={fmt(count)} />
-      ))}
+    <div className="space-y-0.5">
+      <StatRow label="Total" value={fmt(total)} />
+      <div className="my-1 border-t border-slate-100" />
+      <div className="max-h-[60vh] space-y-0.5 overflow-y-auto">
+        {stats.map(([value, count]) => (
+          <StatRow key={String(value)} label={String(value)} value={fmt(count)} />
+        ))}
+      </div>
     </div>
   )
 }
@@ -84,7 +68,7 @@ export function StatisticsPanel({ stats, propertyKey }: Props): React.JSX.Elemen
 
   return (
     <div>
-      <p className="mb-2 truncate text-[10px] text-slate-400" title={propertyKey}>{propertyKey}</p>
+      <span className="mb-2 inline-block rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-700" title={propertyKey}>{propertyKey}</span>
       {stats.type === 'numeric' && <NumericStatsTable stats={stats.stats} />}
       {stats.type === 'date' && <DateStatsTable stats={stats.stats} />}
       {stats.type === 'categorical' && <CategoricalStatsTable stats={stats.stats} />}

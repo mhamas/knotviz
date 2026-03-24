@@ -154,7 +154,7 @@ export function GraphView({
         onDownload={handleDownload}
         onReset={onLoadNewFile}
       />
-      <div className="relative flex-1 bg-white">
+      <div className="relative flex-1 overflow-hidden bg-white">
         <div
           ref={containerRef}
           data-testid="sigma-canvas"

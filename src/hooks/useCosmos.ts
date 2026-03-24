@@ -519,12 +519,9 @@ export function useCosmos(
       c.setPointColors(pointColors)
       c.setPointSizes(pointSizes)
       c.setLinkColors(linkColors)
-      // update() flushes dirty flags to GPU via create() without the
-      // expensive graph.update() CPU reprocessing that render() does.
-      // Preserves current alpha (simulation state).
-      // update() is not in the public TypeScript types but exists at runtime.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ;(c as any).update()
+      // render() flushes dirty flags to GPU. Calling without alpha arg
+      // preserves current simulation state.
+      c.render()
       setMatchingCount(mc)
       setPropertyStats(s)
     }

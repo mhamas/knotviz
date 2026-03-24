@@ -9,6 +9,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import {
   CollapsibleSection,
   LabeledSlider,
@@ -28,6 +29,8 @@ interface Props {
   onRandomizeLayout?: () => void
   onDownload?: () => void
   onReset?: () => void
+  isOpen?: boolean
+  onToggle?: () => void
 }
 
 /**
@@ -46,6 +49,8 @@ export function LeftSidebar({
   onRandomizeLayout = () => {},
   onDownload = () => {},
   onReset = () => {},
+  isOpen = true,
+  onToggle,
 }: Props): React.JSX.Element {
   // Store state
   const isGraphLoaded = useGraphStore((s) => s.isGraphLoaded)
@@ -79,100 +84,125 @@ export function LeftSidebar({
   const debouncedNodeSizeChange = useDebounce(setNodeSize, 30)
   const debouncedEdgeSizeChange = useDebounce(setEdgeSize, 30)
 
+  if (!isOpen) {
+    return (
+      <div className="flex h-screen shrink-0 flex-col items-center border-r border-slate-200 bg-slate-50 px-1 pt-2">
+        <button
+          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+          onClick={onToggle}
+          aria-label="Open left panel"
+          title="Open panel"
+        >
+          <PanelLeftOpen className="h-4 w-4" />
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-screen w-60 shrink-0 flex-col gap-4 border-r border-slate-200 bg-white p-4">
       <div className={isDisabled ? 'pointer-events-none opacity-40' : ''}>
       {/* Simulation */}
-      <div className="mt-2 space-y-3">
-        <SectionHeading help="Runs a GPU-accelerated force-directed layout that pushes connected nodes closer together and unconnected nodes apart, making clusters and relationships easier to see.">
-          Simulation
-        </SectionHeading>
+      <div className="mt-2">
+        <CollapsibleSection
+          label="Simulation"
+          help="Runs a GPU-accelerated force-directed layout that pushes connected nodes closer together and unconnected nodes apart, making clusters and relationships easier to see."
+          trailing={onToggle && (
+            <button
+              className="flex h-5 w-5 cursor-pointer items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              onClick={(e): void => { e.preventDefault(); onToggle() }}
+              aria-label="Close left panel"
+            >
+              <PanelLeftClose className="h-3.5 w-3.5" />
+            </button>
+          )}
+        >
+          <div className="space-y-3">
+            {/* Simulating indicator */}
+            {isRunning && (
+              <div className="flex items-center gap-2 text-xs text-blue-600">
+                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-blue-500" />
+                <span>Simulating…</span>
+              </div>
+            )}
 
-        {/* Simulating indicator */}
-        {isRunning && (
-          <div className="flex items-center gap-2 text-xs text-blue-600">
-            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-blue-500" />
-            <span>Simulating…</span>
-          </div>
-        )}
+            {/* Run / Stop */}
+            <div className="flex gap-2">
+              <SidebarButton
+                color="green"
+                className="flex-1"
+                onClick={onRun}
+                disabled={isRunning}
+              >
+                Run
+              </SidebarButton>
+              <SidebarButton
+                color="red"
+                className="flex-1"
+                onClick={onStop}
+                disabled={!isRunning}
+              >
+                Stop
+              </SidebarButton>
+            </div>
 
-        {/* Run / Stop */}
-        <div className="flex gap-2">
-          <SidebarButton
-            color="green"
-            className="flex-1"
-            onClick={onRun}
-            disabled={isRunning}
-          >
-            Run
-          </SidebarButton>
-          <SidebarButton
-            color="red"
-            className="flex-1"
-            onClick={onStop}
-            disabled={!isRunning}
-          >
-            Stop
-          </SidebarButton>
-        </div>
+            {/* Error */}
+            {simulationError && (
+              <p className="text-xs text-red-500">{simulationError}</p>
+            )}
 
-        {/* Error */}
-        {simulationError && (
-          <p className="text-xs text-red-500">{simulationError}</p>
-        )}
+            <div className="space-y-2.5">
+              <LabeledSlider
+                label="Repulsion"
+                value={repulsion}
+                formatValue={(v): string => v.toFixed(2)}
+                help="A force between ALL pairs of nodes that pushes them apart, like magnets with the same pole. This is the main force that prevents nodes from overlapping and creates space in the layout. Unlike Link Spring (which only acts between connected nodes), Repulsion acts between every node — even nodes with no edges between them. Higher values spread the entire graph out; lower values let it collapse tighter. If you raise Repulsion without raising Link Spring, clusters will break apart. If you lower it too much, unconnected groups will overlap."
+                min={0}
+                max={200}
+                step={1}
+                defaultValue={[repulsion * 100]}
+                onValueChange={(value): void => {
+                  const v = Array.isArray(value) ? value[0] : value
+                  debouncedRepulsionChange(v / 100)
+                }}
+              />
 
-        <CollapsibleSection label="Simulation settings">
-          <div className="space-y-2.5">
-          <LabeledSlider
-            label="Repulsion"
-            value={repulsion}
-            formatValue={(v): string => v.toFixed(2)}
-            help="A force between ALL pairs of nodes that pushes them apart, like magnets with the same pole. This is the main force that prevents nodes from overlapping and creates space in the layout. Unlike Link Spring (which only acts between connected nodes), Repulsion acts between every node — even nodes with no edges between them. Higher values spread the entire graph out; lower values let it collapse tighter. If you raise Repulsion without raising Link Spring, clusters will break apart. If you lower it too much, unconnected groups will overlap."
-            min={0}
-            max={200}
-            step={1}
-            defaultValue={[repulsion * 100]}
-            onValueChange={(value): void => {
-              const v = Array.isArray(value) ? value[0] : value
-              debouncedRepulsionChange(v / 100)
-            }}
-          />
+              <LabeledSlider
+                label="Friction"
+                value={friction}
+                formatValue={(v): string => v.toFixed(2)}
+                help="Controls how quickly nodes lose their momentum and come to rest. Think of it like air resistance. Low friction (close to 0) means nodes stop almost immediately after forces are applied — the layout converges fast but may look rigid. High friction (close to 1) means nodes keep sliding for a long time — the layout is smoother and more organic but takes longer to settle. If the simulation feels jittery, raise friction slightly; if it never stabilizes, lower it."
+                min={0}
+                max={100}
+                step={1}
+                defaultValue={[friction * 100]}
+                onValueChange={(value): void => {
+                  const v = Array.isArray(value) ? value[0] : value
+                  debouncedFrictionChange(v / 100)
+                }}
+              />
 
-          <LabeledSlider
-            label="Friction"
-            value={friction}
-            formatValue={(v): string => v.toFixed(2)}
-            help="Controls how quickly nodes lose their momentum and come to rest. Think of it like air resistance. Low friction (close to 0) means nodes stop almost immediately after forces are applied — the layout converges fast but may look rigid. High friction (close to 1) means nodes keep sliding for a long time — the layout is smoother and more organic but takes longer to settle. If the simulation feels jittery, raise friction slightly; if it never stabilizes, lower it."
-            min={0}
-            max={100}
-            step={1}
-            defaultValue={[friction * 100]}
-            onValueChange={(value): void => {
-              const v = Array.isArray(value) ? value[0] : value
-              debouncedFrictionChange(v / 100)
-            }}
-          />
+              <LabeledSlider
+                label="Link Spring"
+                value={linkSpring}
+                formatValue={(v): string => v.toFixed(2)}
+                help="A spring force that acts ONLY between nodes connected by an edge, pulling them closer together — like a rubber band on each link. This is what makes clusters visible: densely connected groups of nodes get pulled into tight neighborhoods. Unlike Repulsion (which pushes ALL nodes apart), Link Spring only affects connected pairs. The interplay between these two forces defines the layout: Repulsion spreads everything out, Link Spring pulls connected nodes back in. Higher values make connected nodes snap tighter together; lower values let them drift apart even if connected."
+                min={0}
+                max={200}
+                step={1}
+                defaultValue={[linkSpring * 100]}
+                onValueChange={(value): void => {
+                  const v = Array.isArray(value) ? value[0] : value
+                  debouncedLinkSpringChange(v / 100)
+                }}
+              />
+            </div>
 
-          <LabeledSlider
-            label="Link Spring"
-            value={linkSpring}
-            formatValue={(v): string => v.toFixed(2)}
-            help="A spring force that acts ONLY between nodes connected by an edge, pulling them closer together — like a rubber band on each link. This is what makes clusters visible: densely connected groups of nodes get pulled into tight neighborhoods. Unlike Repulsion (which pushes ALL nodes apart), Link Spring only affects connected pairs. The interplay between these two forces defines the layout: Repulsion spreads everything out, Link Spring pulls connected nodes back in. Higher values make connected nodes snap tighter together; lower values let them drift apart even if connected."
-            min={0}
-            max={200}
-            step={1}
-            defaultValue={[linkSpring * 100]}
-            onValueChange={(value): void => {
-              const v = Array.isArray(value) ? value[0] : value
-              debouncedLinkSpringChange(v / 100)
-            }}
-          />
-
-          </div>
-          <div className="mt-3 flex justify-end">
-            <SidebarButton className="w-1/2" onClick={onRandomizeLayout}>
-              ↺ Randomize
-            </SidebarButton>
+            <div className="flex justify-end">
+              <SidebarButton className="w-1/2" onClick={onRandomizeLayout}>
+                ↺ Randomize
+              </SidebarButton>
+            </div>
           </div>
         </CollapsibleSection>
       </div>

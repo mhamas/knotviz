@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { PanelRightClose } from 'lucide-react'
 import type { ColorGradientState, FilterMap, PropertyMeta, PropertyStatsResult } from '../types'
 import type { PropertyColumns } from '../hooks/useFilterState'
 import { CollapsibleSection } from '@/components/sidebar'
@@ -46,7 +46,7 @@ export function ColorsSidebar({
               onClick={(e): void => { e.preventDefault(); onClose() }}
               aria-label="Close Colors panel"
             >
-              <X className="h-3.5 w-3.5" />
+              <PanelRightClose className="h-3.5 w-3.5" />
             </button>
           }
         >

@@ -91,9 +91,12 @@ export function GraphView({
     propertyTypeMap,
   )
 
+  // Sidebar state
+  const [isLeftOpen, setIsLeftOpen] = useState(true)
+
   // Right sidebar tab state
-  const [wantsColorsOpen, setWantsColorsOpen] = useState(true)
-  const [wantsFiltersOpen, setWantsFiltersOpen] = useState(true)
+  const [wantsColorsOpen, setWantsColorsOpen] = useState(false)
+  const [wantsFiltersOpen, setWantsFiltersOpen] = useState(false)
   const [maxTabs, setMaxTabs] = useState(2)
 
   // Left sidebar 240px + tab strip ~36px + each right sidebar 300px + min canvas 100px
@@ -200,6 +203,8 @@ export function GraphView({
         onRandomizeLayout={randomizePositions}
         onDownload={handleDownload}
         onReset={onLoadNewFile}
+        isOpen={isLeftOpen}
+        onToggle={(): void => setIsLeftOpen((v) => !v)}
       />
       <div className="relative flex-1 overflow-hidden bg-white">
         <div

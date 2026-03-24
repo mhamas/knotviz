@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { PanelRightClose } from 'lucide-react'
 import type { PropertyMeta } from '../types'
 import type { FilterStateHandle } from '../hooks/useFilterState'
 import { SectionHeading } from '@/components/sidebar'
@@ -39,7 +39,7 @@ export function FiltersSidebar({
             onClick={onClose}
             aria-label="Close Filters panel"
           >
-            <X className="h-3.5 w-3.5" />
+            <PanelRightClose className="h-3.5 w-3.5" />
           </button>
         </div>
         {!hasProperties ? (

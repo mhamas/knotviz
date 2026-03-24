@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Graph as CosmosGraph } from '@cosmos.gl/graph'
 import type { GraphConfigInterface } from '@cosmos.gl/graph'
-import type { CosmosGraphData, ColorGradientState, FilterMap, PropertyType, TooltipState } from '../types'
+import type { CosmosGraphData, ColorGradientState, FilterMap, PropertyType, PropertyStatsResult, TooltipState } from '../types'
 import type { PropertyColumns } from './useFilterState'
 import { getPaletteColors, isBuiltinPalette } from '@/lib/colorScales'
 import { useGraphStore } from '@/stores/useGraphStore'
@@ -48,6 +48,7 @@ export interface UseCosmosReturn {
   rotationCenter: { x: number; y: number } | null
   isSimulationRunning: boolean
   matchingCount: number
+  propertyStats: PropertyStatsResult | null
   startSimulation: () => void
   stopSimulation: () => void
   pauseSimulation: () => void
@@ -77,6 +78,7 @@ export function useCosmos(
   const hoverRef = useRef<HTMLDivElement | null>(null)
   const [isSimulationRunning, setIsSimulationRunning] = useState(false)
   const [matchingCount, setMatchingCount] = useState(0)
+  const [propertyStats, setPropertyStats] = useState<PropertyStatsResult | null>(null)
 
   // Store state
   const nodeSize = useGraphStore((s) => s.nodeSize)
@@ -505,11 +507,12 @@ export function useCosmos(
     const worker = new AppearanceWorker()
     workerRef.current = worker
     worker.onmessage = (e: MessageEvent): void => {
-      const { pointColors, pointSizes, linkColors, matchingCount: mc } = e.data as {
+      const { pointColors, pointSizes, linkColors, matchingCount: mc, stats: s } = e.data as {
         pointColors: Float32Array
         pointSizes: Float32Array
         linkColors: Float32Array
         matchingCount: number
+        stats: PropertyStatsResult | null
       }
       const c = cosmosRef.current
       if (!c) return
@@ -520,6 +523,7 @@ export function useCosmos(
       // render(0) would set alpha=0, killing a running simulation.
       c.render()
       setMatchingCount(mc)
+      setPropertyStats(s)
     }
     return () => { worker.terminate(); workerRef.current = null }
   }, [])
@@ -576,6 +580,10 @@ export function useCosmos(
         propertyKey: gradientState.propertyKey,
         paletteStops,
         propType,
+      },
+      statsConfig: {
+        propertyKey: gradientState.propertyKey,
+        propertyType: propType,
       },
       defaultRgba: hexToRgba(COLOR_DEFAULT),
       edgeRgba: hexToRgba(COLOR_EDGE_DEFAULT),
@@ -738,6 +746,7 @@ export function useCosmos(
     rotationCenter,
     isSimulationRunning,
     matchingCount,
+    propertyStats,
     startSimulation,
     stopSimulation,
     pauseSimulation,

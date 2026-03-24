@@ -78,18 +78,67 @@ export type FilterMap = Map<string, FilterState>
 
 // ─── Stats ─────────────────────────────────────────────────────────────────
 
-export interface PropertyStats {
+/** Descriptive statistics for a numeric property. */
+export interface NumericStats {
+  count: number
   min: number
   max: number
   mean: number
   median: number
+  p10: number
+  p20: number
   p25: number
+  p30: number
+  p40: number
+  p50: number
+  p60: number
+  p70: number
   p75: number
+  p80: number
+  p90: number
 }
+
+/** Descriptive statistics for a date property. Values are YYYY-MM-DD strings. */
+export interface DateStats {
+  count: number
+  min: string
+  max: string
+  mean: string
+  median: string
+  p10: string
+  p20: string
+  p25: string
+  p30: string
+  p40: string
+  p50: string
+  p60: string
+  p70: string
+  p75: string
+  p80: string
+  p90: string
+}
+
+/** Frequency counts for a string or boolean property. */
+export type CategoricalStats = Map<string | boolean, number>
+
+/** Serializable frequency counts (Map can't be structured-cloned via postMessage). */
+export type SerializableCategoricalStats = [string | boolean, number][]
+
+/** Union of stats results returned from the appearance worker. */
+export type PropertyStatsResult =
+  | { type: 'numeric'; stats: NumericStats }
+  | { type: 'date'; stats: DateStats }
+  | { type: 'categorical'; stats: SerializableCategoricalStats }
 
 export interface HistogramBucket {
   from: number
   to: number
+  count: number
+}
+
+export interface DateHistogramBucket {
+  from: string
+  to: string
   count: number
 }
 

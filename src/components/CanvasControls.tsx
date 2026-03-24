@@ -19,7 +19,7 @@ interface Props {
  */
 export function CanvasControls({ onZoomIn, onZoomOut, onFit, onRotateCW, onRotateCCW, isDisabled = false }: Props): React.JSX.Element {
   return (
-    <div className="absolute bottom-3 right-3 z-10 flex flex-col gap-1">
+    <div className="absolute bottom-3 right-3 z-10 flex items-center gap-1">
       <Button
         variant="outline"
         size="icon"
@@ -50,7 +50,6 @@ export function CanvasControls({ onZoomIn, onZoomOut, onFit, onRotateCW, onRotat
       >
         <Maximize className="h-3.5 w-3.5" />
       </Button>
-      <div className="my-0.5" />
       <Button
         variant="outline"
         size="icon"
@@ -71,7 +70,6 @@ export function CanvasControls({ onZoomIn, onZoomOut, onFit, onRotateCW, onRotat
       >
         <RotateCw className="h-3.5 w-3.5" />
       </Button>
-      <div className="my-0.5" />
       <KeyboardShortcutsHelp />
     </div>
   )

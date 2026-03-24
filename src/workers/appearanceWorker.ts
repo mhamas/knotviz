@@ -4,7 +4,9 @@
  */
 
 import type { SerializableFilter } from '../lib/appearanceUtils'
+import type { PropertyType, PropertyStatsResult } from '../types'
 import { passesFilter, hexToRgbNorm, interpolateStops } from '../lib/appearanceUtils'
+import { computeFilteredStats } from '../lib/computeStats'
 
 /** Base point size before pointSizeScale is applied by the GPU shader. */
 const BASE_POINT_SIZE = 4
@@ -25,11 +27,17 @@ interface InitMessage {
   linkIndices: Float32Array
 }
 
+interface StatsConfig {
+  propertyKey: string | null
+  propertyType: PropertyType | null
+}
+
 interface UpdateMessage {
   type: 'update'
   nodeCount: number
   filters: Record<string, SerializableFilter>
   gradientConfig: GradientConfig
+  statsConfig: StatsConfig
   defaultRgba: [number, number, number, number]
   edgeRgba: [number, number, number, number]
 }
@@ -43,7 +51,7 @@ self.onmessage = (e: MessageEvent<InitMessage | UpdateMessage>): void => {
     return
   }
 
-  const { nodeCount, filters, gradientConfig, defaultRgba, edgeRgba } = input
+  const { nodeCount, filters, gradientConfig, statsConfig, defaultRgba, edgeRgba } = input
   const linkIndices = storedLinkIndices
 
   // Step 1: Compute matching bitmask
@@ -129,7 +137,16 @@ self.onmessage = (e: MessageEvent<InitMessage | UpdateMessage>): void => {
     if (visible[i]) matchingCount++
   }
 
-  const msg = { pointColors, pointSizes, linkColors, matchingCount }
+  // Step 6: Compute stats for the selected color property over visible nodes
+  let stats: PropertyStatsResult | null = null
+  if (statsConfig.propertyKey && statsConfig.propertyType) {
+    const col = storedColumns[statsConfig.propertyKey]
+    if (col) {
+      stats = computeFilteredStats(visible, col, statsConfig.propertyType)
+    }
+  }
+
+  const msg = { pointColors, pointSizes, linkColors, matchingCount, stats }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(self.postMessage as any)(msg, [
     pointColors.buffer, pointSizes.buffer, linkColors.buffer,

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { CosmosGraphData, ColorGradientState, PropertyMeta, PropertyType, PropertyValue } from '../types'
 import type { PropertyColumns } from '../hooks/useFilterState'
 import { useCosmos } from '../hooks/useCosmos'
@@ -11,6 +11,7 @@ import { LeftSidebar } from './LeftSidebar'
 import { RightSidebar } from './RightSidebar'
 import { DragOverlay } from './DragOverlay'
 import { NodeTooltip } from './NodeTooltip'
+import { StatisticsPanel } from './StatisticsPanel'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -44,8 +45,9 @@ export function GraphView({
   filename,
   onLoadNewFile,
 }: Props): React.JSX.Element {
-  const propertyTypeMap = new Map<string, PropertyType>(
-    propertyMetas.map((m) => [m.key, m.type]),
+  const propertyTypeMap = useMemo(
+    () => new Map<string, PropertyType>(propertyMetas.map((m) => [m.key, m.type])),
+    [propertyMetas],
   )
 
   // Filter system (UI state only — matching computed in worker)
@@ -75,6 +77,7 @@ export function GraphView({
     rotationCenter,
     isSimulationRunning,
     matchingCount,
+    propertyStats,
     startSimulation,
     stopSimulation,
     randomizePositions,
@@ -209,6 +212,10 @@ export function GraphView({
           isDisabled={isSimulationRunning}
         />
       </div>
+      <StatisticsPanel
+        stats={propertyStats}
+        propertyKey={gradientState.propertyKey}
+      />
       <RightSidebar
         propertyMetas={propertyMetas}
         filterHandle={filterHandle}

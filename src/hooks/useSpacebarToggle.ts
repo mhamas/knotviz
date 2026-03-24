@@ -25,9 +25,12 @@ export function useSpacebarToggle(
         start()
       }
     }
-    window.addEventListener('keydown', handleKeyDown)
+    // Use capture phase on document so the handler fires before any element-level
+    // listeners (e.g. canvas, buttons) can consume or interfere with the event.
+    // preventDefault() in capture also suppresses native button-activation from Space.
+    document.addEventListener('keydown', handleKeyDown, { capture: true })
     return (): void => {
-      window.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('keydown', handleKeyDown, { capture: true })
     }
   }, [isRunning, start, stop])
 }

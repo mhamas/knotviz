@@ -8,10 +8,11 @@ import { useFilterState } from '../hooks/useFilterState'
 import { FilenameLabel } from './FilenameLabel'
 import { CanvasControls } from './CanvasControls'
 import { LeftSidebar } from './LeftSidebar'
-import { RightSidebar } from './RightSidebar'
+import { RightTabStrip } from './RightTabStrip'
+import { ColorsSidebar } from './ColorsSidebar'
+import { FiltersSidebar } from './FiltersSidebar'
 import { DragOverlay } from './DragOverlay'
 import { NodeTooltip } from './NodeTooltip'
-import { StatisticsPanel } from './StatisticsPanel'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -89,6 +90,10 @@ export function GraphView({
     gradientState,
     propertyTypeMap,
   )
+
+  // Right sidebar tab state
+  const [isColorsOpen, setIsColorsOpen] = useState(true)
+  const [isFiltersOpen, setIsFiltersOpen] = useState(true)
 
   const { isDragOver, isConfirmOpen, handleConfirm, handleCancel } = useFileDrop(onLoadNewFile)
 
@@ -212,19 +217,31 @@ export function GraphView({
           isDisabled={isSimulationRunning}
         />
       </div>
-      <StatisticsPanel
-        stats={propertyStats}
-        propertyKey={gradientState.propertyKey}
-      />
-      <RightSidebar
-        propertyMetas={propertyMetas}
-        filterHandle={filterHandle}
-        gradientState={gradientState}
-        onGradientChange={setGradientState}
-        cosmosData={cosmosData}
-        matchingCount={matchingCount}
-        nodeCount={cosmosData.nodeCount}
-        propertyColumns={propertyColumns}
+      {isColorsOpen && (
+        <ColorsSidebar
+          propertyMetas={propertyMetas}
+          gradientState={gradientState}
+          onGradientChange={setGradientState}
+          propertyColumns={propertyColumns}
+          filters={filterHandle.filters}
+          propertyStats={propertyStats}
+          onClose={(): void => setIsColorsOpen(false)}
+        />
+      )}
+      {isFiltersOpen && (
+        <FiltersSidebar
+          propertyMetas={propertyMetas}
+          filterHandle={filterHandle}
+          matchingCount={matchingCount}
+          nodeCount={cosmosData.nodeCount}
+          onClose={(): void => setIsFiltersOpen(false)}
+        />
+      )}
+      <RightTabStrip
+        isColorsOpen={isColorsOpen}
+        isFiltersOpen={isFiltersOpen}
+        onToggleColors={(): void => setIsColorsOpen((v) => !v)}
+        onToggleFilters={(): void => setIsFiltersOpen((v) => !v)}
       />
 
       <AlertDialog open={isConfirmOpen} onOpenChange={(isOpen): void => { if (!isOpen) handleCancel() }}>

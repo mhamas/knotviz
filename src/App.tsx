@@ -1,12 +1,28 @@
 import { useCallback, useRef, useState } from 'react'
 import type { CosmosGraphData, PropertyMeta } from './types'
-import type { PropertyColumns } from './hooks/useFilterState'
+import type { FilterStateHandle, PropertyColumns } from './hooks/useFilterState'
 import { useGraphStore } from '@/stores/useGraphStore'
 import { DropZone } from './components/DropZone'
 import { GraphView } from './components/GraphView'
 import { LeftSidebar } from './components/LeftSidebar'
-import { RightSidebar } from './components/RightSidebar'
+import { RightTabStrip } from './components/RightTabStrip'
+import { ColorsSidebar } from './components/ColorsSidebar'
+import { FiltersSidebar } from './components/FiltersSidebar'
 import { ErrorBoundary } from './components/ErrorBoundary'
+
+const noop = (): void => {}
+const emptyFilterHandle: FilterStateHandle = {
+  filters: new Map(),
+  resetKey: 0,
+  setNumberFilter: noop,
+  setStringFilter: noop,
+  setDateFilter: noop,
+  setBooleanFilter: noop,
+  setFilterEnabled: noop,
+  setAllFiltersEnabled: noop,
+  clearAllFilters: noop,
+  hasActiveFilters: false,
+}
 
 interface LoadedData {
   cosmosData: CosmosGraphData
@@ -51,15 +67,27 @@ function App(): React.JSX.Element {
             }}
           />
         </div>
-        <RightSidebar
+        <ColorsSidebar
           propertyMetas={[]}
-          filterHandle={null}
-          gradientState={null}
+          gradientState={{ propertyKey: null, palette: 'Viridis', isReversed: false, customColors: [], customPalettes: [] }}
           onGradientChange={() => {}}
-          cosmosData={null}
+          propertyColumns={{}}
+          filters={new Map()}
+          propertyStats={null}
+          onClose={() => {}}
+        />
+        <FiltersSidebar
+          propertyMetas={[]}
+          filterHandle={emptyFilterHandle}
           matchingCount={0}
           nodeCount={0}
-          propertyColumns={{}}
+          onClose={() => {}}
+        />
+        <RightTabStrip
+          isColorsOpen={true}
+          isFiltersOpen={true}
+          onToggleColors={() => {}}
+          onToggleFilters={() => {}}
         />
       </div>
     )

@@ -1,5 +1,5 @@
 import type { PropertyStatsResult, NumericStats, DateStats, SerializableCategoricalStats } from '../types'
-import { SectionHeading, StatRow } from '@/components/sidebar'
+import { StatRow } from '@/components/sidebar'
 
 interface Props {
   stats: PropertyStatsResult | null
@@ -73,19 +73,17 @@ function CategoricalStatsTable({ stats }: { stats: SerializableCategoricalStats 
 }
 
 /**
- * Statistics panel that appears to the left of the right sidebar when a
- * color property is selected. Shows descriptive stats for the selected
- * property over visible (filtered) nodes.
+ * Statistics content for the selected color property, shown inside
+ * the Colors sidebar when a property is selected.
  *
  * @param props - Stats result from the worker and the selected property key.
- * @returns Statistics panel element, or null when hidden.
+ * @returns Statistics content element, or null when hidden.
  */
 export function StatisticsPanel({ stats, propertyKey }: Props): React.JSX.Element | null {
   if (!propertyKey || !stats) return null
 
   return (
-    <div className="h-screen w-[300px] shrink-0 overflow-y-auto border-l border-slate-200 bg-white p-3">
-      <SectionHeading>Statistics</SectionHeading>
+    <div>
       <p className="mb-2 truncate text-[10px] text-slate-400" title={propertyKey}>{propertyKey}</p>
       {stats.type === 'numeric' && <NumericStatsTable stats={stats.stats} />}
       {stats.type === 'date' && <DateStatsTable stats={stats.stats} />}

@@ -5,6 +5,7 @@ interface Props {
   help?: string
   children: React.ReactNode
   defaultOpen?: boolean
+  trailing?: React.ReactNode
 }
 
 /**
@@ -13,7 +14,7 @@ interface Props {
  * @param props - Toggle label, optional help popover, and collapsible content.
  * @returns Collapsible section element.
  */
-export function CollapsibleSection({ label, help, children, defaultOpen = true }: Props): React.JSX.Element {
+export function CollapsibleSection({ label, help, children, defaultOpen = true, trailing }: Props): React.JSX.Element {
   return (
     <details className="group" open={defaultOpen || undefined}>
       <summary className="flex cursor-pointer list-none items-center gap-1 select-none">
@@ -22,6 +23,7 @@ export function CollapsibleSection({ label, help, children, defaultOpen = true }
         </span>
         <h3 className="text-xs font-bold uppercase tracking-wide text-slate-600">{label}</h3>
         {help && <HelpPopover>{help}</HelpPopover>}
+        {trailing && <span className="ml-auto">{trailing}</span>}
       </summary>
       <div className="mt-2">{children}</div>
     </details>

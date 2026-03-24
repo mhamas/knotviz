@@ -20,8 +20,6 @@ test.describe('Right Sidebar', () => {
   })
 
   test('right sidebar shows color and filter controls', async ({ page }) => {
-    const sidebar = page.getByTestId('right-sidebar')
-    await expect(sidebar).toBeVisible()
     await expect(page.getByTestId('color-property-select')).toBeVisible()
     await expect(page.getByTestId('filter-match-count')).toBeVisible()
   })

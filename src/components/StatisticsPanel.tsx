@@ -48,9 +48,16 @@ function CategoricalStatsTable({ stats }: { stats: SerializableCategoricalStats 
       <StatRow label="Total" value={fmt(total)} />
       <div className="my-1 border-t border-slate-100" />
       <div className="max-h-[60vh] space-y-0.5 overflow-y-auto">
-        {stats.map(([value, count]) => (
-          <StatRow key={String(value)} label={String(value)} value={fmt(count)} />
-        ))}
+        {stats.map(([value, count]) => {
+          const pct = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0'
+          return (
+            <StatRow
+              key={String(value)}
+              label={String(value)}
+              value={<>{fmt(count)} <span className="ml-2 text-slate-300">({pct}%)</span></>}
+            />
+          )
+        })}
       </div>
     </div>
   )

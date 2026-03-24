@@ -56,6 +56,7 @@ function App(): React.JSX.Element {
           isFiltersOpen={false}
           onToggleColors={() => {}}
           onToggleFilters={() => {}}
+          isDisabled
         />
       </div>
     )

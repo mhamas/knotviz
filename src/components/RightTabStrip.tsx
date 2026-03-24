@@ -9,6 +9,7 @@ interface Props {
   isFiltersOpen: boolean
   onToggleColors: () => void
   onToggleFilters: () => void
+  isDisabled?: boolean
 }
 
 /**
@@ -23,15 +24,17 @@ export function RightTabStrip({
   isFiltersOpen,
   onToggleColors,
   onToggleFilters,
+  isDisabled = false,
 }: Props): React.JSX.Element {
   return (
-    <div className="flex h-screen shrink-0 flex-col items-center gap-1 border-l border-slate-200 bg-slate-50 px-1 pt-2">
+    <div className={`flex h-screen shrink-0 flex-col items-center gap-1 border-l border-slate-200 bg-slate-50 px-1 pt-2 ${isDisabled ? 'pointer-events-none opacity-40' : ''}`}>
       <button
         className="flex h-8 w-8 cursor-pointer items-center justify-center rounded transition-colors"
         style={isColorsOpen
           ? { backgroundColor: COLOR_TAB_COLORS_BG, color: COLOR_TAB_COLORS }
           : { color: COLOR_TAB_COLORS }}
         onClick={onToggleColors}
+        disabled={isDisabled}
         aria-label="Toggle Colors panel"
         title={isColorsOpen ? 'Close colors & stats' : 'Open colors & stats'}
       >
@@ -43,6 +46,7 @@ export function RightTabStrip({
           ? { backgroundColor: COLOR_TAB_FILTERS_BG, color: COLOR_TAB_FILTERS }
           : { color: COLOR_TAB_FILTERS }}
         onClick={onToggleFilters}
+        disabled={isDisabled}
         aria-label="Toggle Filters panel"
         title={isFiltersOpen ? 'Close filters' : 'Open filters'}
       >

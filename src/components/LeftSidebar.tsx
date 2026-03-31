@@ -159,7 +159,7 @@ export function LeftSidebar({
                 formatValue={(v): string => v.toFixed(2)}
                 help="A force between ALL pairs of nodes that pushes them apart, like magnets with the same pole. This is the main force that prevents nodes from overlapping and creates space in the layout. Unlike Link Spring (which only acts between connected nodes), Repulsion acts between every node — even nodes with no edges between them. Higher values spread the entire graph out; lower values let it collapse tighter. If you raise Repulsion without raising Link Spring, clusters will break apart. If you lower it too much, unconnected groups will overlap."
                 min={0}
-                max={200}
+                max={300}
                 step={1}
                 defaultValue={[repulsion * 100]}
                 onValueChange={(value): void => {
@@ -170,16 +170,16 @@ export function LeftSidebar({
 
               <LabeledSlider
                 label="Friction"
-                value={friction}
+                value={1 - friction}
                 formatValue={(v): string => v.toFixed(2)}
-                help="Controls how quickly nodes lose their momentum and come to rest. Think of it like air resistance. Low friction (close to 0) means nodes stop almost immediately after forces are applied — the layout converges fast but may look rigid. High friction (close to 1) means nodes keep sliding for a long time — the layout is smoother and more organic but takes longer to settle. If the simulation feels jittery, raise friction slightly; if it never stabilizes, lower it."
+                help="Controls how quickly nodes lose their momentum and come to rest. Think of it like air resistance. High friction (close to 1) means nodes stop almost immediately after forces are applied — the layout converges fast but may look rigid. Low friction (close to 0) means nodes keep sliding for a long time — the layout is smoother and more organic but takes longer to settle. If the simulation never stabilizes, raise friction; if it feels too rigid, lower it."
                 min={0}
                 max={100}
                 step={1}
-                defaultValue={[friction * 100]}
+                defaultValue={[(1 - friction) * 100]}
                 onValueChange={(value): void => {
                   const v = Array.isArray(value) ? value[0] : value
-                  debouncedFrictionChange(v / 100)
+                  debouncedFrictionChange(1 - v / 100)
                 }}
               />
 
@@ -189,7 +189,7 @@ export function LeftSidebar({
                 formatValue={(v): string => v.toFixed(2)}
                 help="A spring force that acts ONLY between nodes connected by an edge, pulling them closer together — like a rubber band on each link. This is what makes clusters visible: densely connected groups of nodes get pulled into tight neighborhoods. Unlike Repulsion (which pushes ALL nodes apart), Link Spring only affects connected pairs. The interplay between these two forces defines the layout: Repulsion spreads everything out, Link Spring pulls connected nodes back in. Higher values make connected nodes snap tighter together; lower values let them drift apart even if connected."
                 min={0}
-                max={200}
+                max={300}
                 step={1}
                 defaultValue={[linkSpring * 100]}
                 onValueChange={(value): void => {

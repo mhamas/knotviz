@@ -26,7 +26,7 @@ interface Props {
   simulationError?: string | null
   onRun?: () => void
   onStop?: () => void
-  onRandomizeLayout?: () => void
+  onRestart?: () => void
   onDownload?: () => void
   onReset?: () => void
   isOpen?: boolean
@@ -46,7 +46,7 @@ export function LeftSidebar({
   simulationError = null,
   onRun = () => {},
   onStop = () => {},
-  onRandomizeLayout = () => {},
+  onRestart = () => {},
   onDownload = () => {},
   onReset = () => {},
   isOpen = true,
@@ -57,6 +57,10 @@ export function LeftSidebar({
   const repulsion = useGraphStore((s) => s.repulsion)
   const friction = useGraphStore((s) => s.friction)
   const linkSpring = useGraphStore((s) => s.linkSpring)
+  const edgePercentage = useGraphStore((s) => s.edgePercentage)
+  const maxNeighbors = useGraphStore((s) => s.maxNeighbors)
+  const maxDegree = useGraphStore((s) => s.maxDegree)
+  const isKeepAtLeastOneEdge = useGraphStore((s) => s.isKeepAtLeastOneEdge)
   const nodeSize = useGraphStore((s) => s.nodeSize)
   const edgeSize = useGraphStore((s) => s.edgeSize)
   const isEdgesVisible = useGraphStore((s) => s.isEdgesVisible)
@@ -69,6 +73,9 @@ export function LeftSidebar({
   const setRepulsion = useGraphStore((s) => s.setRepulsion)
   const setFriction = useGraphStore((s) => s.setFriction)
   const setLinkSpring = useGraphStore((s) => s.setLinkSpring)
+  const setEdgePercentage = useGraphStore((s) => s.setEdgePercentage)
+  const setMaxNeighbors = useGraphStore((s) => s.setMaxNeighbors)
+  const setIsKeepAtLeastOneEdge = useGraphStore((s) => s.setIsKeepAtLeastOneEdge)
   const setNodeSize = useGraphStore((s) => s.setNodeSize)
   const setEdgeSize = useGraphStore((s) => s.setEdgeSize)
   const setIsEdgesVisible = useGraphStore((s) => s.setIsEdgesVisible)
@@ -80,6 +87,8 @@ export function LeftSidebar({
   const debouncedRepulsionChange = useDebounce(setRepulsion, 100)
   const debouncedFrictionChange = useDebounce(setFriction, 100)
   const debouncedLinkSpringChange = useDebounce(setLinkSpring, 100)
+  const debouncedEdgePercentageChange = useDebounce(setEdgePercentage, 100)
+  const debouncedMaxNeighborsChange = useDebounce(setMaxNeighbors, 100)
   // Display sliders use short debounce — they only change GPU uniforms, no worker involved
   const debouncedNodeSizeChange = useDebounce(setNodeSize, 30)
   const debouncedEdgeSizeChange = useDebounce(setEdgeSize, 30)
@@ -127,7 +136,7 @@ export function LeftSidebar({
               </div>
             )}
 
-            {/* Run / Stop */}
+            {/* Run / Stop / Restart */}
             <div className="flex gap-2">
               <SidebarButton
                 color="green"
@@ -144,6 +153,12 @@ export function LeftSidebar({
                 disabled={!isRunning}
               >
                 Stop
+              </SidebarButton>
+              <SidebarButton
+                className="flex-1"
+                onClick={onRestart}
+              >
+                Restart
               </SidebarButton>
             </div>
 
@@ -199,11 +214,46 @@ export function LeftSidebar({
               />
             </div>
 
-            <div className="flex justify-end">
-              <SidebarButton className="w-1/2" onClick={onRandomizeLayout}>
-                ↺ Randomize
-              </SidebarButton>
+            <div className="mt-5 space-y-2.5">
+              <LabeledSlider
+                label="Edges to keep (%)"
+                value={edgePercentage}
+                formatValue={(v): string => `${Math.round(v)}%`}
+                help="Keep only the top X% of edges by weight. Edges are sorted by weight (highest first). Lower values remove weak edges from both the simulation and display. Applied before the max neighbors limit."
+                min={0}
+                max={100}
+                step={1}
+                defaultValue={[edgePercentage]}
+                onValueChange={(value): void => {
+                  const v = Array.isArray(value) ? value[0] : value
+                  debouncedEdgePercentageChange(v)
+                }}
+              />
+
+              <LabeledSlider
+                key={maxDegree}
+                label="Max neighbors per node"
+                value={maxNeighbors}
+                formatValue={(v): string => String(Math.round(v))}
+                help={`Limit the maximum number of edges per node (0–${maxDegree || 0}). For each node, keeps the highest-weight edges up to this limit. Applied after the edge percentage filter.`}
+                min={0}
+                max={maxDegree || 1}
+                step={1}
+                defaultValue={[maxNeighbors]}
+                onValueChange={(value): void => {
+                  const v = Array.isArray(value) ? value[0] : value
+                  debouncedMaxNeighborsChange(Math.round(v))
+                }}
+              />
             </div>
+
+            <SidebarCheckbox
+              label="Always keep strongest edge per node"
+              checked={isKeepAtLeastOneEdge}
+              onCheckedChange={setIsKeepAtLeastOneEdge}
+              help="When checked, each node's highest-weight edge is always kept regardless of the Edge % and Max neighbors filters above."
+            />
+
           </div>
         </CollapsibleSection>
       </div>

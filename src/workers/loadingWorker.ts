@@ -70,6 +70,7 @@ self.onmessage = async (e: MessageEvent): Promise<void> => {
       result.linkIndices.buffer as ArrayBuffer,
       result.edgeSources.buffer as ArrayBuffer,
       result.edgeTargets.buffer as ArrayBuffer,
+      result.edgeSortOrder.buffer as ArrayBuffer,
     ]
     if (result.initialPositions) transferables.push(result.initialPositions.buffer as ArrayBuffer)
     if (result.edgeWeights) transferables.push(result.edgeWeights.buffer as ArrayBuffer)
@@ -189,6 +190,8 @@ interface ProcessResult {
   edgeTargets: Uint32Array
   edgeLabels: (string | undefined)[]
   edgeWeights: Float32Array | undefined
+  edgeSortOrder: Uint32Array
+  maxDegree: number
   propertyColumns: Record<string, (number | string | boolean | undefined)[]>
   propertyMetas: PropertyMeta[]
   replacementCount: number
@@ -322,9 +325,31 @@ class GraphBuilder {
     }
 
     const linkIndices = new Float32Array(edgeCount * 2)
+    const edgeSources = new Uint32Array(this.edgeSrcIndices)
+    const edgeTargets = new Uint32Array(this.edgeTgtIndices)
     for (let i = 0; i < edgeCount; i++) {
       linkIndices[i * 2] = this.edgeSrcIndices[i]
       linkIndices[i * 2 + 1] = this.edgeTgtIndices[i]
+    }
+
+    const edgeWeights = this.hasAnyWeight ? new Float32Array(this.edgeWeightList) : undefined
+
+    // Pre-sort edge indices by weight descending (for edge filtering sliders)
+    const edgeSortOrder = new Uint32Array(edgeCount)
+    for (let i = 0; i < edgeCount; i++) edgeSortOrder[i] = i
+    if (edgeWeights) {
+      edgeSortOrder.sort((a, b) => edgeWeights[b] - edgeWeights[a])
+    }
+
+    // Compute max degree (max edges touching any single node)
+    const degree = new Uint32Array(nodeCount)
+    for (let i = 0; i < edgeCount; i++) {
+      degree[edgeSources[i]]++
+      degree[edgeTargets[i]]++
+    }
+    let maxDegree = 0
+    for (let i = 0; i < nodeCount; i++) {
+      if (degree[i] > maxDegree) maxDegree = degree[i]
     }
 
     return {
@@ -335,10 +360,12 @@ class GraphBuilder {
       positionMode,
       nodeIds: this.nodeIds,
       nodeLabels: this.nodeLabels,
-      edgeSources: new Uint32Array(this.edgeSrcIndices),
-      edgeTargets: new Uint32Array(this.edgeTgtIndices),
+      edgeSources,
+      edgeTargets,
       edgeLabels: this.edgeLabelList,
-      edgeWeights: this.hasAnyWeight ? new Float32Array(this.edgeWeightList) : undefined,
+      edgeWeights,
+      edgeSortOrder,
+      maxDegree,
       propertyColumns: this.propertyColumns as Record<string, (number | string | boolean | undefined)[]>,
       propertyMetas,
       replacementCount,

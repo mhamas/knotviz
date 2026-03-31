@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Graph as CosmosGraph } from '@cosmos.gl/graph'
 import type { GraphConfigInterface } from '@cosmos.gl/graph'
 import type { CosmosGraphData, ColorGradientState, FilterMap, PropertyType, PropertyStatsResult, TooltipState } from '../types'
@@ -6,6 +6,7 @@ import type { PropertyColumns } from './useFilterState'
 import { getPaletteColors, isBuiltinPalette } from '@/lib/colorScales'
 import { useGraphStore } from '@/stores/useGraphStore'
 import { COLOR_DEFAULT, COLOR_EDGE_DEFAULT } from '@/lib/colors'
+import { filterEdges } from '@/lib/filterEdges'
 import AppearanceWorker from '@/workers/appearanceWorker?worker'
 
 /** Max number of node labels rendered as HTML overlays. */
@@ -52,7 +53,7 @@ export interface UseCosmosReturn {
   startSimulation: () => void
   stopSimulation: () => void
   pauseSimulation: () => void
-  randomizePositions: () => void
+  restartSimulation: () => void
   cosmosRef: React.RefObject<CosmosGraph | null>
 }
 
@@ -90,6 +91,9 @@ export function useCosmos(
   const friction = useGraphStore((s) => s.friction)
   const linkSpring = useGraphStore((s) => s.linkSpring)
   const decay = useGraphStore((s) => s.decay)
+  const edgePercentage = useGraphStore((s) => s.edgePercentage)
+  const maxNeighbors = useGraphStore((s) => s.maxNeighbors)
+  const isKeepAtLeastOneEdge = useGraphStore((s) => s.isKeepAtLeastOneEdge)
 
   // Refs for callback closures
   const dataRef = useRef(data)
@@ -103,12 +107,32 @@ export function useCosmos(
   useEffect(() => { isHighlightNeighborsRef.current = isHighlightNeighbors }, [isHighlightNeighbors])
   useEffect(() => { isNodeLabelsVisibleRef.current = isNodeLabelsVisible }, [isNodeLabelsVisible])
 
-  // Mark graph as loaded
+  // Mark graph as loaded + set maxDegree so sliders know bounds
   useEffect(() => {
     if (data) {
       useGraphStore.getState().setGraphLoaded(data.nodeCount, data.linkIndices.length / 2)
+      useGraphStore.getState().setMaxDegree(data.maxDegree)
+      useGraphStore.getState().setMaxNeighbors(data.maxDegree)
     }
   }, [data])
+
+  // Filtered link indices (edge % + max neighbors)
+  const totalEdgeCount = data ? data.linkIndices.length / 2 : 0
+  const filteredLinkIndices = useMemo(() => {
+    if (!data) return new Float32Array(0)
+    return filterEdges(
+      data.linkIndices,
+      data.edgeSortOrder,
+      data.nodeCount,
+      totalEdgeCount,
+      edgePercentage,
+      maxNeighbors,
+      data.maxDegree,
+      isKeepAtLeastOneEdge,
+    )
+  }, [data, totalEdgeCount, edgePercentage, maxNeighbors, isKeepAtLeastOneEdge])
+  const filteredLinksRef = useRef(filteredLinkIndices)
+  filteredLinksRef.current = filteredLinkIndices
 
   // ── Cosmos init / destroy ──
   useEffect(() => {
@@ -355,8 +379,8 @@ export function useCosmos(
       const positions = data.initialPositions ?? generateRandomPositions(data.nodeCount)
       cosmos.setPointPositions(positions)
 
-      // Links
-      cosmos.setLinks(data.linkIndices)
+      // Links (use filtered set — may be subset if edge % / max neighbors active)
+      cosmos.setLinks(filteredLinksRef.current)
 
       // Render statically (alpha=0 = no physics forces).
       // fitViewOnInit zooms camera to frame all nodes.
@@ -442,6 +466,18 @@ export function useCosmos(
       simulationDecay: decay,
     })
   }, [repulsion, friction, linkSpring, decay])
+
+  // ── Sync filtered edges into cosmos + worker ──
+  useEffect(() => {
+    const cosmos = cosmosRef.current
+    if (!cosmos) return
+    cosmos.setLinks(filteredLinkIndices)
+    if (!isSimRunningRef.current) {
+      cosmos.render(0)
+    }
+    // Update worker with new link set
+    workerRef.current?.postMessage({ type: 'updateLinks', linkIndices: filteredLinkIndices })
+  }, [filteredLinkIndices])
 
   // ── Sync display settings ──
   useEffect(() => {
@@ -536,7 +572,7 @@ export function useCosmos(
     worker.postMessage({
       type: 'init',
       propertyColumns,
-      linkIndices: data.linkIndices,
+      linkIndices: filteredLinksRef.current,
     })
     // Also trigger initial appearance
     setMatchingCount(data.nodeCount)
@@ -723,13 +759,14 @@ export function useCosmos(
     cosmosRef.current?.pause()
   }, [])
 
-  const randomizePositions = useCallback((): void => {
+  const restartSimulation = useCallback((): void => {
     if (!data) return
     const cosmos = cosmosRef.current
     if (!cosmos) return
     cosmos.setPointPositions(generateRandomPositions(data.nodeCount))
     cosmos.render(0)
     cosmos.fitView(0)
+    cosmos.start()
   }, [data])
 
   return {
@@ -750,7 +787,7 @@ export function useCosmos(
     startSimulation,
     stopSimulation,
     pauseSimulation,
-    randomizePositions,
+    restartSimulation,
     cosmosRef,
   }
 }

@@ -81,7 +81,7 @@ export function GraphView({
     propertyStats,
     startSimulation,
     stopSimulation,
-    randomizePositions,
+    restartSimulation,
     cosmosRef,
   } = useCosmos(
     cosmosData,
@@ -200,7 +200,7 @@ export function GraphView({
         isRunning={isSimulationRunning}
         onRun={startSimulation}
         onStop={stopSimulation}
-        onRandomizeLayout={randomizePositions}
+        onRestart={restartSimulation}
         onDownload={handleDownload}
         onReset={onLoadNewFile}
         isOpen={isLeftOpen}

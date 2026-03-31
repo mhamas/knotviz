@@ -13,6 +13,10 @@ interface SimulationState {
   friction: number
   linkSpring: number
   decay: number
+  edgePercentage: number
+  maxNeighbors: number
+  maxDegree: number
+  isKeepAtLeastOneEdge: boolean
 }
 
 interface GraphMeta {
@@ -31,6 +35,10 @@ interface Actions {
   setFriction: (v: number) => void
   setLinkSpring: (v: number) => void
   setDecay: (v: number) => void
+  setEdgePercentage: (v: number) => void
+  setMaxNeighbors: (v: number) => void
+  setMaxDegree: (v: number) => void
+  setIsKeepAtLeastOneEdge: (v: boolean) => void
   setGraphLoaded: (nodeCount: number, edgeCount: number) => void
   resetStore: () => void
 }
@@ -51,6 +59,10 @@ export const STORE_DEFAULTS: DisplayState & SimulationState & GraphMeta = {
   friction: 0.85,
   linkSpring: 1.0,
   decay: 5000,
+  edgePercentage: 100,
+  maxNeighbors: 0,
+  maxDegree: 0,
+  isKeepAtLeastOneEdge: false,
   isGraphLoaded: false,
   nodeCount: 0,
   edgeCount: 0,
@@ -76,6 +88,10 @@ export const useGraphStore = create<GraphStore>()((set) => ({
   setFriction: (v): void => set({ friction: v }),
   setLinkSpring: (v): void => set({ linkSpring: v }),
   setDecay: (v): void => set({ decay: v }),
+  setEdgePercentage: (v): void => set({ edgePercentage: v }),
+  setMaxNeighbors: (v): void => set({ maxNeighbors: v }),
+  setMaxDegree: (v): void => set({ maxDegree: v }),
+  setIsKeepAtLeastOneEdge: (v): void => set({ isKeepAtLeastOneEdge: v }),
   setGraphLoaded: (nodeCount, edgeCount): void => {
     set({ isGraphLoaded: true, nodeCount, edgeCount })
   },

@@ -27,6 +27,11 @@ interface InitMessage {
   linkIndices: Float32Array
 }
 
+interface UpdateLinksMessage {
+  type: 'updateLinks'
+  linkIndices: Float32Array
+}
+
 interface StatsConfig {
   propertyKey: string | null
   propertyType: PropertyType | null
@@ -42,15 +47,33 @@ interface UpdateMessage {
   edgeRgba: [number, number, number, number]
 }
 
-self.onmessage = (e: MessageEvent<InitMessage | UpdateMessage>): void => {
+// Cache last update params so we can recompute when links change
+let lastUpdateParams: UpdateMessage | null = null
+
+self.onmessage = (e: MessageEvent<InitMessage | UpdateLinksMessage | UpdateMessage>): void => {
   const input = e.data
 
   if (input.type === 'init') {
     storedColumns = input.propertyColumns
     storedLinkIndices = input.linkIndices
+    lastUpdateParams = null
     return
   }
 
+  if (input.type === 'updateLinks') {
+    storedLinkIndices = input.linkIndices
+    // Recompute appearance with new links if we have cached params
+    if (lastUpdateParams) {
+      computeAppearance(lastUpdateParams)
+    }
+    return
+  }
+
+  lastUpdateParams = input
+  computeAppearance(input)
+}
+
+function computeAppearance(input: UpdateMessage): void {
   const { nodeCount, filters, gradientConfig, statsConfig, defaultRgba, edgeRgba } = input
   const linkIndices = storedLinkIndices
 

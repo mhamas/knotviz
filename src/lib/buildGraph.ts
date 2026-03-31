@@ -92,17 +92,42 @@ export function buildGraph(nullDefaultResult: NullDefaultResult): CosmosGraphDat
     console.warn(`Skipped ${skippedEdges} edges referencing unknown node ids`)
   }
 
+  const finalLinkIndices = skippedEdges > 0 ? linkIndices.subarray(0, validEdgeCount * 2) : linkIndices
+  const finalEdgeSources = skippedEdges > 0 ? edgeSources.subarray(0, validEdgeCount) : edgeSources
+  const finalEdgeTargets = skippedEdges > 0 ? edgeTargets.subarray(0, validEdgeCount) : edgeTargets
+  const edgeWeights = hasAnyWeight ? new Float32Array(edgeWeightsList) : undefined
+
+  // Pre-sort edge indices by weight descending (for edge filtering sliders)
+  const edgeSortOrder = new Uint32Array(validEdgeCount)
+  for (let i = 0; i < validEdgeCount; i++) edgeSortOrder[i] = i
+  if (edgeWeights) {
+    edgeSortOrder.sort((a, b) => edgeWeights[b] - edgeWeights[a])
+  }
+
+  // Compute max degree (max edges touching any single node)
+  const degree = new Uint32Array(nodeCount)
+  for (let i = 0; i < validEdgeCount; i++) {
+    degree[finalEdgeSources[i]]++
+    degree[finalEdgeTargets[i]]++
+  }
+  let maxDegree = 0
+  for (let i = 0; i < nodeCount; i++) {
+    if (degree[i] > maxDegree) maxDegree = degree[i]
+  }
+
   return {
     nodeCount,
     nodeIds,
     nodeLabels,
     nodeIndexMap,
     initialPositions,
-    linkIndices: skippedEdges > 0 ? linkIndices.subarray(0, validEdgeCount * 2) : linkIndices,
+    linkIndices: finalLinkIndices,
     positionMode,
-    edgeSources: skippedEdges > 0 ? edgeSources.subarray(0, validEdgeCount) : edgeSources,
-    edgeTargets: skippedEdges > 0 ? edgeTargets.subarray(0, validEdgeCount) : edgeTargets,
+    edgeSources: finalEdgeSources,
+    edgeTargets: finalEdgeTargets,
     edgeLabels: edgeLabelsList,
-    edgeWeights: hasAnyWeight ? new Float32Array(edgeWeightsList) : undefined,
+    edgeWeights,
+    edgeSortOrder,
+    maxDegree,
   }
 }

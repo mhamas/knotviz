@@ -227,4 +227,8 @@ export interface CosmosGraphData {
   edgeLabels: (string | undefined)[]
   /** Edge weights (for export, undefined if no edges have weight). */
   edgeWeights: Float32Array | undefined
+  /** Edge indices sorted by weight descending (for edge filtering). */
+  edgeSortOrder: Uint32Array
+  /** Maximum number of edges touching any single node. */
+  maxDegree: number
 }

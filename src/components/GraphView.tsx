@@ -83,6 +83,8 @@ export function GraphView({
     stopSimulation,
     restartSimulation,
     cosmosRef,
+    visibleNodes,
+    keptEdgeIndices,
   } = useCosmos(
     cosmosData,
     propertyColumns,
@@ -154,9 +156,11 @@ export function GraphView({
     if (!cosmos) return
     const positions = cosmos.getPointPositions()
 
-    // Reconstruct nodes lazily from compact stores + property columns
+    // Only export visible nodes (pass property filters)
+    const isNodeVisible = visibleNodes
     const nodes = []
     for (let i = 0; i < cosmosData.nodeCount; i++) {
+      if (isNodeVisible && !isNodeVisible[i]) continue
       const node: Record<string, unknown> = {
         id: cosmosData.nodeIds[i],
         x: positions[i * 2] ?? 0,
@@ -172,12 +176,17 @@ export function GraphView({
       nodes.push(node)
     }
 
-    // Reconstruct edges from compact stores
+    // Only export edges that survive simulation filtering AND have both endpoints visible
+    const visibleNodeSet = isNodeVisible
     const edges = []
-    for (let i = 0; i < cosmosData.edgeSources.length; i++) {
+    for (let k = 0; k < keptEdgeIndices.length; k++) {
+      const i = keptEdgeIndices[k]
+      const srcIdx = cosmosData.edgeSources[i]
+      const tgtIdx = cosmosData.edgeTargets[i]
+      if (visibleNodeSet && (!visibleNodeSet[srcIdx] || !visibleNodeSet[tgtIdx])) continue
       const edge: Record<string, unknown> = {
-        source: cosmosData.nodeIds[cosmosData.edgeSources[i]],
-        target: cosmosData.nodeIds[cosmosData.edgeTargets[i]],
+        source: cosmosData.nodeIds[srcIdx],
+        target: cosmosData.nodeIds[tgtIdx],
       }
       if (cosmosData.edgeLabels[i]) edge.label = cosmosData.edgeLabels[i]
       if (cosmosData.edgeWeights?.[i]) edge.weight = cosmosData.edgeWeights[i]
@@ -192,7 +201,7 @@ export function GraphView({
     a.download = filename
     a.click()
     URL.revokeObjectURL(url)
-  }, [cosmosRef, cosmosData, propertyMetas, propertyColumns, filename])
+  }, [cosmosRef, cosmosData, propertyMetas, propertyColumns, filename, visibleNodes, keptEdgeIndices])
 
   return (
     <div className="flex h-screen w-screen">

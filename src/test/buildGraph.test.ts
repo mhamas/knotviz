@@ -119,4 +119,64 @@ describe('buildGraph', () => {
     const cosmosData = buildGraph(result)
     expect(cosmosData.edgeLabels[0]).toBe('knows')
   })
+
+  it('computes edgeSortOrder sorted by weight descending', () => {
+    const result = makeResult({
+      version: '1',
+      nodes: [{ id: '1' }, { id: '2' }, { id: '3' }],
+      edges: [
+        { source: '1', target: '2', weight: 0.3 },
+        { source: '2', target: '3', weight: 0.9 },
+        { source: '3', target: '1', weight: 0.6 },
+      ],
+    })
+    const cosmosData = buildGraph(result)
+    expect(cosmosData.edgeSortOrder).toBeDefined()
+    expect(cosmosData.edgeSortOrder.length).toBe(3)
+    // Highest weight first: edge1 (0.9), edge2 (0.6), edge0 (0.3)
+    expect(cosmosData.edgeSortOrder[0]).toBe(1)
+    expect(cosmosData.edgeSortOrder[1]).toBe(2)
+    expect(cosmosData.edgeSortOrder[2]).toBe(0)
+  })
+
+  it('edgeSortOrder is identity when no edges have weights', () => {
+    const result = makeResult({
+      version: '1',
+      nodes: [{ id: '1' }, { id: '2' }, { id: '3' }],
+      edges: [
+        { source: '1', target: '2' },
+        { source: '2', target: '3' },
+      ],
+    })
+    const cosmosData = buildGraph(result)
+    expect(cosmosData.edgeSortOrder.length).toBe(2)
+    // No weights → sort is stable identity
+    expect(cosmosData.edgeSortOrder[0]).toBe(0)
+    expect(cosmosData.edgeSortOrder[1]).toBe(1)
+  })
+
+  it('computes maxDegree correctly', () => {
+    // Star graph: node 1 connects to 2,3,4 → degree 3
+    const result = makeResult({
+      version: '1',
+      nodes: [{ id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }],
+      edges: [
+        { source: '1', target: '2' },
+        { source: '1', target: '3' },
+        { source: '1', target: '4' },
+      ],
+    })
+    const cosmosData = buildGraph(result)
+    expect(cosmosData.maxDegree).toBe(3)
+  })
+
+  it('maxDegree is 0 for graph with no edges', () => {
+    const result = makeResult({
+      version: '1',
+      nodes: [{ id: '1' }, { id: '2' }],
+      edges: [],
+    })
+    const cosmosData = buildGraph(result)
+    expect(cosmosData.maxDegree).toBe(0)
+  })
 })

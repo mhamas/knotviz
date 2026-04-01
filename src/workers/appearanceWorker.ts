@@ -169,10 +169,10 @@ function computeAppearance(input: UpdateMessage): void {
     }
   }
 
-  const msg = { pointColors, pointSizes, linkColors, matchingCount, stats }
+  const msg = { pointColors, pointSizes, linkColors, matchingCount, stats, visibleNodes: visible }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ;(self.postMessage as any)(msg, [
-    pointColors.buffer, pointSizes.buffer, linkColors.buffer,
+    pointColors.buffer, pointSizes.buffer, linkColors.buffer, visible.buffer,
   ])
 }
 

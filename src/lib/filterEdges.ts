@@ -1,3 +1,11 @@
+/** Result of edge filtering: filtered link indices + which original edges were kept. */
+export interface FilteredEdgesResult {
+  /** Filtered [src0,tgt0,src1,tgt1,…] ready for cosmos.setLinks(). */
+  linkIndices: Float32Array
+  /** Original edge indices that survived filtering (for metadata lookup). */
+  keptEdgeIndices: Uint32Array
+}
+
 /**
  * Filters edges by global weight percentage and per-node max neighbors.
  *
@@ -15,10 +23,10 @@
  * @param maxNeighbors - Max edges per node. Edges beyond this are dropped.
  * @param maxDegree - Max degree in the full graph (for fast-path check).
  * @param isKeepAtLeastOne - When true, the highest-weight edge per node is always kept.
- * @returns Filtered linkIndices Float32Array ready for cosmos.setLinks().
+ * @returns Filtered link indices and the original edge indices that were kept.
  *
  * @example
- * const filtered = filterEdges(data.linkIndices, data.edgeSortOrder, data.nodeCount, edgeCount, 50, 10, data.maxDegree, true)
+ * const { linkIndices, keptEdgeIndices } = filterEdges(data.linkIndices, data.edgeSortOrder, data.nodeCount, edgeCount, 50, 10, data.maxDegree, true)
  */
 export function filterEdges(
   fullLinkIndices: Float32Array,
@@ -29,10 +37,12 @@ export function filterEdges(
   maxNeighbors: number,
   maxDegree: number,
   isKeepAtLeastOne: boolean,
-): Float32Array {
+): FilteredEdgesResult {
   // Fast path: no filtering needed
   if (edgePercentage >= 100 && maxNeighbors >= maxDegree) {
-    return fullLinkIndices
+    const allIndices = new Uint32Array(totalEdgeCount)
+    for (let i = 0; i < totalEdgeCount; i++) allIndices[i] = i
+    return { linkIndices: fullLinkIndices, keptEdgeIndices: allIndices }
   }
 
   // Step 1: If keepAtLeastOne, find the best edge per node (first in sort order = highest weight)
@@ -63,6 +73,7 @@ export function filterEdges(
   // Max possible size: pctCount + protected edges
   const maxSize = protectedEdges ? totalEdgeCount : pctCount
   const result = new Float32Array(maxSize * 2)
+  const keptOriginal = new Uint32Array(maxSize)
   const keptSet = protectedEdges ? new Uint8Array(totalEdgeCount) : null
   let kept = 0
 
@@ -81,6 +92,7 @@ export function filterEdges(
 
     result[kept * 2] = src
     result[kept * 2 + 1] = tgt
+    keptOriginal[kept] = edgeIdx
     if (keptSet) keptSet[edgeIdx] = 1
     kept++
   }
@@ -92,10 +104,14 @@ export function filterEdges(
       if (protectedEdges[edgeIdx] && !keptSet![edgeIdx]) {
         result[kept * 2] = fullLinkIndices[edgeIdx * 2]
         result[kept * 2 + 1] = fullLinkIndices[edgeIdx * 2 + 1]
+        keptOriginal[kept] = edgeIdx
         kept++
       }
     }
   }
 
-  return result.subarray(0, kept * 2)
+  return {
+    linkIndices: result.subarray(0, kept * 2),
+    keptEdgeIndices: keptOriginal.subarray(0, kept),
+  }
 }

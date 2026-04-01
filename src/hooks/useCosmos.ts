@@ -55,6 +55,8 @@ export interface UseCosmosReturn {
   pauseSimulation: () => void
   restartSimulation: () => void
   cosmosRef: React.RefObject<CosmosGraph | null>
+  visibleNodes: Uint8Array | null
+  keptEdgeIndices: Uint32Array
 }
 
 /**
@@ -79,6 +81,7 @@ export function useCosmos(
   const hoverRef = useRef<HTMLDivElement | null>(null)
   const [isSimulationRunning, setIsSimulationRunning] = useState(false)
   const [matchingCount, setMatchingCount] = useState(0)
+  const [visibleNodes, setVisibleNodes] = useState<Uint8Array | null>(null)
   const [propertyStats, setPropertyStats] = useState<PropertyStatsResult | null>(null)
 
   // Store state
@@ -118,8 +121,9 @@ export function useCosmos(
 
   // Filtered link indices (edge % + max neighbors)
   const totalEdgeCount = data ? data.linkIndices.length / 2 : 0
-  const filteredLinkIndices = useMemo(() => {
-    if (!data) return new Float32Array(0)
+  const emptyEdgeResult = useMemo(() => ({ linkIndices: new Float32Array(0), keptEdgeIndices: new Uint32Array(0) }), [])
+  const filteredEdges = useMemo(() => {
+    if (!data) return emptyEdgeResult
     return filterEdges(
       data.linkIndices,
       data.edgeSortOrder,
@@ -130,7 +134,8 @@ export function useCosmos(
       data.maxDegree,
       isKeepAtLeastOneEdge,
     )
-  }, [data, totalEdgeCount, edgePercentage, maxNeighbors, isKeepAtLeastOneEdge])
+  }, [data, emptyEdgeResult, totalEdgeCount, edgePercentage, maxNeighbors, isKeepAtLeastOneEdge])
+  const filteredLinkIndices = filteredEdges.linkIndices
   const filteredLinksRef = useRef(filteredLinkIndices)
   filteredLinksRef.current = filteredLinkIndices
 
@@ -543,12 +548,13 @@ export function useCosmos(
     const worker = new AppearanceWorker()
     workerRef.current = worker
     worker.onmessage = (e: MessageEvent): void => {
-      const { pointColors, pointSizes, linkColors, matchingCount: mc, stats: s } = e.data as {
+      const { pointColors, pointSizes, linkColors, matchingCount: mc, stats: s, visibleNodes: vn } = e.data as {
         pointColors: Float32Array
         pointSizes: Float32Array
         linkColors: Float32Array
         matchingCount: number
         stats: PropertyStatsResult | null
+        visibleNodes: Uint8Array
       }
       const c = cosmosRef.current
       if (!c) return
@@ -559,6 +565,7 @@ export function useCosmos(
       // preserves current simulation state.
       c.render()
       setMatchingCount(mc)
+      setVisibleNodes(vn)
       setPropertyStats(s)
     }
     return () => { worker.terminate(); workerRef.current = null }
@@ -789,6 +796,8 @@ export function useCosmos(
     pauseSimulation,
     restartSimulation,
     cosmosRef,
+    visibleNodes,
+    keptEdgeIndices: filteredEdges.keptEdgeIndices,
   }
 }
 

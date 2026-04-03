@@ -352,9 +352,9 @@ export function LeftSidebar({
         <SectionHeading>Graph Info</SectionHeading>
         <div className="mt-2 space-y-1">
           <StatRow label="Nodes" value={nodeCount.toLocaleString()} />
-          <StatRow label="Edges" value={`${filteredEdgeCount.toLocaleString()} / ${edgeCount.toLocaleString()}`} />
-          <StatRow label="Max outgoing" value={String(finalMaxOutgoing)} />
-          <StatRow label="Max incoming" value={String(finalMaxIncoming)} />
+          <StatRow label="Edges" value={filteredEdgeCount === edgeCount ? edgeCount.toLocaleString() : `${filteredEdgeCount.toLocaleString()} / ${edgeCount.toLocaleString()}`} />
+          <StatRow label="Max outgoing edges" value={String(finalMaxOutgoing)} />
+          <StatRow label="Max incoming edges" value={String(finalMaxIncoming)} />
         </div>
       </div>
 

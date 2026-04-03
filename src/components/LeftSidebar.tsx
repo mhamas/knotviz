@@ -127,7 +127,8 @@ export function LeftSidebar({
   }
 
   return (
-    <div className="flex h-screen w-60 shrink-0 flex-col gap-4 border-r border-slate-200 bg-white p-4">
+    <div className="flex h-screen w-60 shrink-0 flex-col gap-2 border-r border-slate-200 bg-white px-4 pt-2 pb-4">
+      <img src="/logo.png" alt="Knotviz" className="h-auto w-24" />
       <div className={isDisabled ? 'pointer-events-none opacity-40' : ''}>
       {/* Simulation */}
       <div className="mt-2">

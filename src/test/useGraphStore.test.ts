@@ -11,6 +11,7 @@ describe('useGraphStore', () => {
     expect(state.nodeSize).toBe(3)
     expect(state.edgeSize).toBe(0.5)
     expect(state.isEdgesVisible).toBe(true)
+    expect(state.isEdgeDirectionality).toBe(false)
     expect(state.isNodeLabelsVisible).toBe(false)
     expect(state.isHighlightNeighbors).toBe(false)
     expect(state.repulsion).toBe(1.0)
@@ -39,6 +40,11 @@ describe('useGraphStore', () => {
   it('setIsEdgesVisible updates isEdgesVisible', () => {
     useGraphStore.getState().setIsEdgesVisible(false)
     expect(useGraphStore.getState().isEdgesVisible).toBe(false)
+  })
+
+  it('setIsEdgeDirectionality updates isEdgeDirectionality', () => {
+    useGraphStore.getState().setIsEdgeDirectionality(true)
+    expect(useGraphStore.getState().isEdgeDirectionality).toBe(true)
   })
 
   it('setIsNodeLabelsVisible updates isNodeLabelsVisible', () => {
@@ -92,6 +98,7 @@ describe('useGraphStore', () => {
     s.setNodeSize(10)
     s.setEdgeSize(2)
     s.setIsEdgesVisible(false)
+    s.setIsEdgeDirectionality(true)
     s.setIsNodeLabelsVisible(true)
     s.setIsHighlightNeighbors(true)
     s.setRepulsion(5)
@@ -111,6 +118,7 @@ describe('useGraphStore', () => {
     expect(reset.nodeSize).toBe(STORE_DEFAULTS.nodeSize)
     expect(reset.edgeSize).toBe(STORE_DEFAULTS.edgeSize)
     expect(reset.isEdgesVisible).toBe(STORE_DEFAULTS.isEdgesVisible)
+    expect(reset.isEdgeDirectionality).toBe(STORE_DEFAULTS.isEdgeDirectionality)
     expect(reset.isNodeLabelsVisible).toBe(STORE_DEFAULTS.isNodeLabelsVisible)
     expect(reset.isHighlightNeighbors).toBe(STORE_DEFAULTS.isHighlightNeighbors)
     expect(reset.repulsion).toBe(STORE_DEFAULTS.repulsion)

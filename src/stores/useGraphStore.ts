@@ -4,6 +4,7 @@ interface DisplayState {
   nodeSize: number
   edgeSize: number
   isEdgesVisible: boolean
+  isEdgeDirectionality: boolean
   isNodeLabelsVisible: boolean
   isHighlightNeighbors: boolean
 }
@@ -29,6 +30,7 @@ interface Actions {
   setNodeSize: (v: number) => void
   setEdgeSize: (v: number) => void
   setIsEdgesVisible: (v: boolean) => void
+  setIsEdgeDirectionality: (v: boolean) => void
   setIsNodeLabelsVisible: (v: boolean) => void
   setIsHighlightNeighbors: (v: boolean) => void
   setRepulsion: (v: number) => void
@@ -53,6 +55,7 @@ export const STORE_DEFAULTS: DisplayState & SimulationState & GraphMeta = {
   nodeSize: 3,
   edgeSize: 0.5,
   isEdgesVisible: true,
+  isEdgeDirectionality: false,
   isNodeLabelsVisible: false,
   isHighlightNeighbors: false,
   repulsion: 1.0,
@@ -82,6 +85,7 @@ export const useGraphStore = create<GraphStore>()((set) => ({
   setNodeSize: (v): void => set({ nodeSize: v }),
   setEdgeSize: (v): void => set({ edgeSize: v }),
   setIsEdgesVisible: (v): void => set({ isEdgesVisible: v }),
+  setIsEdgeDirectionality: (v): void => set({ isEdgeDirectionality: v }),
   setIsNodeLabelsVisible: (v): void => set({ isNodeLabelsVisible: v }),
   setIsHighlightNeighbors: (v): void => set({ isHighlightNeighbors: v }),
   setRepulsion: (v): void => set({ repulsion: v }),

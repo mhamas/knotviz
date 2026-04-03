@@ -88,6 +88,7 @@ export function useCosmos(
   const nodeSize = useGraphStore((s) => s.nodeSize)
   const edgeSize = useGraphStore((s) => s.edgeSize)
   const isEdgesVisible = useGraphStore((s) => s.isEdgesVisible)
+  const isEdgeDirectionality = useGraphStore((s) => s.isEdgeDirectionality)
   const isNodeLabelsVisible = useGraphStore((s) => s.isNodeLabelsVisible)
   const isHighlightNeighbors = useGraphStore((s) => s.isHighlightNeighbors)
   const repulsion = useGraphStore((s) => s.repulsion)
@@ -254,6 +255,8 @@ export function useCosmos(
       linkDefaultWidth: 1,
       linkWidthScale: edgeSize,
       renderLinks: isEdgesVisible,
+      linkDefaultArrows: isEdgeDirectionality,
+      linkArrowsSizeScale: 1.5,
       hoveredPointCursor: 'default',
       renderHoveredPointRing: true,
       hoveredPointRingColor: '#3b82f6',
@@ -488,6 +491,10 @@ export function useCosmos(
   useEffect(() => {
     cosmosRef.current?.setConfig({ renderLinks: isEdgesVisible })
   }, [isEdgesVisible])
+
+  useEffect(() => {
+    cosmosRef.current?.setConfig({ linkDefaultArrows: isEdgeDirectionality })
+  }, [isEdgeDirectionality])
 
   // ── Sync node labels ──
   // When toggled, render labels using stride sampling (reliable across all GPUs).

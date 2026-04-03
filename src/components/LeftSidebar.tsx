@@ -64,6 +64,7 @@ export function LeftSidebar({
   const nodeSize = useGraphStore((s) => s.nodeSize)
   const edgeSize = useGraphStore((s) => s.edgeSize)
   const isEdgesVisible = useGraphStore((s) => s.isEdgesVisible)
+  const isEdgeDirectionality = useGraphStore((s) => s.isEdgeDirectionality)
   const isNodeLabelsVisible = useGraphStore((s) => s.isNodeLabelsVisible)
   const isHighlightNeighbors = useGraphStore((s) => s.isHighlightNeighbors)
   const nodeCount = useGraphStore((s) => s.nodeCount)
@@ -79,6 +80,7 @@ export function LeftSidebar({
   const setNodeSize = useGraphStore((s) => s.setNodeSize)
   const setEdgeSize = useGraphStore((s) => s.setEdgeSize)
   const setIsEdgesVisible = useGraphStore((s) => s.setIsEdgesVisible)
+  const setIsEdgeDirectionality = useGraphStore((s) => s.setIsEdgeDirectionality)
   const setIsNodeLabelsVisible = useGraphStore((s) => s.setIsNodeLabelsVisible)
   const setIsHighlightNeighbors = useGraphStore((s) => s.setIsHighlightNeighbors)
 
@@ -292,6 +294,13 @@ export function LeftSidebar({
           label="Show edges"
           checked={isEdgesVisible}
           onCheckedChange={setIsEdgesVisible}
+        />
+
+        <SidebarCheckbox
+          label="Show edge directionality"
+          checked={isEdgeDirectionality}
+          onCheckedChange={setIsEdgeDirectionality}
+          help="Arrows indicating edge direction are drawn at the midpoint of each edge, so they may be hard to see on short or overlapping edges."
         />
 
         <SidebarCheckbox

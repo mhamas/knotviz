@@ -127,11 +127,10 @@ export function LeftSidebar({
   }
 
   return (
-    <div className="flex h-screen w-60 shrink-0 flex-col gap-2 border-r border-slate-200 bg-white px-4 pt-2 pb-4">
-      <img src="/logo.png" alt="Knotviz" className="h-auto w-24" />
+    <div className="flex h-screen w-60 shrink-0 flex-col gap-2 border-r border-slate-200 bg-white px-4 pt-4 pb-4">
       <div className={isDisabled ? 'pointer-events-none opacity-40' : ''}>
       {/* Simulation */}
-      <div className="mt-2">
+      <div>
         <CollapsibleSection
           label="Simulation"
           defaultOpen={isGraphLoaded && !hasPositions}
@@ -391,6 +390,7 @@ export function LeftSidebar({
       </AlertDialog>
       </div>
 
+      <img src="/logo.png" alt="Knotviz" className="h-auto w-24 opacity-60" />
     </div>
   )
 }

@@ -95,7 +95,7 @@ export function useCosmos(
   const linkSpring = useGraphStore((s) => s.linkSpring)
   const decay = useGraphStore((s) => s.decay)
   const edgePercentage = useGraphStore((s) => s.edgePercentage)
-  const maxNeighbors = useGraphStore((s) => s.maxNeighbors)
+  const maxOutgoing = useGraphStore((s) => s.maxOutgoing)
   const isKeepAtLeastOneEdge = useGraphStore((s) => s.isKeepAtLeastOneEdge)
 
   // Refs for callback closures
@@ -110,12 +110,12 @@ export function useCosmos(
   useEffect(() => { isHighlightNeighborsRef.current = isHighlightNeighbors }, [isHighlightNeighbors])
   useEffect(() => { isNodeLabelsVisibleRef.current = isNodeLabelsVisible }, [isNodeLabelsVisible])
 
-  // Mark graph as loaded + set maxDegree so sliders know bounds
+  // Mark graph as loaded + set maxOutgoingDegree so sliders know bounds
   useEffect(() => {
     if (data) {
       useGraphStore.getState().setGraphLoaded(data.nodeCount, data.linkIndices.length / 2)
-      useGraphStore.getState().setMaxDegree(data.maxDegree)
-      useGraphStore.getState().setMaxNeighbors(data.maxDegree)
+      useGraphStore.getState().setMaxOutgoingDegree(data.maxOutgoingDegree)
+      useGraphStore.getState().setMaxOutgoing(data.maxOutgoingDegree)
     }
   }, [data])
 
@@ -130,11 +130,11 @@ export function useCosmos(
       data.nodeCount,
       totalEdgeCount,
       edgePercentage,
-      maxNeighbors,
-      data.maxDegree,
+      maxOutgoing,
+      data.maxOutgoingDegree,
       isKeepAtLeastOneEdge,
     )
-  }, [data, emptyEdgeResult, totalEdgeCount, edgePercentage, maxNeighbors, isKeepAtLeastOneEdge])
+  }, [data, emptyEdgeResult, totalEdgeCount, edgePercentage, maxOutgoing, isKeepAtLeastOneEdge])
   const filteredLinkIndices = filteredEdges.linkIndices
   const filteredLinksRef = useRef(filteredLinkIndices)
   filteredLinksRef.current = filteredLinkIndices

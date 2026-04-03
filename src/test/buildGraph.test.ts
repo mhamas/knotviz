@@ -155,8 +155,8 @@ describe('buildGraph', () => {
     expect(cosmosData.edgeSortOrder[1]).toBe(1)
   })
 
-  it('computes maxDegree correctly', () => {
-    // Star graph: node 1 connects to 2,3,4 → degree 3
+  it('computes maxOutgoingDegree correctly', () => {
+    // Star graph: node 1 is source to 2,3,4 → outgoing degree 3
     const result = makeResult({
       version: '1',
       nodes: [{ id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }],
@@ -167,16 +167,32 @@ describe('buildGraph', () => {
       ],
     })
     const cosmosData = buildGraph(result)
-    expect(cosmosData.maxDegree).toBe(3)
+    expect(cosmosData.maxOutgoingDegree).toBe(3)
   })
 
-  it('maxDegree is 0 for graph with no edges', () => {
+  it('maxOutgoingDegree counts only outgoing edges', () => {
+    // Fan-in: nodes 2,3,4 all point to node 1 → node 1 has 0 outgoing
+    const result = makeResult({
+      version: '1',
+      nodes: [{ id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }],
+      edges: [
+        { source: '2', target: '1' },
+        { source: '3', target: '1' },
+        { source: '4', target: '1' },
+      ],
+    })
+    const cosmosData = buildGraph(result)
+    // Each source node has 1 outgoing edge
+    expect(cosmosData.maxOutgoingDegree).toBe(1)
+  })
+
+  it('maxOutgoingDegree is 0 for graph with no edges', () => {
     const result = makeResult({
       version: '1',
       nodes: [{ id: '1' }, { id: '2' }],
       edges: [],
     })
     const cosmosData = buildGraph(result)
-    expect(cosmosData.maxDegree).toBe(0)
+    expect(cosmosData.maxOutgoingDegree).toBe(0)
   })
 })

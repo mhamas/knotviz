@@ -14,8 +14,8 @@ interface SimulationState {
   linkSpring: number
   decay: number
   edgePercentage: number
-  maxNeighbors: number
-  maxDegree: number
+  maxOutgoing: number
+  maxOutgoingDegree: number
   isKeepAtLeastOneEdge: boolean
 }
 
@@ -36,8 +36,8 @@ interface Actions {
   setLinkSpring: (v: number) => void
   setDecay: (v: number) => void
   setEdgePercentage: (v: number) => void
-  setMaxNeighbors: (v: number) => void
-  setMaxDegree: (v: number) => void
+  setMaxOutgoing: (v: number) => void
+  setMaxOutgoingDegree: (v: number) => void
   setIsKeepAtLeastOneEdge: (v: boolean) => void
   setGraphLoaded: (nodeCount: number, edgeCount: number) => void
   resetStore: () => void
@@ -60,8 +60,8 @@ export const STORE_DEFAULTS: DisplayState & SimulationState & GraphMeta = {
   linkSpring: 1.0,
   decay: 5000,
   edgePercentage: 100,
-  maxNeighbors: 0,
-  maxDegree: 0,
+  maxOutgoing: 0,
+  maxOutgoingDegree: 0,
   isKeepAtLeastOneEdge: false,
   isGraphLoaded: false,
   nodeCount: 0,
@@ -89,8 +89,8 @@ export const useGraphStore = create<GraphStore>()((set) => ({
   setLinkSpring: (v): void => set({ linkSpring: v }),
   setDecay: (v): void => set({ decay: v }),
   setEdgePercentage: (v): void => set({ edgePercentage: v }),
-  setMaxNeighbors: (v): void => set({ maxNeighbors: v }),
-  setMaxDegree: (v): void => set({ maxDegree: v }),
+  setMaxOutgoing: (v): void => set({ maxOutgoing: v }),
+  setMaxOutgoingDegree: (v): void => set({ maxOutgoingDegree: v }),
   setIsKeepAtLeastOneEdge: (v): void => set({ isKeepAtLeastOneEdge: v }),
   setGraphLoaded: (nodeCount, edgeCount): void => {
     set({ isGraphLoaded: true, nodeCount, edgeCount })

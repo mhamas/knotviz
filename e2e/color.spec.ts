@@ -14,9 +14,16 @@ async function loadGraph(page: Page, name: string): Promise<void> {
   await expect(page.getByTestId('sigma-canvas')).toBeVisible()
 }
 
+/** Open the Colors panel (collapsed by default after graph load). */
+async function openColorsPanel(page: Page): Promise<void> {
+  await page.getByLabel('Toggle Colors panel').click()
+  await expect(page.getByTestId('color-property-select')).toBeVisible()
+}
+
 test.describe('Color Tab', () => {
   test.beforeEach(async ({ page }) => {
     await loadGraph(page, 'sample-graph.json')
+    await openColorsPanel(page)
   })
 
   test('shows empty state when no property selected', async ({ page }) => {
@@ -73,6 +80,7 @@ test.describe('Color Tab', () => {
   })
 
   test('color controls and filter controls are both visible', async ({ page }) => {
+    // Colors panel is already open from beforeEach; filters tab is also open by default
     await expect(page.getByTestId('color-property-select')).toBeVisible()
     await expect(page.getByTestId('filter-match-count')).toBeVisible()
   })

@@ -18,8 +18,8 @@ describe('useGraphStore', () => {
     expect(state.linkSpring).toBe(1.0)
     expect(state.decay).toBe(5000)
     expect(state.edgePercentage).toBe(100)
-    expect(state.maxNeighbors).toBe(0)
-    expect(state.maxDegree).toBe(0)
+    expect(state.maxOutgoing).toBe(0)
+    expect(state.maxOutgoingDegree).toBe(0)
     expect(state.isKeepAtLeastOneEdge).toBe(false)
     expect(state.isGraphLoaded).toBe(false)
     expect(state.nodeCount).toBe(0)
@@ -71,14 +71,14 @@ describe('useGraphStore', () => {
     expect(useGraphStore.getState().edgePercentage).toBe(50)
   })
 
-  it('setMaxNeighbors updates maxNeighbors', () => {
-    useGraphStore.getState().setMaxNeighbors(10)
-    expect(useGraphStore.getState().maxNeighbors).toBe(10)
+  it('setMaxOutgoing updates maxOutgoing', () => {
+    useGraphStore.getState().setMaxOutgoing(10)
+    expect(useGraphStore.getState().maxOutgoing).toBe(10)
   })
 
-  it('setMaxDegree updates maxDegree', () => {
-    useGraphStore.getState().setMaxDegree(42)
-    expect(useGraphStore.getState().maxDegree).toBe(42)
+  it('setMaxOutgoingDegree updates maxOutgoingDegree', () => {
+    useGraphStore.getState().setMaxOutgoingDegree(42)
+    expect(useGraphStore.getState().maxOutgoingDegree).toBe(42)
   })
 
   it('setIsKeepAtLeastOneEdge updates isKeepAtLeastOneEdge', () => {
@@ -99,8 +99,8 @@ describe('useGraphStore', () => {
     s.setLinkSpring(2)
     s.setDecay(10000)
     s.setEdgePercentage(25)
-    s.setMaxNeighbors(5)
-    s.setMaxDegree(20)
+    s.setMaxOutgoing(5)
+    s.setMaxOutgoingDegree(20)
     s.setIsKeepAtLeastOneEdge(true)
     s.setGraphLoaded(50, 100)
 
@@ -116,8 +116,8 @@ describe('useGraphStore', () => {
     expect(reset.repulsion).toBe(STORE_DEFAULTS.repulsion)
     expect(reset.friction).toBe(STORE_DEFAULTS.friction)
     expect(reset.edgePercentage).toBe(STORE_DEFAULTS.edgePercentage)
-    expect(reset.maxNeighbors).toBe(STORE_DEFAULTS.maxNeighbors)
-    expect(reset.maxDegree).toBe(STORE_DEFAULTS.maxDegree)
+    expect(reset.maxOutgoing).toBe(STORE_DEFAULTS.maxOutgoing)
+    expect(reset.maxOutgoingDegree).toBe(STORE_DEFAULTS.maxOutgoingDegree)
     expect(reset.isKeepAtLeastOneEdge).toBe(STORE_DEFAULTS.isKeepAtLeastOneEdge)
     expect(reset.isGraphLoaded).toBe(false)
     expect(reset.nodeCount).toBe(0)

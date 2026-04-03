@@ -58,8 +58,8 @@ export function LeftSidebar({
   const friction = useGraphStore((s) => s.friction)
   const linkSpring = useGraphStore((s) => s.linkSpring)
   const edgePercentage = useGraphStore((s) => s.edgePercentage)
-  const maxNeighbors = useGraphStore((s) => s.maxNeighbors)
-  const maxDegree = useGraphStore((s) => s.maxDegree)
+  const maxOutgoing = useGraphStore((s) => s.maxOutgoing)
+  const maxOutgoingDegree = useGraphStore((s) => s.maxOutgoingDegree)
   const isKeepAtLeastOneEdge = useGraphStore((s) => s.isKeepAtLeastOneEdge)
   const nodeSize = useGraphStore((s) => s.nodeSize)
   const edgeSize = useGraphStore((s) => s.edgeSize)
@@ -74,7 +74,7 @@ export function LeftSidebar({
   const setFriction = useGraphStore((s) => s.setFriction)
   const setLinkSpring = useGraphStore((s) => s.setLinkSpring)
   const setEdgePercentage = useGraphStore((s) => s.setEdgePercentage)
-  const setMaxNeighbors = useGraphStore((s) => s.setMaxNeighbors)
+  const setMaxOutgoing = useGraphStore((s) => s.setMaxOutgoing)
   const setIsKeepAtLeastOneEdge = useGraphStore((s) => s.setIsKeepAtLeastOneEdge)
   const setNodeSize = useGraphStore((s) => s.setNodeSize)
   const setEdgeSize = useGraphStore((s) => s.setEdgeSize)
@@ -88,7 +88,7 @@ export function LeftSidebar({
   const debouncedFrictionChange = useDebounce(setFriction, 100)
   const debouncedLinkSpringChange = useDebounce(setLinkSpring, 100)
   const debouncedEdgePercentageChange = useDebounce(setEdgePercentage, 100)
-  const debouncedMaxNeighborsChange = useDebounce(setMaxNeighbors, 100)
+  const debouncedMaxOutgoingChange = useDebounce(setMaxOutgoing, 100)
   // Display sliders use short debounce — they only change GPU uniforms, no worker involved
   const debouncedNodeSizeChange = useDebounce(setNodeSize, 30)
   const debouncedEdgeSizeChange = useDebounce(setEdgeSize, 30)
@@ -219,7 +219,7 @@ export function LeftSidebar({
                 label="Edges to keep (%)"
                 value={edgePercentage}
                 formatValue={(v): string => `${Math.round(v)}%`}
-                help="Keep only the top X% of edges by weight. Edges are sorted by weight (highest first). Lower values remove weak edges from both the simulation and display. Applied before the max neighbors limit."
+                help="Keep only the top X% of edges by weight. Edges are sorted by weight (highest first). Lower values remove weak edges from both the simulation and display. Applied before the max outgoing limit."
                 min={0}
                 max={100}
                 step={1}
@@ -231,18 +231,18 @@ export function LeftSidebar({
               />
 
               <LabeledSlider
-                key={maxDegree}
-                label="Max neighbors per node"
-                value={maxNeighbors}
+                key={maxOutgoingDegree}
+                label="Max outgoing edges per node"
+                value={maxOutgoing}
                 formatValue={(v): string => String(Math.round(v))}
-                help={`Limit the maximum number of edges per node (0–${maxDegree || 0}). For each node, keeps the highest-weight edges up to this limit. Applied after the edge percentage filter.`}
+                help={`Limit the maximum number of outgoing edges per node (0–${maxOutgoingDegree || 0}). For each source node, keeps the highest-weight outgoing edges up to this limit. Applied after the edge percentage filter.`}
                 min={0}
-                max={maxDegree || 1}
+                max={maxOutgoingDegree || 1}
                 step={1}
-                defaultValue={[maxNeighbors]}
+                defaultValue={[maxOutgoing]}
                 onValueChange={(value): void => {
                   const v = Array.isArray(value) ? value[0] : value
-                  debouncedMaxNeighborsChange(Math.round(v))
+                  debouncedMaxOutgoingChange(Math.round(v))
                 }}
               />
             </div>
@@ -251,7 +251,7 @@ export function LeftSidebar({
               label="Always keep strongest edge per node"
               checked={isKeepAtLeastOneEdge}
               onCheckedChange={setIsKeepAtLeastOneEdge}
-              help="When checked, each node's highest-weight edge is always kept regardless of the Edge % and Max neighbors filters above."
+              help="When checked, each node's highest-weight edge is always kept regardless of the Edge % and Max outgoing filters above."
             />
 
           </div>

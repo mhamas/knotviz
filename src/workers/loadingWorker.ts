@@ -191,7 +191,7 @@ interface ProcessResult {
   edgeLabels: (string | undefined)[]
   edgeWeights: Float32Array | undefined
   edgeSortOrder: Uint32Array
-  maxDegree: number
+  maxOutgoingDegree: number
   propertyColumns: Record<string, (number | string | boolean | undefined)[]>
   propertyMetas: PropertyMeta[]
   replacementCount: number
@@ -341,15 +341,14 @@ class GraphBuilder {
       edgeSortOrder.sort((a, b) => edgeWeights[b] - edgeWeights[a])
     }
 
-    // Compute max degree (max edges touching any single node)
-    const degree = new Uint32Array(nodeCount)
+    // Compute max outgoing degree (max outgoing edges from any single node)
+    const outDegree = new Uint32Array(nodeCount)
     for (let i = 0; i < edgeCount; i++) {
-      degree[edgeSources[i]]++
-      degree[edgeTargets[i]]++
+      outDegree[edgeSources[i]]++
     }
-    let maxDegree = 0
+    let maxOutgoingDegree = 0
     for (let i = 0; i < nodeCount; i++) {
-      if (degree[i] > maxDegree) maxDegree = degree[i]
+      if (outDegree[i] > maxOutgoingDegree) maxOutgoingDegree = outDegree[i]
     }
 
     return {
@@ -365,7 +364,7 @@ class GraphBuilder {
       edgeLabels: this.edgeLabelList,
       edgeWeights,
       edgeSortOrder,
-      maxDegree,
+      maxOutgoingDegree,
       propertyColumns: this.propertyColumns as Record<string, (number | string | boolean | undefined)[]>,
       propertyMetas,
       replacementCount,

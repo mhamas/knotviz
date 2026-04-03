@@ -7,12 +7,12 @@ export interface FilteredEdgesResult {
 }
 
 /**
- * Filters edges by global weight percentage and per-node max neighbors.
+ * Filters edges by global weight percentage and per-node max outgoing edges.
  *
  * Order of application:
  * 1. If `isKeepAtLeastOne`, pre-mark the highest-weight edge per node as protected.
  * 2. Keep top `edgePercentage`% of edges by weight (using pre-sorted order).
- * 3. From those, limit each node to at most `maxNeighbors` edges (highest weight kept).
+ * 3. From those, limit each node to at most `maxOutgoing` outgoing edges (highest weight kept).
  * 4. Merge in any protected edges that weren't already kept.
  *
  * @param fullLinkIndices - Original [src0,tgt0,src1,tgt1,…] from buildGraph.
@@ -20,13 +20,13 @@ export interface FilteredEdgesResult {
  * @param nodeCount - Total number of nodes (for degree array allocation).
  * @param totalEdgeCount - Total number of edges in the full graph.
  * @param edgePercentage - 0–100, percentage of edges to keep (by weight).
- * @param maxNeighbors - Max edges per node. Edges beyond this are dropped.
- * @param maxDegree - Max degree in the full graph (for fast-path check).
+ * @param maxOutgoing - Max outgoing edges per source node. Edges beyond this are dropped.
+ * @param maxOutgoingDegree - Max outgoing degree in the full graph (for fast-path check).
  * @param isKeepAtLeastOne - When true, the highest-weight edge per node is always kept.
  * @returns Filtered link indices and the original edge indices that were kept.
  *
  * @example
- * const { linkIndices, keptEdgeIndices } = filterEdges(data.linkIndices, data.edgeSortOrder, data.nodeCount, edgeCount, 50, 10, data.maxDegree, true)
+ * const { linkIndices, keptEdgeIndices } = filterEdges(data.linkIndices, data.edgeSortOrder, data.nodeCount, edgeCount, 50, 10, data.maxOutgoingDegree, true)
  */
 export function filterEdges(
   fullLinkIndices: Float32Array,
@@ -34,12 +34,12 @@ export function filterEdges(
   nodeCount: number,
   totalEdgeCount: number,
   edgePercentage: number,
-  maxNeighbors: number,
-  maxDegree: number,
+  maxOutgoing: number,
+  maxOutgoingDegree: number,
   isKeepAtLeastOne: boolean,
 ): FilteredEdgesResult {
   // Fast path: no filtering needed
-  if (edgePercentage >= 100 && maxNeighbors >= maxDegree) {
+  if (edgePercentage >= 100 && maxOutgoing >= maxOutgoingDegree) {
     const allIndices = new Uint32Array(totalEdgeCount)
     for (let i = 0; i < totalEdgeCount; i++) allIndices[i] = i
     return { linkIndices: fullLinkIndices, keptEdgeIndices: allIndices }
@@ -67,9 +67,9 @@ export function filterEdges(
     ? 0
     : Math.ceil(totalEdgeCount * edgePercentage / 100)
 
-  // Step 3: Apply percentage + max-neighbors filter
-  const isNeighborLimited = maxNeighbors < maxDegree
-  const degree = isNeighborLimited ? new Uint32Array(nodeCount) : null
+  // Step 3: Apply percentage + max-outgoing filter (only source node degree is capped)
+  const isOutgoingLimited = maxOutgoing < maxOutgoingDegree
+  const outDegree = isOutgoingLimited ? new Uint32Array(nodeCount) : null
   // Max possible size: pctCount + protected edges
   const maxSize = protectedEdges ? totalEdgeCount : pctCount
   const result = new Float32Array(maxSize * 2)
@@ -82,12 +82,11 @@ export function filterEdges(
     const src = fullLinkIndices[edgeIdx * 2]
     const tgt = fullLinkIndices[edgeIdx * 2 + 1]
 
-    if (degree) {
-      if (degree[src] >= maxNeighbors || degree[tgt] >= maxNeighbors) {
+    if (outDegree) {
+      if (outDegree[src] >= maxOutgoing) {
         continue
       }
-      degree[src]++
-      degree[tgt]++
+      outDegree[src]++
     }
 
     result[kept * 2] = src

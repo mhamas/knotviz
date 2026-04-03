@@ -296,10 +296,15 @@ function ColorLegend({ state, selectedType, propertyColumns, filters, stops }: L
     return <DiscreteLegend labels={labels} stops={colorStops} />
   }
 
-  // string: collect distinct values, filtered to active selection if a filter is enabled
+  // string / string[]: collect distinct values, filtered to active selection if a filter is enabled
   const distinct = new Set<string>()
   for (let i = 0; i < col.length; i++) {
-    if (typeof col[i] === 'string') distinct.add(col[i] as string)
+    const v = col[i]
+    if (typeof v === 'string') {
+      distinct.add(v)
+    } else if (Array.isArray(v)) {
+      if (typeof v[0] === 'string') distinct.add(v[0])
+    }
   }
   const filteredLabels = filterStringLegend(Array.from(distinct).sort(), filters.get(state.propertyKey))
   return <DiscreteLegend labels={filteredLabels} stops={stops} />
@@ -426,7 +431,7 @@ export function filterStringLegend(
   allLabels: string[],
   filter: FilterState | undefined,
 ): string[] {
-  if (filter?.type === 'string' && filter.isEnabled && filter.selectedValues.size > 0) {
+  if ((filter?.type === 'string' || filter?.type === 'string[]') && filter.isEnabled && filter.selectedValues.size > 0) {
     return allLabels.filter((v) => filter.selectedValues.has(v))
   }
   return allLabels

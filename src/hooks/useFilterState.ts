@@ -6,11 +6,12 @@ import type {
   FilterState,
   NumberFilterState,
   PropertyMeta,
+  StringArrayFilterState,
   StringFilterState,
 } from '../types'
 
 /** Columnar property values indexed by node index. */
-export type PropertyColumns = Record<string, (number | string | boolean | undefined)[]>
+export type PropertyColumns = Record<string, (number | string | boolean | string[] | undefined)[]>
 
 export interface FilterStateHandle {
   filters: FilterMap
@@ -78,6 +79,25 @@ function initializeFilters(
         selectedValues: new Set<string>(),
         allValues,
       } satisfies StringFilterState)
+    } else if (meta.type === 'string[]') {
+      const distinct = new Set<string>()
+      if (col) {
+        for (let i = 0; i < col.length; i++) {
+          const v = col[i]
+          if (Array.isArray(v)) {
+            for (const s of v) {
+              if (typeof s === 'string') distinct.add(s)
+            }
+          }
+        }
+      }
+      const allValues = Array.from(distinct).sort()
+      filters.set(meta.key, {
+        type: 'string[]',
+        isEnabled: false,
+        selectedValues: new Set<string>(),
+        allValues,
+      } satisfies StringArrayFilterState)
     } else if (meta.type === 'date') {
       let domainMin = '1970-01-01'
       let domainMax = '1970-01-01'

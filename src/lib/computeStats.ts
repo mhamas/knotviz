@@ -138,7 +138,7 @@ export function computeCategoricalStats(values: (string | boolean)[]): Categoric
  */
 export function computeFilteredStats(
   visible: Uint8Array,
-  column: (number | string | boolean | undefined)[],
+  column: (number | string | boolean | string[] | undefined)[],
   propType: PropertyType,
 ): PropertyStatsResult | null {
   if (propType === 'number') {

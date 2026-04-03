@@ -4,6 +4,7 @@ import { detectPropertyTypes } from './detectPropertyTypes'
 const TYPE_DEFAULTS: Record<PropertyType, PropertyValue> = {
   number: 0,
   string: '',
+  'string[]': [],
   boolean: false,
   date: '1970-01-01',
 }

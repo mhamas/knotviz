@@ -31,6 +31,7 @@ export function detectPropertyTypes(nodes: NodeInput[]): Map<string, PropertyTyp
     isAllBoolean: boolean
     isAllNumber: boolean
     isAllDate: boolean
+    isAllStringArray: boolean
   }>()
 
   for (let i = 0; i < nodes.length; i++) {
@@ -39,7 +40,7 @@ export function detectPropertyTypes(nodes: NodeInput[]): Map<string, PropertyTyp
     for (const key of Object.keys(props)) {
       let state = keyState.get(key)
       if (!state) {
-        state = { nonNullCount: 0, isAllBoolean: true, isAllNumber: true, isAllDate: true }
+        state = { nonNullCount: 0, isAllBoolean: true, isAllNumber: true, isAllDate: true, isAllStringArray: true }
         keyState.set(key, state)
       }
 
@@ -47,9 +48,12 @@ export function detectPropertyTypes(nodes: NodeInput[]): Map<string, PropertyTyp
       if (value === null || value === undefined) continue
       state.nonNullCount++
 
+      const isStringArray = Array.isArray(value) && value.every((v: unknown) => typeof v === 'string')
+
       if (state.isAllBoolean && typeof value !== 'boolean') state.isAllBoolean = false
       if (state.isAllNumber && typeof value !== 'number') state.isAllNumber = false
       if (state.isAllDate && !(typeof value === 'string' && ISO_DATE_RE.test(value))) state.isAllDate = false
+      if (state.isAllStringArray && !isStringArray) state.isAllStringArray = false
     }
   }
 
@@ -63,6 +67,8 @@ export function detectPropertyTypes(nodes: NodeInput[]): Map<string, PropertyTyp
       result.set(key, 'number')
     } else if (state.isAllDate) {
       result.set(key, 'date')
+    } else if (state.isAllStringArray) {
+      result.set(key, 'string[]')
     } else {
       result.set(key, 'string')
     }

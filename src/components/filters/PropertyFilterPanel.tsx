@@ -77,6 +77,12 @@ export function PropertyFilterPanel({
             onChange={onStringChange}
           />
         )}
+        {filterState.type === 'string[]' && onStringChange && (
+          <StringFilter
+            state={filterState as unknown as StringFilterState}
+            onChange={onStringChange}
+          />
+        )}
         {filterState.type === 'date' && onDateChange && (
           <DateFilter
             state={filterState as DateFilterState}

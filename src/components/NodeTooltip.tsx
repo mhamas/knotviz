@@ -32,6 +32,9 @@ function formatValue(value: PropertyValue, propertyType: string): string {
   if (propertyType === 'date' && typeof value === 'string') {
     return value
   }
+  if (propertyType === 'string[]' && Array.isArray(value)) {
+    return value.join(', ')
+  }
   return String(value)
 }
 

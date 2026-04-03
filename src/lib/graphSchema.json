@@ -37,12 +37,13 @@
           },
           "properties": {
             "type": "object",
-            "description": "Arbitrary key-value pairs for the node. Values can be number, string, or boolean. ISO 8601 date strings (e.g. \"2024-01-15\") are auto-detected as dates.",
+            "description": "Arbitrary key-value pairs for the node. Values can be number, string, boolean, or array of strings. ISO 8601 date strings (e.g. \"2024-01-15\") are auto-detected as dates.",
             "additionalProperties": {
               "oneOf": [
                 { "type": "number" },
                 { "type": "string" },
-                { "type": "boolean" }
+                { "type": "boolean" },
+                { "type": "array", "items": { "type": "string" } }
               ]
             }
           }

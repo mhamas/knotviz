@@ -5,7 +5,7 @@
 
 /** Serializable filter state (Sets converted to arrays for transfer). */
 export interface SerializableFilter {
-  type: 'number' | 'boolean' | 'string' | 'date'
+  type: 'number' | 'boolean' | 'string' | 'string[]' | 'date'
   isEnabled: boolean
   min?: number
   max?: number
@@ -33,6 +33,15 @@ export function passesFilter(value: unknown, filter: SerializableFilter): boolea
     case 'string': {
       const set = filter.selectedSet as Set<string> | undefined
       return !set || set.size === 0 || (typeof value === 'string' && set.has(value))
+    }
+    case 'string[]': {
+      const set = filter.selectedSet as Set<string> | undefined
+      if (!set || set.size === 0) return true
+      if (!Array.isArray(value)) return false
+      for (const s of value) {
+        if (typeof s === 'string' && set.has(s)) return true
+      }
+      return false
     }
     case 'date':
       return typeof value === 'string' && value >= filter.after! && value <= filter.before!

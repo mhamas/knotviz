@@ -26,9 +26,9 @@ Production-grade graph visualization tool. Prioritize performance, correctness, 
 
 The app accepts a single `.json` file dropped onto the drop zone. The file must conform to a versioned JSON schema (schema stored in `src/lib/graphSchema.json`). On load, the file is validated against the schema before rendering.
 
-**Top-level fields:** `version` (required, string — e.g. `"1"`), `nodes` (array), `edges` (array). **Node fields:** `id` (required), `label` (optional), `properties` (optional — key/value pairs where values are `number`, `string`, `boolean`, or ISO 8601 date strings). **Edge fields:** `source`, `target` (both required), `label` (optional).
+**Top-level fields:** `version` (required, string — e.g. `"1"`), `nodes` (array), `edges` (array). **Node fields:** `id` (required), `label` (optional), `properties` (optional — key/value pairs where values are `number`, `string`, `boolean`, `string[]` (array of strings), or ISO 8601 date strings). **Edge fields:** `source`, `target` (both required), `label` (optional).
 
-Date property values are stored and filtered as **ISO 8601 strings** — no conversion to milliseconds. Elapsed time (e.g. "1,423 days ago") is computed at display time in the tooltip only. Missing property values on a node are **replaced with type defaults on load**: number → `0`, string → `""`, boolean → `false`, date → `"1970-01-01"`. If any values were defaulted, a blocking modal is shown on load displaying the total replacement count; the user may cancel the load or confirm and proceed.
+Date property values are stored and filtered as **ISO 8601 strings** — no conversion to milliseconds. Elapsed time (e.g. "1,423 days ago") is computed at display time in the tooltip only. Missing property values on a node are **replaced with type defaults on load**: number → `0`, string → `""`, string[] → `[]`, boolean → `false`, date → `"1970-01-01"`. If any values were defaulted, a blocking modal is shown on load displaying the total replacement count; the user may cancel the load or confirm and proceed.
 
 ---
 

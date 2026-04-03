@@ -1,15 +1,16 @@
 // ─── Input schema types (as stored in JSON) ───────────────────────────────
 
 /** Raw property value as it appears in JSON. Booleans are native JS booleans;
- *  dates are ISO 8601 strings; numbers and strings are their native types. */
-export type PropertyValue = number | string | boolean
+ *  dates are ISO 8601 strings; numbers and strings are their native types.
+ *  Arrays of strings are supported as a multi-valued property (string[]). */
+export type PropertyValue = number | string | boolean | string[]
 
 export interface NodeInput {
   id: string
   label?: string
   x?: number
   y?: number
-  properties?: Record<string, PropertyValue>
+  properties?: Record<string, PropertyValue | null>
 }
 
 export interface EdgeInput {
@@ -27,7 +28,7 @@ export interface GraphData {
 
 // ─── Property system ───────────────────────────────────────────────────────
 
-export type PropertyType = 'number' | 'string' | 'date' | 'boolean'
+export type PropertyType = 'number' | 'string' | 'string[]' | 'date' | 'boolean'
 
 export interface PropertyMeta {
   key: string
@@ -52,6 +53,13 @@ export interface StringFilterState {
   allValues: string[]
 }
 
+export interface StringArrayFilterState {
+  type: 'string[]'
+  isEnabled: boolean
+  selectedValues: Set<string>
+  allValues: string[]
+}
+
 export interface DateFilterState {
   type: 'date'
   isEnabled: boolean
@@ -70,6 +78,7 @@ export interface BooleanFilterState {
 export type FilterState =
   | NumberFilterState
   | StringFilterState
+  | StringArrayFilterState
   | DateFilterState
   | BooleanFilterState
 

@@ -89,7 +89,7 @@ export function FiltersTab({ propertyMetas, filterHandle, matchingCount, totalNo
                   : undefined
               }
               onStringChange={
-                filterState.type === 'string'
+                filterState.type === 'string' || filterState.type === 'string[]'
                   ? (values): void => setStringFilter(meta.key, values)
                   : undefined
               }

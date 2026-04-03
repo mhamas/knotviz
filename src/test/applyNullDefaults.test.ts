@@ -36,6 +36,16 @@ describe('applyNullDefaults', () => {
     expect(result.data.nodes[1].properties!.name).toBe('')
   })
 
+  it('replaces missing string[] property with []', () => {
+    const graph = makeGraph([
+      { id: '1', properties: { tags: ['a', 'b'] } },
+      { id: '2', properties: {} },
+    ])
+    const result = applyNullDefaults(graph)
+    expect(result.replacementCount).toBe(1)
+    expect(result.data.nodes[1].properties!.tags).toEqual([])
+  })
+
   it('replaces missing boolean property with false', () => {
     const graph = makeGraph([
       { id: '1', properties: { active: true } },

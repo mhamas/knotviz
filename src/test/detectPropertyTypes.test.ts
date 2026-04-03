@@ -5,7 +5,7 @@ import type { NodeInput } from '../types'
 function nodesWithProp(key: string, values: unknown[]): NodeInput[] {
   return values.map((v, i) => ({
     id: String(i),
-    properties: { [key]: v } as Record<string, number | string | boolean>,
+    properties: { [key]: v } as Record<string, number | string | boolean | string[]>,
   }))
 }
 
@@ -91,6 +91,21 @@ describe('detectPropertyTypes', () => {
     expect(result.get('name')).toBe('string')
     expect(result.get('active')).toBe('boolean')
     expect(result.get('joined')).toBe('date')
+  })
+
+  it('detects all string arrays as "string[]"', () => {
+    const result = detectPropertyTypes(nodesWithProp('tags', [['a', 'b'], ['c'], ['d', 'e', 'f']]))
+    expect(result.get('tags')).toBe('string[]')
+  })
+
+  it('detects empty arrays as "string[]"', () => {
+    const result = detectPropertyTypes(nodesWithProp('tags', [['a'], []]))
+    expect(result.get('tags')).toBe('string[]')
+  })
+
+  it('detects mixed arrays and strings as "string" fallback', () => {
+    const result = detectPropertyTypes(nodesWithProp('tags', [['a', 'b'], 'plain']))
+    expect(result.get('tags')).toBe('string')
   })
 
   it('handles nodes without properties', () => {

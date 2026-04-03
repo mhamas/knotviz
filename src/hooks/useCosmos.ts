@@ -611,7 +611,7 @@ export function useCosmos(
     // Serialize filters (convert Sets to arrays for structured clone)
     const serializedFilters: Record<string, unknown> = {}
     for (const [key, f] of filters) {
-      if (f.type === 'string') {
+      if (f.type === 'string' || f.type === 'string[]') {
         serializedFilters[key] = { ...f, selectedValues: Array.from(f.selectedValues) }
       } else {
         serializedFilters[key] = { ...f }

@@ -19,10 +19,10 @@ import { parseStreamingJsonGraph } from '../lib/streamingJsonGraphParser'
 
 interface PropertyMeta {
   key: string
-  type: 'number' | 'string' | 'date' | 'boolean'
+  type: 'number' | 'string' | 'string[]' | 'date' | 'boolean'
 }
 
-type PropertyValue = number | string | boolean
+type PropertyValue = number | string | boolean | string[]
 
 const ISO_DATE_RE =
   /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})?)?$/
@@ -30,6 +30,7 @@ const ISO_DATE_RE =
 const TYPE_DEFAULTS: Record<string, PropertyValue> = {
   number: 0,
   string: '',
+  'string[]': [],
   boolean: false,
   date: '1970-01-01',
 }
@@ -38,6 +39,7 @@ interface TypeState {
   nonNullCount: number
   isAllBoolean: boolean
   isAllNumber: boolean
+  isAllStringArray: boolean
   isAllDate: boolean
 }
 
@@ -193,7 +195,7 @@ interface ProcessResult {
   edgeSortOrder: Uint32Array
   maxOutgoingDegree: number
   maxIncomingDegree: number
-  propertyColumns: Record<string, (number | string | boolean | undefined)[]>
+  propertyColumns: Record<string, (number | string | boolean | string[] | undefined)[]>
   propertyMetas: PropertyMeta[]
   replacementCount: number
 }
@@ -240,19 +242,21 @@ class GraphBuilder {
       const props = n.properties as Record<string, unknown>
       for (const key of Object.keys(props)) {
         const val = props[key]
-        if (typeof val !== 'number' && typeof val !== 'string' && typeof val !== 'boolean') continue
+        const isStringArray = Array.isArray(val) && val.every((v: unknown) => typeof v === 'string')
+        if (typeof val !== 'number' && typeof val !== 'string' && typeof val !== 'boolean' && !isStringArray) continue
 
         if (!(key in this.propertyColumns)) {
           this.propertyColumns[key] = new Array(index).fill(undefined)
-          this.typeStates[key] = { nonNullCount: 0, isAllBoolean: true, isAllNumber: true, isAllDate: true }
+          this.typeStates[key] = { nonNullCount: 0, isAllBoolean: true, isAllNumber: true, isAllDate: true, isAllStringArray: true }
         }
-        this.propertyColumns[key].push(val)
+        this.propertyColumns[key].push(val as PropertyValue)
 
         const ts = this.typeStates[key]
         ts.nonNullCount++
         if (ts.isAllBoolean && typeof val !== 'boolean') ts.isAllBoolean = false
         if (ts.isAllNumber && typeof val !== 'number') ts.isAllNumber = false
         if (ts.isAllDate && !(typeof val === 'string' && ISO_DATE_RE.test(val))) ts.isAllDate = false
+        if (ts.isAllStringArray && !isStringArray) ts.isAllStringArray = false
       }
     }
 
@@ -297,6 +301,7 @@ class GraphBuilder {
       else if (ts.isAllBoolean) type = 'boolean'
       else if (ts.isAllNumber) type = 'number'
       else if (ts.isAllDate) type = 'date'
+      else if (ts.isAllStringArray) type = 'string[]'
       else type = 'string'
       propertyMetas.push({ key, type })
 

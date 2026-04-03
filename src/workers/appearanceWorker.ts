@@ -18,12 +18,12 @@ interface GradientConfig {
 }
 
 // Persistent state: columns sent once on graph load, reused across messages
-let storedColumns: Record<string, (number | string | boolean | undefined)[]> = {}
+let storedColumns: Record<string, (number | string | boolean | string[] | undefined)[]> = {}
 let storedLinkIndices: Float32Array = new Float32Array(0)
 
 interface InitMessage {
   type: 'init'
-  propertyColumns: Record<string, (number | string | boolean | undefined)[]>
+  propertyColumns: Record<string, (number | string | boolean | string[] | undefined)[]>
   linkIndices: Float32Array
 }
 
@@ -85,7 +85,7 @@ function computeAppearance(input: UpdateMessage): void {
 
   // Convert string filter selectedValues from arrays to Sets for O(1) lookup
   for (const [, f] of enabledFilters) {
-    if (f.type === 'string' && f.selectedValues && Array.isArray(f.selectedValues)) {
+    if ((f.type === 'string' || f.type === 'string[]') && f.selectedValues && Array.isArray(f.selectedValues)) {
       f.selectedSet = new Set(f.selectedValues)
     }
   }
@@ -181,7 +181,7 @@ function computeAppearance(input: UpdateMessage): void {
 function applyGradient(
   pointColors: Float32Array,
   visible: Uint8Array,
-  col: (number | string | boolean | undefined)[],
+  col: (number | string | boolean | string[] | undefined)[],
   propType: string,
   stops: [number, number, number][],
   nodeCount: number,
@@ -250,13 +250,15 @@ function applyGradient(
       pointColors[off + 2] = b
       pointColors[off + 3] = 1
     }
-  } else if (propType === 'string') {
-    // Collect distinct values, map to colors round-robin
+  } else if (propType === 'string' || propType === 'string[]') {
+    // Collect distinct values, map to colors round-robin.
+    // For string[], use first element of each array.
     const distinctMap = new Map<string, number>()
     const distinctValues: string[] = []
     for (let i = 0; i < nodeCount; i++) {
       if (!visible[i]) continue
-      const v = col[i]
+      const raw = col[i]
+      const v = Array.isArray(raw) ? raw[0] : raw
       if (typeof v !== 'string') continue
       if (!distinctMap.has(v)) {
         distinctMap.set(v, distinctValues.length)
@@ -271,7 +273,8 @@ function applyGradient(
     }
     for (let i = 0; i < nodeCount; i++) {
       if (!visible[i]) continue
-      const v = col[i]
+      const raw = col[i]
+      const v = Array.isArray(raw) ? raw[0] : raw
       if (typeof v !== 'string') continue
       const idx = distinctMap.get(v)!
       const stopIdx = idx % stops.length

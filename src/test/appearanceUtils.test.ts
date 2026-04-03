@@ -46,6 +46,29 @@ describe('passesFilter', () => {
     expect(passesFilter(123, f)).toBe(false)
   })
 
+  it('string[] filter with empty set passes all', () => {
+    const f: SerializableFilter = { type: 'string[]', isEnabled: true, selectedSet: new Set() }
+    expect(passesFilter(['a', 'b'], f)).toBe(true)
+  })
+
+  it('string[] filter passes if any array element matches', () => {
+    const f: SerializableFilter = { type: 'string[]', isEnabled: true, selectedSet: new Set(['b', 'c']) }
+    expect(passesFilter(['a', 'b'], f)).toBe(true)
+    expect(passesFilter(['c', 'd'], f)).toBe(true)
+    expect(passesFilter(['x', 'y'], f)).toBe(false)
+  })
+
+  it('string[] filter fails for non-array value', () => {
+    const f: SerializableFilter = { type: 'string[]', isEnabled: true, selectedSet: new Set(['a']) }
+    expect(passesFilter('a', f)).toBe(false)
+    expect(passesFilter(123, f)).toBe(false)
+  })
+
+  it('string[] filter fails for empty array', () => {
+    const f: SerializableFilter = { type: 'string[]', isEnabled: true, selectedSet: new Set(['a']) }
+    expect(passesFilter([], f)).toBe(false)
+  })
+
   it('date filter passes when in range', () => {
     const f: SerializableFilter = { type: 'date', isEnabled: true, after: '2020-01-01', before: '2024-12-31' }
     expect(passesFilter('2022-06-15', f)).toBe(true)

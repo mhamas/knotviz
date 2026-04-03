@@ -5,9 +5,13 @@ export interface FilteredEdgesResult {
   /** Original edge indices that survived filtering (for metadata lookup). */
   keptEdgeIndices: Uint32Array
   /** Max outgoing degree after percentage filter (for dynamic slider range). */
-  effectiveMaxOutgoing: number
+  sliderMaxOutgoing: number
   /** Max incoming degree after percentage + outgoing filter (for dynamic slider range). */
-  effectiveMaxIncoming: number
+  sliderMaxIncoming: number
+  /** Max outgoing degree in the final filtered edges. */
+  finalMaxOutgoing: number
+  /** Max incoming degree in the final filtered edges. */
+  finalMaxIncoming: number
 }
 
 /**
@@ -20,7 +24,7 @@ export interface FilteredEdgesResult {
  * 4. From those, limit each node to at most `maxIncoming` incoming edges (highest weight kept).
  * 5. Merge in any protected edges that weren't already kept.
  *
- * Also computes effective max degrees after each stage for dynamic slider ranges.
+ * Also computes slider max degrees after each stage for dynamic slider ranges.
  *
  * @param fullLinkIndices - Original [src0,tgt0,src1,tgt1,…] from buildGraph.
  * @param edgeSortOrder - Edge indices sorted by weight descending.
@@ -32,7 +36,7 @@ export interface FilteredEdgesResult {
  * @param maxIncoming - Max incoming edges per target node. Edges beyond this are dropped.
  * @param maxIncomingDegree - Max incoming degree in the full graph (for fast-path check).
  * @param isKeepAtLeastOne - When true, the highest-weight edge per node is always kept.
- * @returns Filtered link indices, kept edge indices, and effective max degrees for slider ranges.
+ * @returns Filtered link indices, kept edge indices, and slider max degrees for slider ranges.
  *
  * @example
  * const result = filterEdges(data.linkIndices, data.edgeSortOrder, data.nodeCount, edgeCount, 50, 10, data.maxOutgoingDegree, 5, data.maxIncomingDegree, true)
@@ -56,8 +60,10 @@ export function filterEdges(
     return {
       linkIndices: fullLinkIndices,
       keptEdgeIndices: allIndices,
-      effectiveMaxOutgoing: maxOutgoingDegree,
-      effectiveMaxIncoming: maxIncomingDegree,
+      sliderMaxOutgoing: maxOutgoingDegree,
+      sliderMaxIncoming: maxIncomingDegree,
+      finalMaxOutgoing: maxOutgoingDegree,
+      finalMaxIncoming: maxIncomingDegree,
     }
   }
 
@@ -92,7 +98,7 @@ export function filterEdges(
   const afterOutgoing = new Uint32Array(maxSize) // stores original edge indices
   let afterOutgoingCount = 0
 
-  // Also compute effective max outgoing degree (from edges surviving percentage only)
+  // Also compute slider max outgoing degree (from edges surviving percentage only)
   const pctOutDegree = new Uint32Array(nodeCount)
 
   for (let i = 0; i < pctCount; i++) {
@@ -112,17 +118,17 @@ export function filterEdges(
     afterOutgoing[afterOutgoingCount++] = edgeIdx
   }
 
-  // Compute effectiveMaxOutgoing from pctOutDegree
-  let effectiveMaxOutgoing = 0
+  // Compute sliderMaxOutgoing from pctOutDegree
+  let sliderMaxOutgoing = 0
   for (let i = 0; i < nodeCount; i++) {
-    if (pctOutDegree[i] > effectiveMaxOutgoing) effectiveMaxOutgoing = pctOutDegree[i]
+    if (pctOutDegree[i] > sliderMaxOutgoing) sliderMaxOutgoing = pctOutDegree[i]
   }
 
   // Step 4: Apply max-incoming filter on edges surviving pct + outgoing
   const isIncomingLimited = maxIncoming < maxIncomingDegree
   const inDegree = isIncomingLimited ? new Uint32Array(nodeCount) : null
 
-  // Also compute effective max incoming degree (from edges surviving pct + outgoing)
+  // Also compute slider max incoming degree (from edges surviving pct + outgoing)
   const afterOutInDegree = new Uint32Array(nodeCount)
 
   const result = new Float32Array(maxSize * 2)
@@ -152,10 +158,10 @@ export function filterEdges(
     kept++
   }
 
-  // Compute effectiveMaxIncoming from afterOutInDegree
-  let effectiveMaxIncoming = 0
+  // Compute sliderMaxIncoming from afterOutInDegree
+  let sliderMaxIncoming = 0
   for (let i = 0; i < nodeCount; i++) {
-    if (afterOutInDegree[i] > effectiveMaxIncoming) effectiveMaxIncoming = afterOutInDegree[i]
+    if (afterOutInDegree[i] > sliderMaxIncoming) sliderMaxIncoming = afterOutInDegree[i]
   }
 
   // Step 5: Add protected edges that weren't already kept
@@ -171,10 +177,27 @@ export function filterEdges(
     }
   }
 
+  // Compute final max degrees from the kept edges
+  const finalResult = result.subarray(0, kept * 2)
+  const finalOutDegree = new Uint32Array(nodeCount)
+  const finalInDegree = new Uint32Array(nodeCount)
+  for (let i = 0; i < kept; i++) {
+    finalOutDegree[finalResult[i * 2]]++
+    finalInDegree[finalResult[i * 2 + 1]]++
+  }
+  let finalMaxOutgoing = 0
+  let finalMaxIncoming = 0
+  for (let i = 0; i < nodeCount; i++) {
+    if (finalOutDegree[i] > finalMaxOutgoing) finalMaxOutgoing = finalOutDegree[i]
+    if (finalInDegree[i] > finalMaxIncoming) finalMaxIncoming = finalInDegree[i]
+  }
+
   return {
-    linkIndices: result.subarray(0, kept * 2),
+    linkIndices: finalResult,
     keptEdgeIndices: keptOriginal.subarray(0, kept),
-    effectiveMaxOutgoing,
-    effectiveMaxIncoming,
+    sliderMaxOutgoing,
+    sliderMaxIncoming,
+    finalMaxOutgoing,
+    finalMaxIncoming,
   }
 }

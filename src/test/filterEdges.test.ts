@@ -85,10 +85,10 @@ describe('filterEdges', () => {
       expect(Array.from(result.keptEdgeIndices).sort()).toEqual([0, 1, 2])
     })
 
-    it('returns correct effectiveMax values on fast path', () => {
+    it('returns correct sliderMax values on fast path', () => {
       const result = filterNoIncoming(triangle, 3, 100, triangle.maxOutgoingDegree, false)
-      expect(result.effectiveMaxOutgoing).toBe(triangle.maxOutgoingDegree)
-      expect(result.effectiveMaxIncoming).toBe(triangle.maxIncomingDegree)
+      expect(result.sliderMaxOutgoing).toBe(triangle.maxOutgoingDegree)
+      expect(result.sliderMaxIncoming).toBe(triangle.maxIncomingDegree)
     })
   })
 
@@ -255,7 +255,7 @@ describe('filterEdges', () => {
     })
   })
 
-  describe('effective max values', () => {
+  describe('slider max values', () => {
     // Star-out: node 0 → 1,2,3,4 (weights 4,3,2,1)
     const star = makeTestData(5, [
       [0, 1, 4],
@@ -264,17 +264,17 @@ describe('filterEdges', () => {
       [0, 4, 1],
     ])
 
-    it('effectiveMaxOutgoing reflects max outgoing after percentage filter', () => {
+    it('sliderMaxOutgoing reflects max outgoing after percentage filter', () => {
       // 50% of 4 = ceil(2) = 2 edges: node 0 has 2 outgoing after pct
       const result = filterEdges(
         star.linkIndices, star.edgeSortOrder,
         5, 4, 50, star.maxOutgoingDegree, star.maxOutgoingDegree,
         star.maxIncomingDegree, star.maxIncomingDegree, false,
       )
-      expect(result.effectiveMaxOutgoing).toBe(2)
+      expect(result.sliderMaxOutgoing).toBe(2)
     })
 
-    it('effectiveMaxIncoming reflects max incoming after pct + outgoing filter', () => {
+    it('sliderMaxIncoming reflects max incoming after pct + outgoing filter', () => {
       // Fan-in: 1→0(w4), 2→0(w3), 3→0(w2), 4→0(w1)
       const fanIn = makeTestData(5, [
         [1, 0, 4],
@@ -283,13 +283,13 @@ describe('filterEdges', () => {
         [4, 0, 1],
       ])
       // 100%, maxOutgoing=1 (each source has 1 outgoing so all pass)
-      // After outgoing filter: node 0 has 4 incoming → effectiveMaxIncoming = 4
+      // After outgoing filter: node 0 has 4 incoming → sliderMaxIncoming = 4
       const result = filterEdges(
         fanIn.linkIndices, fanIn.edgeSortOrder,
         5, 4, 100, 1, fanIn.maxOutgoingDegree,
         fanIn.maxIncomingDegree, fanIn.maxIncomingDegree, false,
       )
-      expect(result.effectiveMaxIncoming).toBe(4)
+      expect(result.sliderMaxIncoming).toBe(4)
 
       // Now 50%: only top 2 edges survive pct → node 0 has 2 incoming
       const result2 = filterEdges(
@@ -297,7 +297,7 @@ describe('filterEdges', () => {
         5, 4, 50, fanIn.maxOutgoingDegree, fanIn.maxOutgoingDegree,
         fanIn.maxIncomingDegree, fanIn.maxIncomingDegree, false,
       )
-      expect(result2.effectiveMaxIncoming).toBe(2)
+      expect(result2.sliderMaxIncoming).toBe(2)
     })
   })
 

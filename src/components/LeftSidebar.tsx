@@ -31,8 +31,11 @@ interface Props {
   onReset?: () => void
   isOpen?: boolean
   onToggle?: () => void
-  effectiveMaxOutgoing?: number
-  effectiveMaxIncoming?: number
+  filteredEdgeCount?: number
+  sliderMaxOutgoing?: number
+  sliderMaxIncoming?: number
+  finalMaxOutgoing?: number
+  finalMaxIncoming?: number
 }
 
 /**
@@ -53,8 +56,11 @@ export function LeftSidebar({
   onReset = () => {},
   isOpen = true,
   onToggle,
-  effectiveMaxOutgoing = 0,
-  effectiveMaxIncoming = 0,
+  filteredEdgeCount = 0,
+  sliderMaxOutgoing = 0,
+  sliderMaxIncoming = 0,
+  finalMaxOutgoing = 0,
+  finalMaxIncoming = 0,
 }: Props): React.JSX.Element {
   // Store state
   const isGraphLoaded = useGraphStore((s) => s.isGraphLoaded)
@@ -241,15 +247,15 @@ export function LeftSidebar({
               />
 
               <LabeledSlider
-                key={`out-${maxOutgoingDegree}-${effectiveMaxOutgoing}`}
+                key={`out-${maxOutgoingDegree}-${sliderMaxOutgoing}`}
                 label="Max outgoing edges per node"
-                value={Math.min(maxOutgoing, effectiveMaxOutgoing || maxOutgoingDegree || 1)}
+                value={Math.min(maxOutgoing, sliderMaxOutgoing || maxOutgoingDegree || 1)}
                 formatValue={(v): string => String(Math.round(v))}
                 help={`Limit the maximum number of outgoing edges per node. For each source node, keeps the highest-weight outgoing edges up to this limit. Applied after the edge percentage filter. Range adjusts based on edges remaining after the percentage filter.`}
                 min={0}
-                max={effectiveMaxOutgoing || maxOutgoingDegree || 1}
+                max={sliderMaxOutgoing || maxOutgoingDegree || 1}
                 step={1}
-                defaultValue={[Math.min(maxOutgoing, effectiveMaxOutgoing || maxOutgoingDegree || 1)]}
+                defaultValue={[Math.min(maxOutgoing, sliderMaxOutgoing || maxOutgoingDegree || 1)]}
                 onValueChange={(value): void => {
                   const v = Array.isArray(value) ? value[0] : value
                   debouncedMaxOutgoingChange(Math.round(v))
@@ -257,15 +263,15 @@ export function LeftSidebar({
               />
 
               <LabeledSlider
-                key={`in-${maxIncomingDegree}-${effectiveMaxIncoming}`}
+                key={`in-${maxIncomingDegree}-${sliderMaxIncoming}`}
                 label="Max incoming edges per node"
-                value={Math.min(maxIncoming, effectiveMaxIncoming || maxIncomingDegree || 1)}
+                value={Math.min(maxIncoming, sliderMaxIncoming || maxIncomingDegree || 1)}
                 formatValue={(v): string => String(Math.round(v))}
                 help={`Limit the maximum number of incoming edges per node. For each target node, keeps the highest-weight incoming edges up to this limit. Applied after the percentage and max outgoing filters. Range adjusts dynamically.`}
                 min={0}
-                max={effectiveMaxIncoming || maxIncomingDegree || 1}
+                max={sliderMaxIncoming || maxIncomingDegree || 1}
                 step={1}
-                defaultValue={[Math.min(maxIncoming, effectiveMaxIncoming || maxIncomingDegree || 1)]}
+                defaultValue={[Math.min(maxIncoming, sliderMaxIncoming || maxIncomingDegree || 1)]}
                 onValueChange={(value): void => {
                   const v = Array.isArray(value) ? value[0] : value
                   debouncedMaxIncomingChange(Math.round(v))
@@ -346,7 +352,9 @@ export function LeftSidebar({
         <SectionHeading>Graph Info</SectionHeading>
         <div className="mt-2 space-y-1">
           <StatRow label="Nodes" value={nodeCount.toLocaleString()} />
-          <StatRow label="Edges" value={edgeCount.toLocaleString()} />
+          <StatRow label="Edges" value={`${filteredEdgeCount.toLocaleString()} / ${edgeCount.toLocaleString()}`} />
+          <StatRow label="Max outgoing" value={String(finalMaxOutgoing)} />
+          <StatRow label="Max incoming" value={String(finalMaxIncoming)} />
         </div>
       </div>
 

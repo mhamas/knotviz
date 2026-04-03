@@ -57,8 +57,11 @@ export interface UseCosmosReturn {
   cosmosRef: React.RefObject<CosmosGraph | null>
   visibleNodes: Uint8Array | null
   keptEdgeIndices: Uint32Array
-  effectiveMaxOutgoing: number
-  effectiveMaxIncoming: number
+  filteredEdgeCount: number
+  sliderMaxOutgoing: number
+  sliderMaxIncoming: number
+  finalMaxOutgoing: number
+  finalMaxIncoming: number
 }
 
 /**
@@ -127,7 +130,7 @@ export function useCosmos(
 
   // Filtered link indices (edge % + max neighbors)
   const totalEdgeCount = data ? data.linkIndices.length / 2 : 0
-  const emptyEdgeResult = useMemo((): FilteredEdgesResult => ({ linkIndices: new Float32Array(0), keptEdgeIndices: new Uint32Array(0), effectiveMaxOutgoing: 0, effectiveMaxIncoming: 0 }), [])
+  const emptyEdgeResult = useMemo((): FilteredEdgesResult => ({ linkIndices: new Float32Array(0), keptEdgeIndices: new Uint32Array(0), sliderMaxOutgoing: 0, sliderMaxIncoming: 0, finalMaxOutgoing: 0, finalMaxIncoming: 0 }), [])
   const filteredEdges = useMemo(() => {
     if (!data) return emptyEdgeResult
     return filterEdges(
@@ -812,8 +815,11 @@ export function useCosmos(
     cosmosRef,
     visibleNodes,
     keptEdgeIndices: filteredEdges.keptEdgeIndices,
-    effectiveMaxOutgoing: filteredEdges.effectiveMaxOutgoing,
-    effectiveMaxIncoming: filteredEdges.effectiveMaxIncoming,
+    filteredEdgeCount: filteredEdges.keptEdgeIndices.length,
+    sliderMaxOutgoing: filteredEdges.sliderMaxOutgoing,
+    sliderMaxIncoming: filteredEdges.sliderMaxIncoming,
+    finalMaxOutgoing: filteredEdges.finalMaxOutgoing,
+    finalMaxIncoming: filteredEdges.finalMaxIncoming,
   }
 }
 

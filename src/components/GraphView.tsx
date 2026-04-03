@@ -85,8 +85,11 @@ export function GraphView({
     cosmosRef,
     visibleNodes,
     keptEdgeIndices,
-    effectiveMaxOutgoing,
-    effectiveMaxIncoming,
+    filteredEdgeCount,
+    sliderMaxOutgoing,
+    sliderMaxIncoming,
+    finalMaxOutgoing,
+    finalMaxIncoming,
   } = useCosmos(
     cosmosData,
     propertyColumns,
@@ -216,8 +219,11 @@ export function GraphView({
         onReset={onLoadNewFile}
         isOpen={isLeftOpen}
         onToggle={(): void => setIsLeftOpen((v) => !v)}
-        effectiveMaxOutgoing={effectiveMaxOutgoing}
-        effectiveMaxIncoming={effectiveMaxIncoming}
+        filteredEdgeCount={filteredEdgeCount}
+        sliderMaxOutgoing={sliderMaxOutgoing}
+        sliderMaxIncoming={sliderMaxIncoming}
+        finalMaxOutgoing={finalMaxOutgoing}
+        finalMaxIncoming={finalMaxIncoming}
       />
       <div className="relative flex-1 overflow-hidden bg-white">
         <div

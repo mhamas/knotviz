@@ -390,7 +390,7 @@ export function LeftSidebar({
       </AlertDialog>
       </div>
 
-      <img src="/logo.png" alt="Knotviz" className="h-auto w-24 opacity-60" />
+      <img src="/logo.png" alt="Knotviz" className="h-auto w-20 opacity-60" />
     </div>
   )
 }

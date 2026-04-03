@@ -231,4 +231,6 @@ export interface CosmosGraphData {
   edgeSortOrder: Uint32Array
   /** Maximum number of outgoing edges from any single node. */
   maxOutgoingDegree: number
+  /** Maximum number of incoming edges to any single node. */
+  maxIncomingDegree: number
 }

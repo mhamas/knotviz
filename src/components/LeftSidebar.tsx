@@ -31,6 +31,8 @@ interface Props {
   onReset?: () => void
   isOpen?: boolean
   onToggle?: () => void
+  effectiveMaxOutgoing?: number
+  effectiveMaxIncoming?: number
 }
 
 /**
@@ -51,6 +53,8 @@ export function LeftSidebar({
   onReset = () => {},
   isOpen = true,
   onToggle,
+  effectiveMaxOutgoing = 0,
+  effectiveMaxIncoming = 0,
 }: Props): React.JSX.Element {
   // Store state
   const isGraphLoaded = useGraphStore((s) => s.isGraphLoaded)
@@ -60,6 +64,8 @@ export function LeftSidebar({
   const edgePercentage = useGraphStore((s) => s.edgePercentage)
   const maxOutgoing = useGraphStore((s) => s.maxOutgoing)
   const maxOutgoingDegree = useGraphStore((s) => s.maxOutgoingDegree)
+  const maxIncoming = useGraphStore((s) => s.maxIncoming)
+  const maxIncomingDegree = useGraphStore((s) => s.maxIncomingDegree)
   const isKeepAtLeastOneEdge = useGraphStore((s) => s.isKeepAtLeastOneEdge)
   const nodeSize = useGraphStore((s) => s.nodeSize)
   const edgeSize = useGraphStore((s) => s.edgeSize)
@@ -76,6 +82,7 @@ export function LeftSidebar({
   const setLinkSpring = useGraphStore((s) => s.setLinkSpring)
   const setEdgePercentage = useGraphStore((s) => s.setEdgePercentage)
   const setMaxOutgoing = useGraphStore((s) => s.setMaxOutgoing)
+  const setMaxIncoming = useGraphStore((s) => s.setMaxIncoming)
   const setIsKeepAtLeastOneEdge = useGraphStore((s) => s.setIsKeepAtLeastOneEdge)
   const setNodeSize = useGraphStore((s) => s.setNodeSize)
   const setEdgeSize = useGraphStore((s) => s.setEdgeSize)
@@ -91,6 +98,7 @@ export function LeftSidebar({
   const debouncedLinkSpringChange = useDebounce(setLinkSpring, 100)
   const debouncedEdgePercentageChange = useDebounce(setEdgePercentage, 100)
   const debouncedMaxOutgoingChange = useDebounce(setMaxOutgoing, 100)
+  const debouncedMaxIncomingChange = useDebounce(setMaxIncoming, 100)
   // Display sliders use short debounce — they only change GPU uniforms, no worker involved
   const debouncedNodeSizeChange = useDebounce(setNodeSize, 30)
   const debouncedEdgeSizeChange = useDebounce(setEdgeSize, 30)
@@ -233,18 +241,34 @@ export function LeftSidebar({
               />
 
               <LabeledSlider
-                key={maxOutgoingDegree}
+                key={`out-${maxOutgoingDegree}-${effectiveMaxOutgoing}`}
                 label="Max outgoing edges per node"
-                value={maxOutgoing}
+                value={Math.min(maxOutgoing, effectiveMaxOutgoing || maxOutgoingDegree || 1)}
                 formatValue={(v): string => String(Math.round(v))}
-                help={`Limit the maximum number of outgoing edges per node (0–${maxOutgoingDegree || 0}). For each source node, keeps the highest-weight outgoing edges up to this limit. Applied after the edge percentage filter.`}
+                help={`Limit the maximum number of outgoing edges per node. For each source node, keeps the highest-weight outgoing edges up to this limit. Applied after the edge percentage filter. Range adjusts based on edges remaining after the percentage filter.`}
                 min={0}
-                max={maxOutgoingDegree || 1}
+                max={effectiveMaxOutgoing || maxOutgoingDegree || 1}
                 step={1}
-                defaultValue={[maxOutgoing]}
+                defaultValue={[Math.min(maxOutgoing, effectiveMaxOutgoing || maxOutgoingDegree || 1)]}
                 onValueChange={(value): void => {
                   const v = Array.isArray(value) ? value[0] : value
                   debouncedMaxOutgoingChange(Math.round(v))
+                }}
+              />
+
+              <LabeledSlider
+                key={`in-${maxIncomingDegree}-${effectiveMaxIncoming}`}
+                label="Max incoming edges per node"
+                value={Math.min(maxIncoming, effectiveMaxIncoming || maxIncomingDegree || 1)}
+                formatValue={(v): string => String(Math.round(v))}
+                help={`Limit the maximum number of incoming edges per node. For each target node, keeps the highest-weight incoming edges up to this limit. Applied after the percentage and max outgoing filters. Range adjusts dynamically.`}
+                min={0}
+                max={effectiveMaxIncoming || maxIncomingDegree || 1}
+                step={1}
+                defaultValue={[Math.min(maxIncoming, effectiveMaxIncoming || maxIncomingDegree || 1)]}
+                onValueChange={(value): void => {
+                  const v = Array.isArray(value) ? value[0] : value
+                  debouncedMaxIncomingChange(Math.round(v))
                 }}
               />
             </div>
@@ -253,7 +277,7 @@ export function LeftSidebar({
               label="Always keep strongest edge per node"
               checked={isKeepAtLeastOneEdge}
               onCheckedChange={setIsKeepAtLeastOneEdge}
-              help="When checked, each node's highest-weight edge is always kept regardless of the Edge % and Max outgoing filters above."
+              help="When checked, each node's highest-weight edge is always kept regardless of the edge filtering sliders above."
             />
 
           </div>

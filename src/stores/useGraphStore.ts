@@ -17,6 +17,8 @@ interface SimulationState {
   edgePercentage: number
   maxOutgoing: number
   maxOutgoingDegree: number
+  maxIncoming: number
+  maxIncomingDegree: number
   isKeepAtLeastOneEdge: boolean
 }
 
@@ -40,6 +42,8 @@ interface Actions {
   setEdgePercentage: (v: number) => void
   setMaxOutgoing: (v: number) => void
   setMaxOutgoingDegree: (v: number) => void
+  setMaxIncoming: (v: number) => void
+  setMaxIncomingDegree: (v: number) => void
   setIsKeepAtLeastOneEdge: (v: boolean) => void
   setGraphLoaded: (nodeCount: number, edgeCount: number) => void
   resetStore: () => void
@@ -65,6 +69,8 @@ export const STORE_DEFAULTS: DisplayState & SimulationState & GraphMeta = {
   edgePercentage: 100,
   maxOutgoing: 0,
   maxOutgoingDegree: 0,
+  maxIncoming: 0,
+  maxIncomingDegree: 0,
   isKeepAtLeastOneEdge: false,
   isGraphLoaded: false,
   nodeCount: 0,
@@ -95,6 +101,8 @@ export const useGraphStore = create<GraphStore>()((set) => ({
   setEdgePercentage: (v): void => set({ edgePercentage: v }),
   setMaxOutgoing: (v): void => set({ maxOutgoing: v }),
   setMaxOutgoingDegree: (v): void => set({ maxOutgoingDegree: v }),
+  setMaxIncoming: (v): void => set({ maxIncoming: v }),
+  setMaxIncomingDegree: (v): void => set({ maxIncomingDegree: v }),
   setIsKeepAtLeastOneEdge: (v): void => set({ isKeepAtLeastOneEdge: v }),
   setGraphLoaded: (nodeCount, edgeCount): void => {
     set({ isGraphLoaded: true, nodeCount, edgeCount })

@@ -21,6 +21,8 @@ describe('useGraphStore', () => {
     expect(state.edgePercentage).toBe(100)
     expect(state.maxOutgoing).toBe(0)
     expect(state.maxOutgoingDegree).toBe(0)
+    expect(state.maxIncoming).toBe(0)
+    expect(state.maxIncomingDegree).toBe(0)
     expect(state.isKeepAtLeastOneEdge).toBe(false)
     expect(state.isGraphLoaded).toBe(false)
     expect(state.nodeCount).toBe(0)
@@ -87,6 +89,16 @@ describe('useGraphStore', () => {
     expect(useGraphStore.getState().maxOutgoingDegree).toBe(42)
   })
 
+  it('setMaxIncoming updates maxIncoming', () => {
+    useGraphStore.getState().setMaxIncoming(7)
+    expect(useGraphStore.getState().maxIncoming).toBe(7)
+  })
+
+  it('setMaxIncomingDegree updates maxIncomingDegree', () => {
+    useGraphStore.getState().setMaxIncomingDegree(33)
+    expect(useGraphStore.getState().maxIncomingDegree).toBe(33)
+  })
+
   it('setIsKeepAtLeastOneEdge updates isKeepAtLeastOneEdge', () => {
     useGraphStore.getState().setIsKeepAtLeastOneEdge(true)
     expect(useGraphStore.getState().isKeepAtLeastOneEdge).toBe(true)
@@ -108,6 +120,8 @@ describe('useGraphStore', () => {
     s.setEdgePercentage(25)
     s.setMaxOutgoing(5)
     s.setMaxOutgoingDegree(20)
+    s.setMaxIncoming(3)
+    s.setMaxIncomingDegree(15)
     s.setIsKeepAtLeastOneEdge(true)
     s.setGraphLoaded(50, 100)
 
@@ -126,6 +140,8 @@ describe('useGraphStore', () => {
     expect(reset.edgePercentage).toBe(STORE_DEFAULTS.edgePercentage)
     expect(reset.maxOutgoing).toBe(STORE_DEFAULTS.maxOutgoing)
     expect(reset.maxOutgoingDegree).toBe(STORE_DEFAULTS.maxOutgoingDegree)
+    expect(reset.maxIncoming).toBe(STORE_DEFAULTS.maxIncoming)
+    expect(reset.maxIncomingDegree).toBe(STORE_DEFAULTS.maxIncomingDegree)
     expect(reset.isKeepAtLeastOneEdge).toBe(STORE_DEFAULTS.isKeepAtLeastOneEdge)
     expect(reset.isGraphLoaded).toBe(false)
     expect(reset.nodeCount).toBe(0)

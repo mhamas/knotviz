@@ -31,6 +31,7 @@ interface Props {
   onReset?: () => void
   isOpen?: boolean
   onToggle?: () => void
+  hasPositions?: boolean
   filteredEdgeCount?: number
   sliderMaxOutgoing?: number
   sliderMaxIncoming?: number
@@ -56,6 +57,7 @@ export function LeftSidebar({
   onReset = () => {},
   isOpen = true,
   onToggle,
+  hasPositions = false,
   filteredEdgeCount = 0,
   sliderMaxOutgoing = 0,
   sliderMaxIncoming = 0,
@@ -131,6 +133,7 @@ export function LeftSidebar({
       <div className="mt-2">
         <CollapsibleSection
           label="Simulation"
+          defaultOpen={isGraphLoaded && !hasPositions}
           help="Runs a GPU-accelerated force-directed layout that pushes connected nodes closer together and unconnected nodes apart, making clusters and relationships easier to see."
           trailing={onToggle && (
             <button

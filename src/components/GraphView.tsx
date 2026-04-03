@@ -219,6 +219,7 @@ export function GraphView({
         onReset={onLoadNewFile}
         isOpen={isLeftOpen}
         onToggle={(): void => setIsLeftOpen((v) => !v)}
+        hasPositions={cosmosData.positionMode === 'all'}
         filteredEdgeCount={filteredEdgeCount}
         sliderMaxOutgoing={sliderMaxOutgoing}
         sliderMaxIncoming={sliderMaxIncoming}

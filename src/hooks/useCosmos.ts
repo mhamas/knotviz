@@ -7,6 +7,8 @@ import { getPaletteColors, isBuiltinPalette } from '@/lib/colorScales'
 import { useGraphStore } from '@/stores/useGraphStore'
 import { COLOR_DEFAULT, COLOR_EDGE_DEFAULT } from '@/lib/colors'
 import { filterEdges, type FilteredEdgesResult } from '@/lib/filterEdges'
+import { useCosmosCamera } from './useCosmosCamera'
+import { useCosmosSimulation } from './useCosmosSimulation'
 import AppearanceWorker from '@/workers/appearanceWorker?worker'
 
 /** Max number of node labels rendered as HTML overlays. */
@@ -742,22 +744,8 @@ export function useCosmos(
     }
   }, [rotatePositions])
 
-  // ── Camera controls ──
-  const handleZoomIn = useCallback((): void => {
-    const cosmos = cosmosRef.current
-    if (!cosmos) return
-    cosmos.setZoomLevel(cosmos.getZoomLevel() * 1.5, 200)
-  }, [])
-
-  const handleZoomOut = useCallback((): void => {
-    const cosmos = cosmosRef.current
-    if (!cosmos) return
-    cosmos.setZoomLevel(cosmos.getZoomLevel() / 1.5, 200)
-  }, [])
-
-  const handleFit = useCallback((): void => {
-    cosmosRef.current?.fitView(200)
-  }, [])
+  // ── Camera controls (extracted) ──
+  const { handleZoomIn, handleZoomOut, handleFit } = useCosmosCamera(cosmosRef)
 
   const handleRotateCW = useCallback((): void => {
     rotatePositions(15)
@@ -767,31 +755,8 @@ export function useCosmos(
     rotatePositions(-15)
   }, [rotatePositions])
 
-  // ── Simulation controls ──
-  const startSimulation = useCallback((): void => {
-    const cosmos = cosmosRef.current
-    if (!cosmos) return
-    cosmos.fitView(0)
-    cosmos.start()
-  }, [])
-
-  const stopSimulation = useCallback((): void => {
-    cosmosRef.current?.pause()
-  }, [])
-
-  const pauseSimulation = useCallback((): void => {
-    cosmosRef.current?.pause()
-  }, [])
-
-  const restartSimulation = useCallback((): void => {
-    if (!data) return
-    const cosmos = cosmosRef.current
-    if (!cosmos) return
-    cosmos.setPointPositions(generateRandomPositions(data.nodeCount))
-    cosmos.render(0)
-    cosmos.fitView(0)
-    cosmos.start()
-  }, [data])
+  // ── Simulation controls (extracted) ──
+  const { startSimulation, stopSimulation, pauseSimulation, restartSimulation } = useCosmosSimulation(cosmosRef, data)
 
   return {
     containerRef,

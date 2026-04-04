@@ -1,6 +1,7 @@
 import Ajv from 'ajv'
 import type { GraphData, NodeInput, EdgeInput } from '../types'
 import graphSchema from './graphSchema.json'
+import { isValidPropertyValue } from './typeDetection'
 
 /**
  * Structural schema for top-level validation via ajv. Checks that the
@@ -86,8 +87,7 @@ export function validateGraph(raw: unknown): GraphData {
       const props = n.properties as Record<string, unknown>
       for (const key of Object.keys(props)) {
         const value = props[key]
-        const isStringArray = Array.isArray(value) && value.every((v: unknown) => typeof v === 'string')
-        if (typeof value !== 'number' && typeof value !== 'string' && typeof value !== 'boolean' && !isStringArray) {
+        if (!isValidPropertyValue(value)) {
           delete props[key]
           skippedNodes++ // count as a warning (batched below)
         }

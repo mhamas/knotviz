@@ -24,8 +24,7 @@ interface PropertyMeta {
 
 type PropertyValue = number | string | boolean | string[]
 
-const ISO_DATE_RE =
-  /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})?)?$/
+import { createTypeState, updateTypeState, resolveType, isValidPropertyValue, type TypeState } from '../lib/typeDetection'
 
 const TYPE_DEFAULTS: Record<string, PropertyValue> = {
   number: 0,
@@ -33,14 +32,6 @@ const TYPE_DEFAULTS: Record<string, PropertyValue> = {
   'string[]': [],
   boolean: false,
   date: '1970-01-01',
-}
-
-interface TypeState {
-  nonNullCount: number
-  isAllBoolean: boolean
-  isAllNumber: boolean
-  isAllStringArray: boolean
-  isAllDate: boolean
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -241,21 +232,14 @@ class GraphBuilder {
       const props = n.properties as Record<string, unknown>
       for (const key of Object.keys(props)) {
         const val = props[key]
-        const isStringArray = Array.isArray(val) && val.every((v: unknown) => typeof v === 'string')
-        if (typeof val !== 'number' && typeof val !== 'string' && typeof val !== 'boolean' && !isStringArray) continue
+        if (!isValidPropertyValue(val)) continue
 
         if (!(key in this.propertyColumns)) {
           this.propertyColumns[key] = new Array(index).fill(undefined)
-          this.typeStates[key] = { nonNullCount: 0, isAllBoolean: true, isAllNumber: true, isAllDate: true, isAllStringArray: true }
+          this.typeStates[key] = createTypeState()
         }
         this.propertyColumns[key].push(val as PropertyValue)
-
-        const ts = this.typeStates[key]
-        ts.nonNullCount++
-        if (ts.isAllBoolean && typeof val !== 'boolean') ts.isAllBoolean = false
-        if (ts.isAllNumber && typeof val !== 'number') ts.isAllNumber = false
-        if (ts.isAllDate && !(typeof val === 'string' && ISO_DATE_RE.test(val))) ts.isAllDate = false
-        if (ts.isAllStringArray && !isStringArray) ts.isAllStringArray = false
+        updateTypeState(this.typeStates[key], val)
       }
     }
 
@@ -295,13 +279,7 @@ class GraphBuilder {
     let replacementCount = 0
 
     for (const [key, ts] of Object.entries(this.typeStates)) {
-      let type: PropertyMeta['type']
-      if (ts.nonNullCount === 0) type = 'number'
-      else if (ts.isAllBoolean) type = 'boolean'
-      else if (ts.isAllNumber) type = 'number'
-      else if (ts.isAllDate) type = 'date'
-      else if (ts.isAllStringArray) type = 'string[]'
-      else type = 'string'
+      const type = resolveType(ts)
       propertyMetas.push({ key, type })
 
       const col = this.propertyColumns[key]

@@ -128,7 +128,6 @@ async function loadWithStreaming(file: File): Promise<ProcessResult> {
   let bytesRead = 0
 
   async function* textChunks(): AsyncGenerator<string> {
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const { done, value } = await reader.read()
       if (done) {

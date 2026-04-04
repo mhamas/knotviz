@@ -18,10 +18,12 @@ export function CopyableCode({ code, label }: Props): React.JSX.Element {
   const [isCopied, setIsCopied] = useState(false)
 
   const handleCopy = useCallback((): void => {
-    navigator.clipboard.writeText(code).then(() => {
-      setIsCopied(true)
-      setTimeout(() => setIsCopied(false), 2000)
-    })
+    navigator.clipboard.writeText(code)
+      .then(() => {
+        setIsCopied(true)
+        setTimeout(() => setIsCopied(false), 2000)
+      })
+      .catch(() => { /* Clipboard access may be denied in non-HTTPS contexts */ })
   }, [code])
 
   return (

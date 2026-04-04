@@ -16,10 +16,11 @@ test.describe('Drop Zone — File Loading', () => {
   })
 
   test('shows disabled sidebar controls before graph is loaded', async ({ page }) => {
-    await expect(page.getByRole('button', { name: 'Run' })).toBeVisible()
+    // Simulation section is collapsed before graph load
+    await expect(page.getByText('Simulation')).toBeVisible()
     await expect(page.getByRole('button', { name: 'Reset graph' })).toBeDisabled()
-    await expect(page.getByText('Nodes')).toBeVisible()
-    await expect(page.getByText('0', { exact: true }).first()).toBeVisible()
+    await expect(page.getByTestId('stat-nodes')).toBeVisible()
+    await expect(page.getByTestId('stat-nodes').getByText('0')).toBeVisible()
   })
 
   test('loads a valid graph via file chooser', async ({ page }) => {

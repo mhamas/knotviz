@@ -34,13 +34,14 @@ test.describe('Edge Filtering — Simulation Controls', () => {
     await expect(page.getByRole('button', { name: 'Restart' })).toBeVisible()
   })
 
-  test('edge filtering sliders are disabled before graph load', async ({ page }) => {
+  test('edge filtering sliders are hidden before graph load (simulation collapsed)', async ({ page }) => {
     // Reset to drop zone
     await page.getByRole('button', { name: 'Reset graph' }).click()
     await page.getByRole('button', { name: 'Reset' }).click()
     await expect(page.getByTestId('drop-zone')).toBeVisible()
-    // Sliders should still render but be in the disabled wrapper
-    await expect(page.getByText('Edges to keep (%)')).toBeVisible()
+    // Simulation section is collapsed before graph load, so sliders are hidden
+    await expect(page.getByText('Simulation')).toBeVisible()
+    await expect(page.getByText('Edges to keep (%)')).toBeHidden()
   })
 })
 

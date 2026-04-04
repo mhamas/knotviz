@@ -9,6 +9,8 @@ import { COLOR_DEFAULT, COLOR_EDGE_DEFAULT } from '@/lib/colors'
 import { filterEdges, type FilteredEdgesResult } from '@/lib/filterEdges'
 import { useCosmosCamera } from './useCosmosCamera'
 import { useCosmosSimulation } from './useCosmosSimulation'
+import { useCosmosRotation } from './useCosmosRotation'
+import { useCosmosLabelSync } from './useCosmosLabelSync'
 import AppearanceWorker from '@/workers/appearanceWorker?worker'
 
 /** Max number of node labels rendered as HTML overlays. */
@@ -508,43 +510,8 @@ export function useCosmos(
     cosmosRef.current?.setConfig({ linkDefaultArrows: isEdgeDirectionality })
   }, [isEdgeDirectionality])
 
-  // ── Sync node labels ──
-  // When toggled, render labels using stride sampling (reliable across all GPUs).
-  useEffect(() => {
-    const container = labelsRef.current
-    if (!container) return
-    if (!isNodeLabelsVisible) {
-      container.style.display = 'none'
-      return
-    }
-    const cosmos = cosmosRef.current
-    if (!cosmos || !data) return
-
-    container.style.display = ''
-    container.innerHTML = ''
-
-    const positions = cosmos.getPointPositions()
-    if (!positions || positions.length === 0) return
-    const canvasW = containerRef.current?.clientWidth ?? 0
-    const canvasH = containerRef.current?.clientHeight ?? 0
-    const stride = Math.max(1, Math.floor(data.nodeCount / MAX_LABELS))
-    let count = 0
-    for (let idx = 0; idx < data.nodeCount && count < MAX_LABELS; idx += stride) {
-      const sx = positions[idx * 2]
-      const sy = positions[idx * 2 + 1]
-      if (sx === undefined || sy === undefined) continue
-      const [screenX, screenY] = cosmos.spaceToScreenPosition([sx, sy])
-      if (screenX < -50 || screenX > canvasW + 50 || screenY < -50 || screenY > canvasH + 50) continue
-      const el = document.createElement('div')
-      el.className = 'pointer-events-none absolute font-sans text-[10px] text-slate-600'
-      el.style.whiteSpace = 'nowrap'
-      el.style.left = `${screenX + 8}px`
-      el.style.top = `${screenY - 6}px`
-      el.textContent = data.nodeLabels[idx] ?? data.nodeIds[idx]
-      container.appendChild(el)
-      count++
-    }
-  }, [isNodeLabelsVisible, data])
+  // ── Sync node labels (extracted to useCosmosLabelSync) ──
+  useCosmosLabelSync(cosmosRef, containerRef, labelsRef, isNodeLabelsVisible, data)
 
   // ── Sync node sizes ──
   // Use pointSizeScale (shader uniform) for instant slider response — no data flush needed.
@@ -668,92 +635,11 @@ export function useCosmos(
     }
   }, [])
 
-  // ── Rotation (transforms actual node positions) ──
-  const [rotationCenter, setRotationCenter] = useState<{ x: number; y: number } | null>(null)
-  const hideRotationCenterTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  /** Rotate all point positions by a delta angle (degrees) around their center of mass. */
-  const rotatePositions = useCallback((deltaDeg: number): void => {
-    const cosmos = cosmosRef.current
-    if (!cosmos || isSimRunningRef.current) return
-    const positions = cosmos.getPointPositions()
-    if (!positions || positions.length < 2) return
-
-    const n = positions.length / 2
-    // Find center of mass
-    let cx = 0, cy = 0
-    for (let i = 0; i < n; i++) {
-      cx += positions[i * 2]
-      cy += positions[i * 2 + 1]
-    }
-    cx /= n
-    cy /= n
-
-    // Apply rotation matrix around center
-    const rad = (deltaDeg * Math.PI) / 180
-    const cos = Math.cos(rad)
-    const sin = Math.sin(rad)
-    const rotated = new Float32Array(positions.length)
-    for (let i = 0; i < n; i++) {
-      const x = positions[i * 2] - cx
-      const y = positions[i * 2 + 1] - cy
-      rotated[i * 2] = x * cos - y * sin + cx
-      rotated[i * 2 + 1] = x * sin + y * cos + cy
-    }
-    cosmos.setPointPositions(rotated)
-    cosmos.render(0)
-
-    // Hide hover label during rotation
-    if (hoverRef.current) hoverRef.current.style.display = 'none'
-
-    // Show rotation center marker
-    const [sx, sy] = cosmos.spaceToScreenPosition([cx, cy])
-    setRotationCenter({ x: sx, y: sy })
-
-    // Auto-hide after 600ms of no rotation
-    if (hideRotationCenterTimer.current) clearTimeout(hideRotationCenterTimer.current)
-    hideRotationCenterTimer.current = setTimeout(() => setRotationCenter(null), 150)
-  }, [])
-
-  // Shift+wheel rotation handler — batches rapid scroll events into one rAF
-  useEffect(() => {
-    const div = containerRef.current
-    if (!div) return
-    let pendingDeg = 0
-    let frameId = 0
-    const flush = (): void => {
-      frameId = 0
-      if (pendingDeg === 0) return
-      const deg = pendingDeg
-      pendingDeg = 0
-      rotatePositions(deg)
-    }
-    const handleWheel = (e: WheelEvent): void => {
-      if (!e.shiftKey || isSimRunningRef.current) return
-      const rawDelta = e.deltaY || e.deltaX
-      if (!rawDelta) return
-      e.preventDefault()
-      e.stopPropagation()
-      pendingDeg += rawDelta * 0.3
-      if (!frameId) frameId = requestAnimationFrame(flush)
-    }
-    div.addEventListener('wheel', handleWheel, { passive: false, capture: true })
-    return (): void => {
-      div.removeEventListener('wheel', handleWheel, { capture: true })
-      if (frameId) cancelAnimationFrame(frameId)
-    }
-  }, [rotatePositions])
+  // ── Rotation (extracted — uses refs for Compiler-safe stable identity) ──
+  const { rotationCenter, handleRotateCW, handleRotateCCW } = useCosmosRotation(cosmosRef, containerRef, hoverRef, isSimRunningRef)
 
   // ── Camera controls (extracted) ──
   const { handleZoomIn, handleZoomOut, handleFit } = useCosmosCamera(cosmosRef)
-
-  const handleRotateCW = useCallback((): void => {
-    rotatePositions(15)
-  }, [rotatePositions])
-
-  const handleRotateCCW = useCallback((): void => {
-    rotatePositions(-15)
-  }, [rotatePositions])
 
   // ── Simulation controls (extracted) ──
   const { startSimulation, stopSimulation, pauseSimulation, restartSimulation } = useCosmosSimulation(cosmosRef, data)

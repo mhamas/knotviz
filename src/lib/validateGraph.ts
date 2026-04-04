@@ -86,7 +86,8 @@ export function validateGraph(raw: unknown): GraphData {
       const props = n.properties as Record<string, unknown>
       for (const key of Object.keys(props)) {
         const value = props[key]
-        if (typeof value !== 'number' && typeof value !== 'string' && typeof value !== 'boolean') {
+        const isStringArray = Array.isArray(value) && value.every((v: unknown) => typeof v === 'string')
+        if (typeof value !== 'number' && typeof value !== 'string' && typeof value !== 'boolean' && !isStringArray) {
           delete props[key]
           skippedNodes++ // count as a warning (batched below)
         }

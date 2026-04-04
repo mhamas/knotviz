@@ -195,4 +195,18 @@ describe('buildGraph', () => {
     const cosmosData = buildGraph(result)
     expect(cosmosData.maxOutgoingDegree).toBe(0)
   })
+
+  it('computes maxIncomingDegree for fan-in graph', () => {
+    const result = makeResult({
+      version: '1',
+      nodes: [{ id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }],
+      edges: [
+        { source: '2', target: '1' },
+        { source: '3', target: '1' },
+        { source: '4', target: '1' },
+      ],
+    })
+    const cosmosData = buildGraph(result)
+    expect(cosmosData.maxIncomingDegree).toBe(3)
+  })
 })

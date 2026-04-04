@@ -169,4 +169,17 @@ describe('validateGraph', () => {
     expect(warn).toHaveBeenCalled()
     warn.mockRestore()
   })
+
+  it('accepts string[] property values', () => {
+    const result = validateGraph({
+      version: '1',
+      nodes: [
+        { id: '1', properties: { tags: ['web', 'api'] } },
+        { id: '2', properties: { tags: ['scraper'] } },
+      ],
+      edges: [],
+    })
+    expect(result.nodes).toHaveLength(2)
+    expect(result.nodes[0].properties!.tags).toEqual(['web', 'api'])
+  })
 })

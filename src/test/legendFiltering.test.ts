@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { filterBooleanLegend, filterContinuousRange, filterStringLegend } from '@/components/ColorTab'
-import type { BooleanFilterState, DateFilterState, NumberFilterState, StringFilterState } from '@/types'
+import type { BooleanFilterState, DateFilterState, NumberFilterState, StringArrayFilterState, StringFilterState } from '@/types'
 
 const stops = ['#3b82f6', '#f97316']
 
@@ -49,6 +49,16 @@ describe('filterStringLegend', () => {
       allValues: ['A', 'B', 'C', 'D'],
     }
     expect(filterStringLegend(allLabels, filter)).toEqual(['B'])
+  })
+
+  it('filters using string[] filter type', () => {
+    const filter: StringArrayFilterState = {
+      type: 'string[]',
+      isEnabled: true,
+      selectedValues: new Set(['A', 'D']),
+      allValues: ['A', 'B', 'C', 'D'],
+    }
+    expect(filterStringLegend(allLabels, filter)).toEqual(['A', 'D'])
   })
 })
 

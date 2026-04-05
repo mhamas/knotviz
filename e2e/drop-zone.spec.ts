@@ -7,7 +7,7 @@ const fixture = (name: string): string => path.join(__dirname, 'fixtures', name)
 
 test.describe('Drop Zone — File Loading', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/graph')
   })
 
   test('shows drop zone on initial load', async ({ page }) => {
@@ -56,7 +56,7 @@ test.describe('Drop Zone — File Loading', () => {
 
 test.describe('Drop Zone — Schema Dialog', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/graph')
   })
 
   test('schema link is visible inside drop zone', async ({ page }) => {

@@ -1,0 +1,6797 @@
+{
+  "version": "1",
+  "nodes": [
+    {
+      "id": "react",
+      "label": "react",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2024-05-16"
+      }
+    },
+    {
+      "id": "react-dom",
+      "label": "react-dom",
+      "properties": {
+        "type": "runtime",
+        "downloads": 617,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-08-23"
+      }
+    },
+    {
+      "id": "next",
+      "label": "next",
+      "properties": {
+        "type": "library",
+        "downloads": 1900,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2025-02-11"
+      }
+    },
+    {
+      "id": "vue",
+      "label": "vue",
+      "properties": {
+        "type": "plugin",
+        "downloads": 853,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-04-06"
+      }
+    },
+    {
+      "id": "angular",
+      "label": "angular",
+      "properties": {
+        "type": "plugin",
+        "downloads": 11111,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-04-14"
+      }
+    },
+    {
+      "id": "svelte",
+      "label": "svelte",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2021-04-10"
+      }
+    },
+    {
+      "id": "solid-js",
+      "label": "solid-js",
+      "properties": {
+        "type": "library",
+        "downloads": 1453,
+        "deprecated": true,
+        "license": "GPL-3.0",
+        "lastPublished": "2025-08-05"
+      }
+    },
+    {
+      "id": "lodash",
+      "label": "lodash",
+      "properties": {
+        "type": "framework",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-08-29"
+      }
+    },
+    {
+      "id": "underscore",
+      "label": "underscore",
+      "properties": {
+        "type": "framework",
+        "downloads": 71671,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-06-05"
+      }
+    },
+    {
+      "id": "ramda",
+      "label": "ramda",
+      "properties": {
+        "type": "framework",
+        "downloads": 12147,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-06-08"
+      }
+    },
+    {
+      "id": "rxjs",
+      "label": "rxjs",
+      "properties": {
+        "type": "library",
+        "downloads": 3465,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-07-13"
+      }
+    },
+    {
+      "id": "immer",
+      "label": "immer",
+      "properties": {
+        "type": "framework",
+        "downloads": 60545,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-08-17"
+      }
+    },
+    {
+      "id": "express",
+      "label": "express",
+      "properties": {
+        "type": "library",
+        "downloads": 2575,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2025-09-21"
+      }
+    },
+    {
+      "id": "fastify",
+      "label": "fastify",
+      "properties": {
+        "type": "tool",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-09-13"
+      }
+    },
+    {
+      "id": "koa",
+      "label": "koa",
+      "properties": {
+        "type": "tool",
+        "downloads": 126,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2022-02-26"
+      }
+    },
+    {
+      "id": "hapi",
+      "label": "hapi",
+      "properties": {
+        "type": "framework",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-05-01"
+      }
+    },
+    {
+      "id": "nestjs",
+      "label": "nestjs",
+      "properties": {
+        "type": "library",
+        "downloads": 126,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-04-17"
+      }
+    },
+    {
+      "id": "hono",
+      "label": "hono",
+      "properties": {
+        "type": "library",
+        "downloads": 11726,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-02-16"
+      }
+    },
+    {
+      "id": "webpack",
+      "label": "webpack",
+      "properties": {
+        "type": "framework",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-03-08"
+      }
+    },
+    {
+      "id": "vite",
+      "label": "vite",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2023-07-27"
+      }
+    },
+    {
+      "id": "rollup",
+      "label": "rollup",
+      "properties": {
+        "type": "runtime",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-04-14"
+      }
+    },
+    {
+      "id": "esbuild",
+      "label": "esbuild",
+      "properties": {
+        "type": "plugin",
+        "downloads": 2441,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2021-03-12"
+      }
+    },
+    {
+      "id": "parcel",
+      "label": "parcel",
+      "properties": {
+        "type": "library",
+        "downloads": 785,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-06-04"
+      }
+    },
+    {
+      "id": "turbopack",
+      "label": "turbopack",
+      "properties": {
+        "type": "tool",
+        "downloads": 534,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2026-03-08"
+      }
+    },
+    {
+      "id": "swc",
+      "label": "swc",
+      "properties": {
+        "type": "tool",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2021-06-25"
+      }
+    },
+    {
+      "id": "typescript",
+      "label": "typescript",
+      "properties": {
+        "type": "library",
+        "downloads": 457,
+        "deprecated": true,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2025-04-29"
+      }
+    },
+    {
+      "id": "babel",
+      "label": "babel",
+      "properties": {
+        "type": "library",
+        "downloads": 560,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2022-02-01"
+      }
+    },
+    {
+      "id": "prettier",
+      "label": "prettier",
+      "properties": {
+        "type": "tool",
+        "downloads": 5518,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-02-24"
+      }
+    },
+    {
+      "id": "eslint",
+      "label": "eslint",
+      "properties": {
+        "type": "framework",
+        "downloads": 2957,
+        "deprecated": true,
+        "license": "Apache-2.0",
+        "lastPublished": "2023-10-04"
+      }
+    },
+    {
+      "id": "biome",
+      "label": "biome",
+      "properties": {
+        "type": "tool",
+        "downloads": 591,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-05-15"
+      }
+    },
+    {
+      "id": "jest",
+      "label": "jest",
+      "properties": {
+        "type": "tool",
+        "downloads": 2988500,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2021-10-24"
+      }
+    },
+    {
+      "id": "vitest",
+      "label": "vitest",
+      "properties": {
+        "type": "framework",
+        "downloads": 656,
+        "deprecated": false,
+        "license": "GPL-3.0",
+        "lastPublished": "2023-01-01"
+      }
+    },
+    {
+      "id": "mocha",
+      "label": "mocha",
+      "properties": {
+        "type": "library",
+        "downloads": 2534999,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2020-07-22"
+      }
+    },
+    {
+      "id": "chai",
+      "label": "chai",
+      "properties": {
+        "type": "library",
+        "downloads": 30382,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2024-06-18"
+      }
+    },
+    {
+      "id": "playwright",
+      "label": "playwright",
+      "properties": {
+        "type": "library",
+        "downloads": 1258,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-01-20"
+      }
+    },
+    {
+      "id": "cypress",
+      "label": "cypress",
+      "properties": {
+        "type": "plugin",
+        "downloads": 80602,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2026-01-04"
+      }
+    },
+    {
+      "id": "testing-library",
+      "label": "testing-library",
+      "properties": {
+        "type": "plugin",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-09-01"
+      }
+    },
+    {
+      "id": "tailwindcss",
+      "label": "tailwindcss",
+      "properties": {
+        "type": "tool",
+        "downloads": 289495,
+        "deprecated": false,
+        "license": "GPL-3.0",
+        "lastPublished": "2023-10-16"
+      }
+    },
+    {
+      "id": "postcss",
+      "label": "postcss",
+      "properties": {
+        "type": "library",
+        "downloads": 2174,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-02-20"
+      }
+    },
+    {
+      "id": "sass",
+      "label": "sass",
+      "properties": {
+        "type": "library",
+        "downloads": 1879,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2022-04-08"
+      }
+    },
+    {
+      "id": "styled-components",
+      "label": "styled-components",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "GPL-3.0",
+        "lastPublished": "2024-10-03"
+      }
+    },
+    {
+      "id": "emotion",
+      "label": "emotion",
+      "properties": {
+        "type": "library",
+        "downloads": 311005,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2023-03-18"
+      }
+    },
+    {
+      "id": "axios",
+      "label": "axios",
+      "properties": {
+        "type": "tool",
+        "downloads": 912,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2024-01-26"
+      }
+    },
+    {
+      "id": "node-fetch",
+      "label": "node-fetch",
+      "properties": {
+        "type": "plugin",
+        "downloads": 7690,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-03-14"
+      }
+    },
+    {
+      "id": "got",
+      "label": "got",
+      "properties": {
+        "type": "tool",
+        "downloads": 4389,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-01-04"
+      }
+    },
+    {
+      "id": "superagent",
+      "label": "superagent",
+      "properties": {
+        "type": "plugin",
+        "downloads": 38969,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-02-10"
+      }
+    },
+    {
+      "id": "ky",
+      "label": "ky",
+      "properties": {
+        "type": "framework",
+        "downloads": 67652,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-12-09"
+      }
+    },
+    {
+      "id": "zod",
+      "label": "zod",
+      "properties": {
+        "type": "plugin",
+        "downloads": 308,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-10-30"
+      }
+    },
+    {
+      "id": "yup",
+      "label": "yup",
+      "properties": {
+        "type": "library",
+        "downloads": 79331,
+        "deprecated": false,
+        "license": "GPL-3.0",
+        "lastPublished": "2020-11-15"
+      }
+    },
+    {
+      "id": "joi",
+      "label": "joi",
+      "properties": {
+        "type": "library",
+        "downloads": 408989,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-05-10"
+      }
+    },
+    {
+      "id": "ajv",
+      "label": "ajv",
+      "properties": {
+        "type": "plugin",
+        "downloads": 916,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-10-10"
+      }
+    },
+    {
+      "id": "prisma",
+      "label": "prisma",
+      "properties": {
+        "type": "library",
+        "downloads": 651420,
+        "deprecated": true,
+        "license": "ISC",
+        "lastPublished": "2024-09-30"
+      }
+    },
+    {
+      "id": "drizzle-orm",
+      "label": "drizzle-orm",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2021-03-06"
+      }
+    },
+    {
+      "id": "typeorm",
+      "label": "typeorm",
+      "properties": {
+        "type": "plugin",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2023-05-18"
+      }
+    },
+    {
+      "id": "sequelize",
+      "label": "sequelize",
+      "properties": {
+        "type": "library",
+        "downloads": 9667,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2021-03-07"
+      }
+    },
+    {
+      "id": "knex",
+      "label": "knex",
+      "properties": {
+        "type": "library",
+        "downloads": 565,
+        "deprecated": false,
+        "license": "GPL-3.0",
+        "lastPublished": "2020-08-17"
+      }
+    },
+    {
+      "id": "mongoose",
+      "label": "mongoose",
+      "properties": {
+        "type": "library",
+        "downloads": 8775,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2026-01-03"
+      }
+    },
+    {
+      "id": "redis",
+      "label": "redis",
+      "properties": {
+        "type": "library",
+        "downloads": 2242,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2023-04-16"
+      }
+    },
+    {
+      "id": "ioredis",
+      "label": "ioredis",
+      "properties": {
+        "type": "library",
+        "downloads": 205,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-12-07"
+      }
+    },
+    {
+      "id": "pg",
+      "label": "pg",
+      "properties": {
+        "type": "library",
+        "downloads": 805807,
+        "deprecated": false,
+        "license": "GPL-3.0",
+        "lastPublished": "2024-04-28"
+      }
+    },
+    {
+      "id": "mysql2",
+      "label": "mysql2",
+      "properties": {
+        "type": "tool",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-03-11"
+      }
+    },
+    {
+      "id": "better-sqlite3",
+      "label": "better-sqlite3",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-11-07"
+      }
+    },
+    {
+      "id": "socket.io",
+      "label": "socket.io",
+      "properties": {
+        "type": "tool",
+        "downloads": 552,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-01-07"
+      }
+    },
+    {
+      "id": "ws",
+      "label": "ws",
+      "properties": {
+        "type": "tool",
+        "downloads": 245858,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2024-10-21"
+      }
+    },
+    {
+      "id": "graphql",
+      "label": "graphql",
+      "properties": {
+        "type": "framework",
+        "downloads": 1720,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-07-18"
+      }
+    },
+    {
+      "id": "apollo-server",
+      "label": "apollo-server",
+      "properties": {
+        "type": "plugin",
+        "downloads": 161,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2025-07-29"
+      }
+    },
+    {
+      "id": "trpc",
+      "label": "trpc",
+      "properties": {
+        "type": "library",
+        "downloads": 1869301,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-12-28"
+      }
+    },
+    {
+      "id": "chalk",
+      "label": "chalk",
+      "properties": {
+        "type": "library",
+        "downloads": 9145,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2025-07-30"
+      }
+    },
+    {
+      "id": "commander",
+      "label": "commander",
+      "properties": {
+        "type": "plugin",
+        "downloads": 230,
+        "deprecated": true,
+        "license": "ISC",
+        "lastPublished": "2025-10-25"
+      }
+    },
+    {
+      "id": "yargs",
+      "label": "yargs",
+      "properties": {
+        "type": "plugin",
+        "downloads": 31769,
+        "deprecated": false,
+        "license": "GPL-3.0",
+        "lastPublished": "2024-07-07"
+      }
+    },
+    {
+      "id": "inquirer",
+      "label": "inquirer",
+      "properties": {
+        "type": "runtime",
+        "downloads": 203,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2021-11-05"
+      }
+    },
+    {
+      "id": "ora",
+      "label": "ora",
+      "properties": {
+        "type": "runtime",
+        "downloads": 2774,
+        "deprecated": true,
+        "license": "ISC",
+        "lastPublished": "2023-11-02"
+      }
+    },
+    {
+      "id": "boxen",
+      "label": "boxen",
+      "properties": {
+        "type": "tool",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-12-23"
+      }
+    },
+    {
+      "id": "dotenv",
+      "label": "dotenv",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-03-13"
+      }
+    },
+    {
+      "id": "cross-env",
+      "label": "cross-env",
+      "properties": {
+        "type": "library",
+        "downloads": 28670,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-10-06"
+      }
+    },
+    {
+      "id": "concurrently",
+      "label": "concurrently",
+      "properties": {
+        "type": "tool",
+        "downloads": 1065,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2023-06-15"
+      }
+    },
+    {
+      "id": "nodemon",
+      "label": "nodemon",
+      "properties": {
+        "type": "plugin",
+        "downloads": 327,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-11-14"
+      }
+    },
+    {
+      "id": "tsx",
+      "label": "tsx",
+      "properties": {
+        "type": "library",
+        "downloads": 26615,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-05-04"
+      }
+    },
+    {
+      "id": "ts-node",
+      "label": "ts-node",
+      "properties": {
+        "type": "runtime",
+        "downloads": 299853,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2024-03-02"
+      }
+    },
+    {
+      "id": "uuid",
+      "label": "uuid",
+      "properties": {
+        "type": "tool",
+        "downloads": 59903,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-11-18"
+      }
+    },
+    {
+      "id": "nanoid",
+      "label": "nanoid",
+      "properties": {
+        "type": "plugin",
+        "downloads": 591,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2022-08-17"
+      }
+    },
+    {
+      "id": "date-fns",
+      "label": "date-fns",
+      "properties": {
+        "type": "library",
+        "downloads": 1231,
+        "deprecated": true,
+        "license": "Apache-2.0",
+        "lastPublished": "2024-07-10"
+      }
+    },
+    {
+      "id": "dayjs",
+      "label": "dayjs",
+      "properties": {
+        "type": "library",
+        "downloads": 208,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2024-09-23"
+      }
+    },
+    {
+      "id": "moment",
+      "label": "moment",
+      "properties": {
+        "type": "plugin",
+        "downloads": 39288,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-12-23"
+      }
+    },
+    {
+      "id": "luxon",
+      "label": "luxon",
+      "properties": {
+        "type": "library",
+        "downloads": 217,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2020-06-20"
+      }
+    },
+    {
+      "id": "pino",
+      "label": "pino",
+      "properties": {
+        "type": "framework",
+        "downloads": 217039,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-03-05"
+      }
+    },
+    {
+      "id": "winston",
+      "label": "winston",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-05-21"
+      }
+    },
+    {
+      "id": "bunyan",
+      "label": "bunyan",
+      "properties": {
+        "type": "tool",
+        "downloads": 6684,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2025-01-09"
+      }
+    },
+    {
+      "id": "morgan",
+      "label": "morgan",
+      "properties": {
+        "type": "tool",
+        "downloads": 100,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2023-09-30"
+      }
+    },
+    {
+      "id": "d3",
+      "label": "d3",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2022-12-16"
+      }
+    },
+    {
+      "id": "three",
+      "label": "three",
+      "properties": {
+        "type": "tool",
+        "downloads": 110,
+        "deprecated": false,
+        "license": "GPL-3.0",
+        "lastPublished": "2023-12-01"
+      }
+    },
+    {
+      "id": "chart.js",
+      "label": "chart.js",
+      "properties": {
+        "type": "plugin",
+        "downloads": 5080,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-11-17"
+      }
+    },
+    {
+      "id": "recharts",
+      "label": "recharts",
+      "properties": {
+        "type": "framework",
+        "downloads": 537,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-02-22"
+      }
+    },
+    {
+      "id": "echarts",
+      "label": "echarts",
+      "properties": {
+        "type": "library",
+        "downloads": 9500,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-03-13"
+      }
+    },
+    {
+      "id": "zustand",
+      "label": "zustand",
+      "properties": {
+        "type": "library",
+        "downloads": 110,
+        "deprecated": false,
+        "license": "GPL-3.0",
+        "lastPublished": "2022-08-11"
+      }
+    },
+    {
+      "id": "jotai",
+      "label": "jotai",
+      "properties": {
+        "type": "library",
+        "downloads": 1080,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2023-01-28"
+      }
+    },
+    {
+      "id": "recoil",
+      "label": "recoil",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2023-04-17"
+      }
+    },
+    {
+      "id": "mobx",
+      "label": "mobx",
+      "properties": {
+        "type": "runtime",
+        "downloads": 343,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-06-09"
+      }
+    },
+    {
+      "id": "redux",
+      "label": "redux",
+      "properties": {
+        "type": "plugin",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2020-05-05"
+      }
+    },
+    {
+      "id": "redux-toolkit",
+      "label": "redux-toolkit",
+      "properties": {
+        "type": "tool",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-07-02"
+      }
+    },
+    {
+      "id": "react-router",
+      "label": "react-router",
+      "properties": {
+        "type": "plugin",
+        "downloads": 1062,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2020-04-17"
+      }
+    },
+    {
+      "id": "react-query",
+      "label": "react-query",
+      "properties": {
+        "type": "tool",
+        "downloads": 28487,
+        "deprecated": false,
+        "license": "GPL-3.0",
+        "lastPublished": "2021-02-17"
+      }
+    },
+    {
+      "id": "swr",
+      "label": "swr",
+      "properties": {
+        "type": "library",
+        "downloads": 491965,
+        "deprecated": true,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2021-08-01"
+      }
+    },
+    {
+      "id": "tanstack-query",
+      "label": "tanstack-query",
+      "properties": {
+        "type": "library",
+        "downloads": 1065,
+        "deprecated": true,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2025-11-09"
+      }
+    },
+    {
+      "id": "sharp",
+      "label": "sharp",
+      "properties": {
+        "type": "plugin",
+        "downloads": 651,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-11-17"
+      }
+    },
+    {
+      "id": "jimp",
+      "label": "jimp",
+      "properties": {
+        "type": "framework",
+        "downloads": 296,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2021-08-28"
+      }
+    },
+    {
+      "id": "canvas",
+      "label": "canvas",
+      "properties": {
+        "type": "library",
+        "downloads": 3674,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2024-03-30"
+      }
+    },
+    {
+      "id": "puppeteer",
+      "label": "puppeteer",
+      "properties": {
+        "type": "tool",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-04-26"
+      }
+    },
+    {
+      "id": "fs-extra",
+      "label": "fs-extra",
+      "properties": {
+        "type": "library",
+        "downloads": 2087,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2025-08-05"
+      }
+    },
+    {
+      "id": "glob",
+      "label": "glob",
+      "properties": {
+        "type": "tool",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2025-06-02"
+      }
+    },
+    {
+      "id": "chokidar",
+      "label": "chokidar",
+      "properties": {
+        "type": "plugin",
+        "downloads": 2129,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2023-01-21"
+      }
+    },
+    {
+      "id": "rimraf",
+      "label": "rimraf",
+      "properties": {
+        "type": "framework",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-03-01"
+      }
+    },
+    {
+      "id": "mkdirp",
+      "label": "mkdirp",
+      "properties": {
+        "type": "library",
+        "downloads": 755922,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-10-04"
+      }
+    },
+    {
+      "id": "semver",
+      "label": "semver",
+      "properties": {
+        "type": "plugin",
+        "downloads": 1453,
+        "deprecated": true,
+        "license": "Apache-2.0",
+        "lastPublished": "2020-05-06"
+      }
+    },
+    {
+      "id": "minimatch",
+      "label": "minimatch",
+      "properties": {
+        "type": "library",
+        "downloads": 957,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2024-01-29"
+      }
+    },
+    {
+      "id": "micromatch",
+      "label": "micromatch",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-02-12"
+      }
+    },
+    {
+      "id": "picomatch",
+      "label": "picomatch",
+      "properties": {
+        "type": "library",
+        "downloads": 171,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-07-18"
+      }
+    },
+    {
+      "id": "debug",
+      "label": "debug",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-08-29"
+      }
+    },
+    {
+      "id": "source-map",
+      "label": "source-map",
+      "properties": {
+        "type": "library",
+        "downloads": 6909,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2021-11-24"
+      }
+    },
+    {
+      "id": "source-map-support",
+      "label": "source-map-support",
+      "properties": {
+        "type": "library",
+        "downloads": 10406,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2023-12-10"
+      }
+    },
+    {
+      "id": "builder",
+      "label": "builder",
+      "properties": {
+        "type": "plugin",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2024-04-21"
+      }
+    },
+    {
+      "id": "@dev/compiler-kit",
+      "label": "@dev/compiler-kit",
+      "properties": {
+        "type": "plugin",
+        "downloads": 1396,
+        "deprecated": false,
+        "license": "GPL-3.0",
+        "lastPublished": "2022-02-17"
+      }
+    },
+    {
+      "id": "token",
+      "label": "token",
+      "properties": {
+        "type": "library",
+        "downloads": 2599284,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-11-14"
+      }
+    },
+    {
+      "id": "@dev/cache",
+      "label": "@dev/cache",
+      "properties": {
+        "type": "library",
+        "downloads": 28122,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2021-03-04"
+      }
+    },
+    {
+      "id": "plugin-js",
+      "label": "plugin-js",
+      "properties": {
+        "type": "plugin",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-12-31"
+      }
+    },
+    {
+      "id": "hot-server-js",
+      "label": "hot-server-js",
+      "properties": {
+        "type": "framework",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2020-03-05"
+      }
+    },
+    {
+      "id": "@data/token",
+      "label": "@data/token",
+      "properties": {
+        "type": "library",
+        "downloads": 703566,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-07-01"
+      }
+    },
+    {
+      "id": "deep-hook-core",
+      "label": "deep-hook-core",
+      "properties": {
+        "type": "library",
+        "downloads": 12885,
+        "deprecated": true,
+        "license": "Apache-2.0",
+        "lastPublished": "2025-10-19"
+      }
+    },
+    {
+      "id": "lazy-formatter",
+      "label": "lazy-formatter",
+      "properties": {
+        "type": "framework",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-06-10"
+      }
+    },
+    {
+      "id": "tiny-buffer-box",
+      "label": "tiny-buffer-box",
+      "properties": {
+        "type": "library",
+        "downloads": 1041,
+        "deprecated": true,
+        "license": "GPL-3.0",
+        "lastPublished": "2020-05-01"
+      }
+    },
+    {
+      "id": "pool",
+      "label": "pool",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-06-16"
+      }
+    },
+    {
+      "id": "handler",
+      "label": "handler",
+      "properties": {
+        "type": "tool",
+        "downloads": 100,
+        "deprecated": true,
+        "license": "GPL-3.0",
+        "lastPublished": "2026-01-21"
+      }
+    },
+    {
+      "id": "@pkg/flat-minifier",
+      "label": "@pkg/flat-minifier",
+      "properties": {
+        "type": "framework",
+        "downloads": 111720,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2022-06-26"
+      }
+    },
+    {
+      "id": "@util/mapper",
+      "label": "@util/mapper",
+      "properties": {
+        "type": "framework",
+        "downloads": 627,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2026-02-24"
+      }
+    },
+    {
+      "id": "@app/migrator",
+      "label": "@app/migrator",
+      "properties": {
+        "type": "framework",
+        "downloads": 725,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-08-09"
+      }
+    },
+    {
+      "id": "plugin",
+      "label": "plugin",
+      "properties": {
+        "type": "library",
+        "downloads": 185,
+        "deprecated": true,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2022-06-01"
+      }
+    },
+    {
+      "id": "filter",
+      "label": "filter",
+      "properties": {
+        "type": "tool",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-01-14"
+      }
+    },
+    {
+      "id": "mapper",
+      "label": "mapper",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-11-13"
+      }
+    },
+    {
+      "id": "gateway",
+      "label": "gateway",
+      "properties": {
+        "type": "framework",
+        "downloads": 21809,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-02-25"
+      }
+    },
+    {
+      "id": "tiny-differ",
+      "label": "tiny-differ",
+      "properties": {
+        "type": "tool",
+        "downloads": 1455782,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2020-12-26"
+      }
+    },
+    {
+      "id": "cool-router",
+      "label": "cool-router",
+      "properties": {
+        "type": "framework",
+        "downloads": 55570,
+        "deprecated": false,
+        "license": "GPL-3.0",
+        "lastPublished": "2023-09-17"
+      }
+    },
+    {
+      "id": "pure-validate",
+      "label": "pure-validate",
+      "properties": {
+        "type": "framework",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-12-09"
+      }
+    },
+    {
+      "id": "quick-transform",
+      "label": "quick-transform",
+      "properties": {
+        "type": "library",
+        "downloads": 22229,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-06-11"
+      }
+    },
+    {
+      "id": "differ",
+      "label": "differ",
+      "properties": {
+        "type": "library",
+        "downloads": 1996,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-07-28"
+      }
+    },
+    {
+      "id": "quick-cache",
+      "label": "quick-cache",
+      "properties": {
+        "type": "library",
+        "downloads": 2069,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-03-06"
+      }
+    },
+    {
+      "id": "minifier",
+      "label": "minifier",
+      "properties": {
+        "type": "library",
+        "downloads": 214,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-02-15"
+      }
+    },
+    {
+      "id": "parser",
+      "label": "parser",
+      "properties": {
+        "type": "framework",
+        "downloads": 594,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2022-12-26"
+      }
+    },
+    {
+      "id": "@util/encrypt",
+      "label": "@util/encrypt",
+      "properties": {
+        "type": "library",
+        "downloads": 440,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2026-01-17"
+      }
+    },
+    {
+      "id": "un-middleware",
+      "label": "un-middleware",
+      "properties": {
+        "type": "framework",
+        "downloads": 885,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2020-06-11"
+      }
+    },
+    {
+      "id": "@util/smart-worker",
+      "label": "@util/smart-worker",
+      "properties": {
+        "type": "tool",
+        "downloads": 277,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-04-27"
+      }
+    },
+    {
+      "id": "config",
+      "label": "config",
+      "properties": {
+        "type": "library",
+        "downloads": 5531,
+        "deprecated": false,
+        "license": "GPL-3.0",
+        "lastPublished": "2020-04-22"
+      }
+    },
+    {
+      "id": "flat-gateway",
+      "label": "flat-gateway",
+      "properties": {
+        "type": "tool",
+        "downloads": 13385,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-10-22"
+      }
+    },
+    {
+      "id": "tiny-token",
+      "label": "tiny-token",
+      "properties": {
+        "type": "library",
+        "downloads": 1487,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-04-29"
+      }
+    },
+    {
+      "id": "pure-token-ts",
+      "label": "pure-token-ts",
+      "properties": {
+        "type": "library",
+        "downloads": 13206,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-12-10"
+      }
+    },
+    {
+      "id": "hyper-adapter",
+      "label": "hyper-adapter",
+      "properties": {
+        "type": "library",
+        "downloads": 1248436,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2020-12-24"
+      }
+    },
+    {
+      "id": "linker",
+      "label": "linker",
+      "properties": {
+        "type": "library",
+        "downloads": 265,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2020-08-05"
+      }
+    },
+    {
+      "id": "simple-linter",
+      "label": "simple-linter",
+      "properties": {
+        "type": "framework",
+        "downloads": 64505,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2025-05-31"
+      }
+    },
+    {
+      "id": "util-x",
+      "label": "util-x",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2026-02-08"
+      }
+    },
+    {
+      "id": "un-connector",
+      "label": "un-connector",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": true,
+        "license": "ISC",
+        "lastPublished": "2026-02-12"
+      }
+    },
+    {
+      "id": "stream",
+      "label": "stream",
+      "properties": {
+        "type": "framework",
+        "downloads": 2808524,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-04-23"
+      }
+    },
+    {
+      "id": "@tools/hot-migrator",
+      "label": "@tools/hot-migrator",
+      "properties": {
+        "type": "tool",
+        "downloads": 361,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-01-29"
+      }
+    },
+    {
+      "id": "formatter",
+      "label": "formatter",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-05-26"
+      }
+    },
+    {
+      "id": "neo-resolver",
+      "label": "neo-resolver",
+      "properties": {
+        "type": "tool",
+        "downloads": 115,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-12-19"
+      }
+    },
+    {
+      "id": "fast-pool",
+      "label": "fast-pool",
+      "properties": {
+        "type": "framework",
+        "downloads": 1717,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2022-12-05"
+      }
+    },
+    {
+      "id": "compiler",
+      "label": "compiler",
+      "properties": {
+        "type": "library",
+        "downloads": 2263,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-02-24"
+      }
+    },
+    {
+      "id": "encrypt-node",
+      "label": "encrypt-node",
+      "properties": {
+        "type": "tool",
+        "downloads": 34984,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2020-01-30"
+      }
+    },
+    {
+      "id": "@dev/lazy-differ",
+      "label": "@dev/lazy-differ",
+      "properties": {
+        "type": "plugin",
+        "downloads": 5161,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-07-05"
+      }
+    },
+    {
+      "id": "simple-cluster",
+      "label": "simple-cluster",
+      "properties": {
+        "type": "library",
+        "downloads": 339,
+        "deprecated": false,
+        "license": "GPL-3.0",
+        "lastPublished": "2025-07-15"
+      }
+    },
+    {
+      "id": "mini-server",
+      "label": "mini-server",
+      "properties": {
+        "type": "plugin",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-12-29"
+      }
+    },
+    {
+      "id": "router",
+      "label": "router",
+      "properties": {
+        "type": "library",
+        "downloads": 579,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2022-04-16"
+      }
+    },
+    {
+      "id": "@app/next-worker",
+      "label": "@app/next-worker",
+      "properties": {
+        "type": "plugin",
+        "downloads": 316,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2024-02-25"
+      }
+    },
+    {
+      "id": "micro-logger",
+      "label": "micro-logger",
+      "properties": {
+        "type": "tool",
+        "downloads": 14652,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-11-30"
+      }
+    },
+    {
+      "id": "@util/pure-builder-hub",
+      "label": "@util/pure-builder-hub",
+      "properties": {
+        "type": "tool",
+        "downloads": 232,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2020-06-06"
+      }
+    },
+    {
+      "id": "quick-encrypt",
+      "label": "quick-encrypt",
+      "properties": {
+        "type": "plugin",
+        "downloads": 63074,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-05-05"
+      }
+    },
+    {
+      "id": "mocker",
+      "label": "mocker",
+      "properties": {
+        "type": "framework",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-03-17"
+      }
+    },
+    {
+      "id": "resolver",
+      "label": "resolver",
+      "properties": {
+        "type": "plugin",
+        "downloads": 2139,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2020-10-28"
+      }
+    },
+    {
+      "id": "migrator",
+      "label": "migrator",
+      "properties": {
+        "type": "runtime",
+        "downloads": 41266,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2022-04-24"
+      }
+    },
+    {
+      "id": "pure-compiler",
+      "label": "pure-compiler",
+      "properties": {
+        "type": "library",
+        "downloads": 13775,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-04-20"
+      }
+    },
+    {
+      "id": "next-util",
+      "label": "next-util",
+      "properties": {
+        "type": "library",
+        "downloads": 28197,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2024-01-29"
+      }
+    },
+    {
+      "id": "encrypt",
+      "label": "encrypt",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-03-14"
+      }
+    },
+    {
+      "id": "hot-filter",
+      "label": "hot-filter",
+      "properties": {
+        "type": "library",
+        "downloads": 604,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-03-09"
+      }
+    },
+    {
+      "id": "neo-gateway",
+      "label": "neo-gateway",
+      "properties": {
+        "type": "library",
+        "downloads": 579707,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2024-12-05"
+      }
+    },
+    {
+      "id": "neo-builder",
+      "label": "neo-builder",
+      "properties": {
+        "type": "plugin",
+        "downloads": 235,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2020-03-24"
+      }
+    },
+    {
+      "id": "reducer",
+      "label": "reducer",
+      "properties": {
+        "type": "runtime",
+        "downloads": 120,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-09-21"
+      }
+    },
+    {
+      "id": "nano-router-pro",
+      "label": "nano-router-pro",
+      "properties": {
+        "type": "framework",
+        "downloads": 262,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2021-12-21"
+      }
+    },
+    {
+      "id": "@util/next-util",
+      "label": "@util/next-util",
+      "properties": {
+        "type": "tool",
+        "downloads": 350,
+        "deprecated": false,
+        "license": "GPL-3.0",
+        "lastPublished": "2020-08-11"
+      }
+    },
+    {
+      "id": "mini-compress",
+      "label": "mini-compress",
+      "properties": {
+        "type": "tool",
+        "downloads": 2691,
+        "deprecated": true,
+        "license": "Apache-2.0",
+        "lastPublished": "2020-12-15"
+      }
+    },
+    {
+      "id": "@net/proxy",
+      "label": "@net/proxy",
+      "properties": {
+        "type": "tool",
+        "downloads": 286,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2025-05-19"
+      }
+    },
+    {
+      "id": "@lib/ultra-migrator",
+      "label": "@lib/ultra-migrator",
+      "properties": {
+        "type": "plugin",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-12-10"
+      }
+    },
+    {
+      "id": "factory",
+      "label": "factory",
+      "properties": {
+        "type": "tool",
+        "downloads": 13598,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2025-04-11"
+      }
+    },
+    {
+      "id": "@pkg/transform",
+      "label": "@pkg/transform",
+      "properties": {
+        "type": "plugin",
+        "downloads": 93590,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-01-11"
+      }
+    },
+    {
+      "id": "buffer-x",
+      "label": "buffer-x",
+      "properties": {
+        "type": "framework",
+        "downloads": 2763436,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-06-20"
+      }
+    },
+    {
+      "id": "connector",
+      "label": "connector",
+      "properties": {
+        "type": "library",
+        "downloads": 175,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-04-04"
+      }
+    },
+    {
+      "id": "deep-builder-core",
+      "label": "deep-builder-core",
+      "properties": {
+        "type": "plugin",
+        "downloads": 100,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2021-11-26"
+      }
+    },
+    {
+      "id": "safe-hook-hub",
+      "label": "safe-hook-hub",
+      "properties": {
+        "type": "framework",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-10-26"
+      }
+    },
+    {
+      "id": "@util/queue",
+      "label": "@util/queue",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2021-02-12"
+      }
+    },
+    {
+      "id": "serialize",
+      "label": "serialize",
+      "properties": {
+        "type": "library",
+        "downloads": 234257,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-02-08"
+      }
+    },
+    {
+      "id": "helper-hub",
+      "label": "helper-hub",
+      "properties": {
+        "type": "framework",
+        "downloads": 514,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2022-08-24"
+      }
+    },
+    {
+      "id": "@lib/migrator-core",
+      "label": "@lib/migrator-core",
+      "properties": {
+        "type": "framework",
+        "downloads": 5501,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-01-17"
+      }
+    },
+    {
+      "id": "adapter",
+      "label": "adapter",
+      "properties": {
+        "type": "tool",
+        "downloads": 144,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2022-07-16"
+      }
+    },
+    {
+      "id": "cool-env",
+      "label": "cool-env",
+      "properties": {
+        "type": "library",
+        "downloads": 196,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-06-05"
+      }
+    },
+    {
+      "id": "cluster",
+      "label": "cluster",
+      "properties": {
+        "type": "plugin",
+        "downloads": 1762,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2025-12-04"
+      }
+    },
+    {
+      "id": "fast-formatter",
+      "label": "fast-formatter",
+      "properties": {
+        "type": "framework",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2024-12-16"
+      }
+    },
+    {
+      "id": "connector-js",
+      "label": "connector-js",
+      "properties": {
+        "type": "library",
+        "downloads": 589,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2026-02-11"
+      }
+    },
+    {
+      "id": "hot-factory",
+      "label": "hot-factory",
+      "properties": {
+        "type": "library",
+        "downloads": 8307,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-06-12"
+      }
+    },
+    {
+      "id": "deep-adapter",
+      "label": "deep-adapter",
+      "properties": {
+        "type": "library",
+        "downloads": 47337,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2024-06-21"
+      }
+    },
+    {
+      "id": "@tools/parser-plus",
+      "label": "@tools/parser-plus",
+      "properties": {
+        "type": "tool",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-07-13"
+      }
+    },
+    {
+      "id": "util-ng",
+      "label": "util-ng",
+      "properties": {
+        "type": "framework",
+        "downloads": 167209,
+        "deprecated": true,
+        "license": "Apache-2.0",
+        "lastPublished": "2020-10-08"
+      }
+    },
+    {
+      "id": "easy-cluster",
+      "label": "easy-cluster",
+      "properties": {
+        "type": "library",
+        "downloads": 6771,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-04-02"
+      }
+    },
+    {
+      "id": "reducer-lab",
+      "label": "reducer-lab",
+      "properties": {
+        "type": "library",
+        "downloads": 744,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-06-14"
+      }
+    },
+    {
+      "id": "cache",
+      "label": "cache",
+      "properties": {
+        "type": "library",
+        "downloads": 139,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-03-03"
+      }
+    },
+    {
+      "id": "easy-resolver",
+      "label": "easy-resolver",
+      "properties": {
+        "type": "tool",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-02-03"
+      }
+    },
+    {
+      "id": "@tools/merger",
+      "label": "@tools/merger",
+      "properties": {
+        "type": "plugin",
+        "downloads": 1333,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-10-14"
+      }
+    },
+    {
+      "id": "tester",
+      "label": "tester",
+      "properties": {
+        "type": "framework",
+        "downloads": 298912,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-03-06"
+      }
+    },
+    {
+      "id": "quick-reducer-js",
+      "label": "quick-reducer-js",
+      "properties": {
+        "type": "plugin",
+        "downloads": 41461,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2021-01-19"
+      }
+    },
+    {
+      "id": "@util/safe-seeder",
+      "label": "@util/safe-seeder",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2021-01-29"
+      }
+    },
+    {
+      "id": "plugin-ng",
+      "label": "plugin-ng",
+      "properties": {
+        "type": "library",
+        "downloads": 250318,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2025-07-21"
+      }
+    },
+    {
+      "id": "safe-token",
+      "label": "safe-token",
+      "properties": {
+        "type": "library",
+        "downloads": 13899,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2021-09-30"
+      }
+    },
+    {
+      "id": "cool-worker",
+      "label": "cool-worker",
+      "properties": {
+        "type": "library",
+        "downloads": 1372,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-09-24"
+      }
+    },
+    {
+      "id": "@tools/mapper-lab",
+      "label": "@tools/mapper-lab",
+      "properties": {
+        "type": "framework",
+        "downloads": 741,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-11-28"
+      }
+    },
+    {
+      "id": "merger",
+      "label": "merger",
+      "properties": {
+        "type": "plugin",
+        "downloads": 1634,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-06-22"
+      }
+    },
+    {
+      "id": "@net/fast-queue-hub",
+      "label": "@net/fast-queue-hub",
+      "properties": {
+        "type": "library",
+        "downloads": 123906,
+        "deprecated": false,
+        "license": "GPL-3.0",
+        "lastPublished": "2021-09-01"
+      }
+    },
+    {
+      "id": "@app/watcher",
+      "label": "@app/watcher",
+      "properties": {
+        "type": "library",
+        "downloads": 329,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2024-02-03"
+      }
+    },
+    {
+      "id": "lazy-factory-js",
+      "label": "lazy-factory-js",
+      "properties": {
+        "type": "tool",
+        "downloads": 10953,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2024-09-03"
+      }
+    },
+    {
+      "id": "@tools/mini-tester",
+      "label": "@tools/mini-tester",
+      "properties": {
+        "type": "runtime",
+        "downloads": 868,
+        "deprecated": true,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2024-09-04"
+      }
+    },
+    {
+      "id": "flat-migrator",
+      "label": "flat-migrator",
+      "properties": {
+        "type": "library",
+        "downloads": 111,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-08-12"
+      }
+    },
+    {
+      "id": "mocker-lite",
+      "label": "mocker-lite",
+      "properties": {
+        "type": "framework",
+        "downloads": 20337,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-06-29"
+      }
+    },
+    {
+      "id": "mini-mocker-box",
+      "label": "mini-mocker-box",
+      "properties": {
+        "type": "library",
+        "downloads": 8046,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-04-13"
+      }
+    },
+    {
+      "id": "@tools/server",
+      "label": "@tools/server",
+      "properties": {
+        "type": "library",
+        "downloads": 3015,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-01-21"
+      }
+    },
+    {
+      "id": "cache-io",
+      "label": "cache-io",
+      "properties": {
+        "type": "library",
+        "downloads": 6598,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-03-26"
+      }
+    },
+    {
+      "id": "super-factory-lite",
+      "label": "super-factory-lite",
+      "properties": {
+        "type": "runtime",
+        "downloads": 1794,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-08-30"
+      }
+    },
+    {
+      "id": "@lib/mapper",
+      "label": "@lib/mapper",
+      "properties": {
+        "type": "library",
+        "downloads": 781,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-02-06"
+      }
+    },
+    {
+      "id": "quick-env",
+      "label": "quick-env",
+      "properties": {
+        "type": "library",
+        "downloads": 9953,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2022-08-01"
+      }
+    },
+    {
+      "id": "buffer",
+      "label": "buffer",
+      "properties": {
+        "type": "plugin",
+        "downloads": 23629,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2021-01-04"
+      }
+    },
+    {
+      "id": "@data/re-bridge",
+      "label": "@data/re-bridge",
+      "properties": {
+        "type": "plugin",
+        "downloads": 10129,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-01-19"
+      }
+    },
+    {
+      "id": "@data/mocker",
+      "label": "@data/mocker",
+      "properties": {
+        "type": "plugin",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2021-02-01"
+      }
+    },
+    {
+      "id": "neo-middleware-node",
+      "label": "neo-middleware-node",
+      "properties": {
+        "type": "library",
+        "downloads": 1991,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2021-02-28"
+      }
+    },
+    {
+      "id": "@dev/client-lab",
+      "label": "@dev/client-lab",
+      "properties": {
+        "type": "library",
+        "downloads": 165956,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-03-29"
+      }
+    },
+    {
+      "id": "client",
+      "label": "client",
+      "properties": {
+        "type": "tool",
+        "downloads": 4722,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2023-12-17"
+      }
+    },
+    {
+      "id": "validate-ng",
+      "label": "validate-ng",
+      "properties": {
+        "type": "tool",
+        "downloads": 1236,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-06-02"
+      }
+    },
+    {
+      "id": "worker",
+      "label": "worker",
+      "properties": {
+        "type": "plugin",
+        "downloads": 1121,
+        "deprecated": false,
+        "license": "GPL-3.0",
+        "lastPublished": "2024-10-09"
+      }
+    },
+    {
+      "id": "safe-compiler",
+      "label": "safe-compiler",
+      "properties": {
+        "type": "library",
+        "downloads": 211964,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-08-23"
+      }
+    },
+    {
+      "id": "easy-client",
+      "label": "easy-client",
+      "properties": {
+        "type": "library",
+        "downloads": 16573,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2025-09-25"
+      }
+    },
+    {
+      "id": "loader-js",
+      "label": "loader-js",
+      "properties": {
+        "type": "library",
+        "downloads": 150,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2023-06-15"
+      }
+    },
+    {
+      "id": "@dev/auto-emitter",
+      "label": "@dev/auto-emitter",
+      "properties": {
+        "type": "tool",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-01-23"
+      }
+    },
+    {
+      "id": "env",
+      "label": "env",
+      "properties": {
+        "type": "library",
+        "downloads": 71911,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2026-01-11"
+      }
+    },
+    {
+      "id": "mini-proxy",
+      "label": "mini-proxy",
+      "properties": {
+        "type": "tool",
+        "downloads": 2153635,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2024-12-28"
+      }
+    },
+    {
+      "id": "re-queue-x",
+      "label": "re-queue-x",
+      "properties": {
+        "type": "library",
+        "downloads": 1088,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2024-02-19"
+      }
+    },
+    {
+      "id": "neo-render",
+      "label": "neo-render",
+      "properties": {
+        "type": "library",
+        "downloads": 2838,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2025-02-14"
+      }
+    },
+    {
+      "id": "auto-scheduler",
+      "label": "auto-scheduler",
+      "properties": {
+        "type": "plugin",
+        "downloads": 3283,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2023-03-23"
+      }
+    },
+    {
+      "id": "@pkg/easy-watcher-js",
+      "label": "@pkg/easy-watcher-js",
+      "properties": {
+        "type": "framework",
+        "downloads": 12309,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-12-25"
+      }
+    },
+    {
+      "id": "router-core",
+      "label": "router-core",
+      "properties": {
+        "type": "plugin",
+        "downloads": 40033,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2020-11-19"
+      }
+    },
+    {
+      "id": "simple-bundler",
+      "label": "simple-bundler",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2022-01-23"
+      }
+    },
+    {
+      "id": "neo-tester",
+      "label": "neo-tester",
+      "properties": {
+        "type": "tool",
+        "downloads": 750,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-03-17"
+      }
+    },
+    {
+      "id": "re-builder-box",
+      "label": "re-builder-box",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-05-19"
+      }
+    },
+    {
+      "id": "@data/cache",
+      "label": "@data/cache",
+      "properties": {
+        "type": "library",
+        "downloads": 646,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2025-10-17"
+      }
+    },
+    {
+      "id": "quick-buffer",
+      "label": "quick-buffer",
+      "properties": {
+        "type": "framework",
+        "downloads": 12089,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-01-30"
+      }
+    },
+    {
+      "id": "fast-tester",
+      "label": "fast-tester",
+      "properties": {
+        "type": "framework",
+        "downloads": 13819,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2021-11-18"
+      }
+    },
+    {
+      "id": "@app/safe-gateway-lab",
+      "label": "@app/safe-gateway-lab",
+      "properties": {
+        "type": "tool",
+        "downloads": 127,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2020-02-10"
+      }
+    },
+    {
+      "id": "transpiler-box",
+      "label": "transpiler-box",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-11-16"
+      }
+    },
+    {
+      "id": "validate",
+      "label": "validate",
+      "properties": {
+        "type": "library",
+        "downloads": 5708,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2021-05-15"
+      }
+    },
+    {
+      "id": "hyper-validate",
+      "label": "hyper-validate",
+      "properties": {
+        "type": "runtime",
+        "downloads": 145,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2026-01-31"
+      }
+    },
+    {
+      "id": "lazy-buffer",
+      "label": "lazy-buffer",
+      "properties": {
+        "type": "library",
+        "downloads": 8412,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-02-09"
+      }
+    },
+    {
+      "id": "render",
+      "label": "render",
+      "properties": {
+        "type": "runtime",
+        "downloads": 50000000,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2022-08-30"
+      }
+    },
+    {
+      "id": "next-compress",
+      "label": "next-compress",
+      "properties": {
+        "type": "library",
+        "downloads": 1236,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-04-11"
+      }
+    },
+    {
+      "id": "mocker-io",
+      "label": "mocker-io",
+      "properties": {
+        "type": "framework",
+        "downloads": 6887,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2021-11-24"
+      }
+    },
+    {
+      "id": "quick-compress-core",
+      "label": "quick-compress-core",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2020-02-06"
+      }
+    },
+    {
+      "id": "@util/queue-x",
+      "label": "@util/queue-x",
+      "properties": {
+        "type": "library",
+        "downloads": 335,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2021-08-08"
+      }
+    },
+    {
+      "id": "@pkg/config",
+      "label": "@pkg/config",
+      "properties": {
+        "type": "library",
+        "downloads": 39802,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2025-08-29"
+      }
+    },
+    {
+      "id": "hash",
+      "label": "hash",
+      "properties": {
+        "type": "framework",
+        "downloads": 187,
+        "deprecated": false,
+        "license": "GPL-3.0",
+        "lastPublished": "2020-11-11"
+      }
+    },
+    {
+      "id": "resolver-plus",
+      "label": "resolver-plus",
+      "properties": {
+        "type": "library",
+        "downloads": 983,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2025-12-13"
+      }
+    },
+    {
+      "id": "@dev/migrator",
+      "label": "@dev/migrator",
+      "properties": {
+        "type": "library",
+        "downloads": 22045,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-04-25"
+      }
+    },
+    {
+      "id": "stream-lab",
+      "label": "stream-lab",
+      "properties": {
+        "type": "framework",
+        "downloads": 11250,
+        "deprecated": true,
+        "license": "Apache-2.0",
+        "lastPublished": "2022-01-22"
+      }
+    },
+    {
+      "id": "@lib/ultra-parser",
+      "label": "@lib/ultra-parser",
+      "properties": {
+        "type": "plugin",
+        "downloads": 2041,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2024-08-04"
+      }
+    },
+    {
+      "id": "bundler-plus",
+      "label": "bundler-plus",
+      "properties": {
+        "type": "framework",
+        "downloads": 6681,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2023-01-21"
+      }
+    },
+    {
+      "id": "hot-transpiler",
+      "label": "hot-transpiler",
+      "properties": {
+        "type": "tool",
+        "downloads": 3303,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2022-11-21"
+      }
+    },
+    {
+      "id": "safe-encrypt",
+      "label": "safe-encrypt",
+      "properties": {
+        "type": "library",
+        "downloads": 173,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2022-07-16"
+      }
+    },
+    {
+      "id": "util",
+      "label": "util",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-09-13"
+      }
+    },
+    {
+      "id": "faker",
+      "label": "faker",
+      "properties": {
+        "type": "library",
+        "downloads": 771646,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-12-23"
+      }
+    },
+    {
+      "id": "lazy-linter",
+      "label": "lazy-linter",
+      "properties": {
+        "type": "library",
+        "downloads": 252,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2024-04-14"
+      }
+    },
+    {
+      "id": "smart-middleware",
+      "label": "smart-middleware",
+      "properties": {
+        "type": "tool",
+        "downloads": 413,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-09-04"
+      }
+    },
+    {
+      "id": "server",
+      "label": "server",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2025-12-02"
+      }
+    },
+    {
+      "id": "@net/deep-server",
+      "label": "@net/deep-server",
+      "properties": {
+        "type": "library",
+        "downloads": 9571,
+        "deprecated": true,
+        "license": "ISC",
+        "lastPublished": "2020-02-14"
+      }
+    },
+    {
+      "id": "@util/mini-migrator",
+      "label": "@util/mini-migrator",
+      "properties": {
+        "type": "framework",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "BSD-3-Clause",
+        "lastPublished": "2021-08-02"
+      }
+    },
+    {
+      "id": "emitter",
+      "label": "emitter",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-08-26"
+      }
+    },
+    {
+      "id": "easy-plugin",
+      "label": "easy-plugin",
+      "properties": {
+        "type": "library",
+        "downloads": 2825,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2024-12-11"
+      }
+    },
+    {
+      "id": "cool-util",
+      "label": "cool-util",
+      "properties": {
+        "type": "library",
+        "downloads": 3413,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2022-07-06"
+      }
+    },
+    {
+      "id": "@data/nano-server-x",
+      "label": "@data/nano-server-x",
+      "properties": {
+        "type": "library",
+        "downloads": 541,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2026-01-08"
+      }
+    },
+    {
+      "id": "micro-differ",
+      "label": "micro-differ",
+      "properties": {
+        "type": "framework",
+        "downloads": 4754,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2025-10-27"
+      }
+    },
+    {
+      "id": "deep-server",
+      "label": "deep-server",
+      "properties": {
+        "type": "runtime",
+        "downloads": 24363,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2023-08-11"
+      }
+    },
+    {
+      "id": "cache-2",
+      "label": "cache-2",
+      "properties": {
+        "type": "library",
+        "downloads": 1045,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2021-10-20"
+      }
+    },
+    {
+      "id": "encrypt-core",
+      "label": "encrypt-core",
+      "properties": {
+        "type": "plugin",
+        "downloads": 6263,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-10-02"
+      }
+    },
+    {
+      "id": "encrypt-lab",
+      "label": "encrypt-lab",
+      "properties": {
+        "type": "tool",
+        "downloads": 547,
+        "deprecated": true,
+        "license": "MIT",
+        "lastPublished": "2024-10-02"
+      }
+    },
+    {
+      "id": "simple-util-lite",
+      "label": "simple-util-lite",
+      "properties": {
+        "type": "tool",
+        "downloads": 710,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-06-21"
+      }
+    },
+    {
+      "id": "seeder",
+      "label": "seeder",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "Apache-2.0",
+        "lastPublished": "2022-04-24"
+      }
+    },
+    {
+      "id": "hash-hub",
+      "label": "hash-hub",
+      "properties": {
+        "type": "library",
+        "downloads": 100,
+        "deprecated": false,
+        "license": "GPL-3.0",
+        "lastPublished": "2022-08-31"
+      }
+    },
+    {
+      "id": "sorter",
+      "label": "sorter",
+      "properties": {
+        "type": "runtime",
+        "downloads": 2845,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-09-18"
+      }
+    },
+    {
+      "id": "@tools/ultra-builder-core",
+      "label": "@tools/ultra-builder-core",
+      "properties": {
+        "type": "framework",
+        "downloads": 247,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2022-03-15"
+      }
+    },
+    {
+      "id": "super-render",
+      "label": "super-render",
+      "properties": {
+        "type": "tool",
+        "downloads": 2357,
+        "deprecated": false,
+        "license": "ISC",
+        "lastPublished": "2023-01-23"
+      }
+    },
+    {
+      "id": "neo-filter",
+      "label": "neo-filter",
+      "properties": {
+        "type": "tool",
+        "downloads": 6785,
+        "deprecated": false,
+        "license": "MIT",
+        "lastPublished": "2025-02-15"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "mini-server",
+      "target": "react",
+      "label": "depends on"
+    },
+    {
+      "source": "react",
+      "target": "client",
+      "label": "depends on"
+    },
+    {
+      "source": "builder",
+      "target": "react",
+      "label": "depends on"
+    },
+    {
+      "source": "react",
+      "target": "dotenv",
+      "label": "depends on"
+    },
+    {
+      "source": "jest",
+      "target": "react",
+      "label": "depends on"
+    },
+    {
+      "source": "react",
+      "target": "flat-gateway",
+      "label": "dev dependency"
+    },
+    {
+      "source": "react",
+      "target": "safe-compiler",
+      "label": "depends on"
+    },
+    {
+      "source": "react",
+      "target": "yargs",
+      "label": "depends on"
+    },
+    {
+      "source": "react",
+      "target": "@tools/server",
+      "label": "dev dependency"
+    },
+    {
+      "source": "@tools/mapper-lab",
+      "target": "react",
+      "label": "depends on"
+    },
+    {
+      "source": "testing-library",
+      "target": "react",
+      "label": "depends on"
+    },
+    {
+      "source": "@tools/hot-migrator",
+      "target": "react",
+      "label": "dev dependency"
+    },
+    {
+      "source": "adapter",
+      "target": "react",
+      "label": "depends on"
+    },
+    {
+      "source": "react",
+      "target": "emotion",
+      "label": "dev dependency"
+    },
+    {
+      "source": "simple-util-lite",
+      "target": "react",
+      "label": "dev dependency"
+    },
+    {
+      "source": "semver",
+      "target": "react",
+      "label": "depends on"
+    },
+    {
+      "source": "deep-hook-core",
+      "target": "react-dom",
+      "label": "dev dependency"
+    },
+    {
+      "source": "glob",
+      "target": "react-dom",
+      "label": "dev dependency"
+    },
+    {
+      "source": "pino",
+      "target": "react-dom",
+      "label": "depends on"
+    },
+    {
+      "source": "react-dom",
+      "target": "cross-env",
+      "label": "dev dependency"
+    },
+    {
+      "source": "cool-env",
+      "target": "react-dom",
+      "label": "depends on"
+    },
+    {
+      "source": "smart-middleware",
+      "target": "react-dom",
+      "label": "peer dependency"
+    },
+    {
+      "source": "quick-cache",
+      "target": "react-dom",
+      "label": "depends on"
+    },
+    {
+      "source": "morgan",
+      "target": "react-dom",
+      "label": "peer dependency"
+    },
+    {
+      "source": "nanoid",
+      "target": "react-dom",
+      "label": "dev dependency"
+    },
+    {
+      "source": "react-dom",
+      "target": "chokidar",
+      "label": "depends on"
+    },
+    {
+      "source": "uuid",
+      "target": "react-dom",
+      "label": "depends on"
+    },
+    {
+      "source": "@dev/lazy-differ",
+      "target": "react-dom",
+      "label": "peer dependency"
+    },
+    {
+      "source": "axios",
+      "target": "react-dom",
+      "label": "depends on"
+    },
+    {
+      "source": "encrypt-node",
+      "target": "react-dom",
+      "label": "depends on"
+    },
+    {
+      "source": "react-dom",
+      "target": "@util/queue-x",
+      "label": "depends on"
+    },
+    {
+      "source": "mobx",
+      "target": "react-dom",
+      "label": "depends on"
+    },
+    {
+      "source": "koa",
+      "target": "next",
+      "label": "depends on"
+    },
+    {
+      "source": "emotion",
+      "target": "next",
+      "label": "peer dependency"
+    },
+    {
+      "source": "tailwindcss",
+      "target": "next",
+      "label": "depends on"
+    },
+    {
+      "source": "recoil",
+      "target": "next",
+      "label": "depends on"
+    },
+    {
+      "source": "pure-token-ts",
+      "target": "next",
+      "label": "depends on"
+    },
+    {
+      "source": "next",
+      "target": "redux",
+      "label": "dev dependency"
+    },
+    {
+      "source": "router",
+      "target": "next",
+      "label": "depends on"
+    },
+    {
+      "source": "linker",
+      "target": "next",
+      "label": "dev dependency"
+    },
+    {
+      "source": "uuid",
+      "target": "next",
+      "label": "dev dependency"
+    },
+    {
+      "source": "neo-builder",
+      "target": "next",
+      "label": "dev dependency"
+    },
+    {
+      "source": "typeorm",
+      "target": "next",
+      "label": "dev dependency"
+    },
+    {
+      "source": "next",
+      "target": "pg",
+      "label": "depends on"
+    },
+    {
+      "source": "@dev/compiler-kit",
+      "target": "next",
+      "label": "depends on"
+    },
+    {
+      "source": "next",
+      "target": "lazy-buffer",
+      "label": "depends on"
+    },
+    {
+      "source": "@data/token",
+      "target": "next",
+      "label": "depends on"
+    },
+    {
+      "source": "gateway",
+      "target": "next",
+      "label": "depends on"
+    },
+    {
+      "source": "ajv",
+      "target": "vue",
+      "label": "depends on"
+    },
+    {
+      "source": "tiny-differ",
+      "target": "vue",
+      "label": "dev dependency"
+    },
+    {
+      "source": "vue",
+      "target": "sass",
+      "label": "peer dependency"
+    },
+    {
+      "source": "vue",
+      "target": "tester",
+      "label": "depends on"
+    },
+    {
+      "source": "lazy-formatter",
+      "target": "vue",
+      "label": "depends on"
+    },
+    {
+      "source": "@dev/cache",
+      "target": "vue",
+      "label": "depends on"
+    },
+    {
+      "source": "@pkg/transform",
+      "target": "vue",
+      "label": "depends on"
+    },
+    {
+      "source": "vue",
+      "target": "neo-render",
+      "label": "depends on"
+    },
+    {
+      "source": "vue",
+      "target": "@net/deep-server",
+      "label": "depends on"
+    },
+    {
+      "source": "super-render",
+      "target": "vue",
+      "label": "dev dependency"
+    },
+    {
+      "source": "vue",
+      "target": "drizzle-orm",
+      "label": "dev dependency"
+    },
+    {
+      "source": "lazy-buffer",
+      "target": "vue",
+      "label": "depends on"
+    },
+    {
+      "source": "recharts",
+      "target": "vue",
+      "label": "depends on"
+    },
+    {
+      "source": "@util/queue-x",
+      "target": "vue",
+      "label": "depends on"
+    },
+    {
+      "source": "@lib/ultra-migrator",
+      "target": "vue",
+      "label": "peer dependency"
+    },
+    {
+      "source": "vue",
+      "target": "luxon",
+      "label": "depends on"
+    },
+    {
+      "source": "safe-token",
+      "target": "angular",
+      "label": "dev dependency"
+    },
+    {
+      "source": "angular",
+      "target": "quick-encrypt",
+      "label": "depends on"
+    },
+    {
+      "source": "@pkg/easy-watcher-js",
+      "target": "angular",
+      "label": "depends on"
+    },
+    {
+      "source": "angular",
+      "target": "next",
+      "label": "depends on"
+    },
+    {
+      "source": "deep-adapter",
+      "target": "angular",
+      "label": "dev dependency"
+    },
+    {
+      "source": "emotion",
+      "target": "angular",
+      "label": "dev dependency"
+    },
+    {
+      "source": "better-sqlite3",
+      "target": "angular",
+      "label": "peer dependency"
+    },
+    {
+      "source": "neo-filter",
+      "target": "angular",
+      "label": "depends on"
+    },
+    {
+      "source": "encrypt-node",
+      "target": "angular",
+      "label": "depends on"
+    },
+    {
+      "source": "tester",
+      "target": "angular",
+      "label": "depends on"
+    },
+    {
+      "source": "angular",
+      "target": "@tools/merger",
+      "label": "dev dependency"
+    },
+    {
+      "source": "angular",
+      "target": "turbopack",
+      "label": "depends on"
+    },
+    {
+      "source": "angular",
+      "target": "@lib/migrator-core",
+      "label": "depends on"
+    },
+    {
+      "source": "testing-library",
+      "target": "angular",
+      "label": "dev dependency"
+    },
+    {
+      "source": "@dev/compiler-kit",
+      "target": "angular",
+      "label": "depends on"
+    },
+    {
+      "source": "rxjs",
+      "target": "angular",
+      "label": "depends on"
+    },
+    {
+      "source": "config",
+      "target": "angular",
+      "label": "depends on"
+    },
+    {
+      "source": "reducer",
+      "target": "angular",
+      "label": "depends on"
+    },
+    {
+      "source": "angular",
+      "target": "connector",
+      "label": "depends on"
+    },
+    {
+      "source": "neo-middleware-node",
+      "target": "angular",
+      "label": "depends on"
+    },
+    {
+      "source": "babel",
+      "target": "svelte",
+      "label": "depends on"
+    },
+    {
+      "source": "chokidar",
+      "target": "svelte",
+      "label": "depends on"
+    },
+    {
+      "source": "mocker-io",
+      "target": "svelte",
+      "label": "peer dependency"
+    },
+    {
+      "source": "svelte",
+      "target": "reducer-lab",
+      "label": "depends on"
+    },
+    {
+      "source": "svelte",
+      "target": "differ",
+      "label": "dev dependency"
+    },
+    {
+      "source": "quick-transform",
+      "target": "svelte",
+      "label": "depends on"
+    },
+    {
+      "source": "mocker-lite",
+      "target": "svelte",
+      "label": "depends on"
+    },
+    {
+      "source": "quick-cache",
+      "target": "svelte",
+      "label": "depends on"
+    },
+    {
+      "source": "svelte",
+      "target": "micromatch",
+      "label": "dev dependency"
+    },
+    {
+      "source": "svelte",
+      "target": "@dev/cache",
+      "label": "depends on"
+    },
+    {
+      "source": "biome",
+      "target": "solid-js",
+      "label": "peer dependency"
+    },
+    {
+      "source": "@tools/mini-tester",
+      "target": "solid-js",
+      "label": "depends on"
+    },
+    {
+      "source": "validate-ng",
+      "target": "solid-js",
+      "label": "depends on"
+    },
+    {
+      "source": "@util/mini-migrator",
+      "target": "solid-js",
+      "label": "depends on"
+    },
+    {
+      "source": "encrypt",
+      "target": "solid-js",
+      "label": "depends on"
+    },
+    {
+      "source": "solid-js",
+      "target": "better-sqlite3",
+      "label": "peer dependency"
+    },
+    {
+      "source": "solid-js",
+      "target": "flat-gateway",
+      "label": "depends on"
+    },
+    {
+      "source": "commander",
+      "target": "solid-js",
+      "label": "depends on"
+    },
+    {
+      "source": "@dev/cache",
+      "target": "solid-js",
+      "label": "dev dependency"
+    },
+    {
+      "source": "hono",
+      "target": "solid-js",
+      "label": "dev dependency"
+    },
+    {
+      "source": "@tools/server",
+      "target": "solid-js",
+      "label": "depends on"
+    },
+    {
+      "source": "solid-js",
+      "target": "three",
+      "label": "depends on"
+    },
+    {
+      "source": "solid-js",
+      "target": "mini-proxy",
+      "label": "dev dependency"
+    },
+    {
+      "source": "@data/cache",
+      "target": "solid-js",
+      "label": "depends on"
+    },
+    {
+      "source": "nano-router-pro",
+      "target": "solid-js",
+      "label": "peer dependency"
+    },
+    {
+      "source": "solid-js",
+      "target": "bunyan",
+      "label": "peer dependency"
+    },
+    {
+      "source": "neo-resolver",
+      "target": "solid-js",
+      "label": "dev dependency"
+    },
+    {
+      "source": "jimp",
+      "target": "solid-js",
+      "label": "peer dependency"
+    },
+    {
+      "source": "koa",
+      "target": "solid-js",
+      "label": "depends on"
+    },
+    {
+      "source": "worker",
+      "target": "lodash",
+      "label": "depends on"
+    },
+    {
+      "source": "redux",
+      "target": "lodash",
+      "label": "dev dependency"
+    },
+    {
+      "source": "lodash",
+      "target": "factory",
+      "label": "depends on"
+    },
+    {
+      "source": "chart.js",
+      "target": "lodash",
+      "label": "peer dependency"
+    },
+    {
+      "source": "lodash",
+      "target": "hono",
+      "label": "depends on"
+    },
+    {
+      "source": "mysql2",
+      "target": "lodash",
+      "label": "dev dependency"
+    },
+    {
+      "source": "render",
+      "target": "lodash",
+      "label": "peer dependency"
+    },
+    {
+      "source": "encrypt-lab",
+      "target": "lodash",
+      "label": "dev dependency"
+    },
+    {
+      "source": "flat-gateway",
+      "target": "lodash",
+      "label": "peer dependency"
+    },
+    {
+      "source": "biome",
+      "target": "lodash",
+      "label": "depends on"
+    },
+    {
+      "source": "lodash",
+      "target": "@pkg/flat-minifier",
+      "label": "peer dependency"
+    },
+    {
+      "source": "hyper-adapter",
+      "target": "lodash",
+      "label": "depends on"
+    },
+    {
+      "source": "lodash",
+      "target": "graphql",
+      "label": "depends on"
+    },
+    {
+      "source": "cool-util",
+      "target": "lodash",
+      "label": "depends on"
+    },
+    {
+      "source": "next",
+      "target": "lodash",
+      "label": "peer dependency"
+    },
+    {
+      "source": "babel",
+      "target": "underscore",
+      "label": "depends on"
+    },
+    {
+      "source": "builder",
+      "target": "underscore",
+      "label": "depends on"
+    },
+    {
+      "source": "underscore",
+      "target": "ts-node",
+      "label": "depends on"
+    },
+    {
+      "source": "underscore",
+      "target": "encrypt-lab",
+      "label": "depends on"
+    },
+    {
+      "source": "@lib/migrator-core",
+      "target": "underscore",
+      "label": "depends on"
+    },
+    {
+      "source": "mocker",
+      "target": "underscore",
+      "label": "depends on"
+    },
+    {
+      "source": "cypress",
+      "target": "underscore",
+      "label": "dev dependency"
+    },
+    {
+      "source": "compiler",
+      "target": "underscore",
+      "label": "dev dependency"
+    },
+    {
+      "source": "@tools/parser-plus",
+      "target": "underscore",
+      "label": "dev dependency"
+    },
+    {
+      "source": "underscore",
+      "target": "un-connector",
+      "label": "depends on"
+    },
+    {
+      "source": "underscore",
+      "target": "tailwindcss",
+      "label": "depends on"
+    },
+    {
+      "source": "fs-extra",
+      "target": "ramda",
+      "label": "depends on"
+    },
+    {
+      "source": "styled-components",
+      "target": "ramda",
+      "label": "depends on"
+    },
+    {
+      "source": "@net/proxy",
+      "target": "ramda",
+      "label": "peer dependency"
+    },
+    {
+      "source": "@dev/migrator",
+      "target": "ramda",
+      "label": "depends on"
+    },
+    {
+      "source": "@util/mini-migrator",
+      "target": "ramda",
+      "label": "peer dependency"
+    },
+    {
+      "source": "date-fns",
+      "target": "ramda",
+      "label": "dev dependency"
+    },
+    {
+      "source": "react-query",
+      "target": "ramda",
+      "label": "depends on"
+    },
+    {
+      "source": "tiny-differ",
+      "target": "ramda",
+      "label": "depends on"
+    },
+    {
+      "source": "ramda",
+      "target": "quick-compress-core",
+      "label": "depends on"
+    },
+    {
+      "source": "rxjs",
+      "target": "ramda",
+      "label": "depends on"
+    },
+    {
+      "source": "@dev/lazy-differ",
+      "target": "ramda",
+      "label": "depends on"
+    },
+    {
+      "source": "mongoose",
+      "target": "ramda",
+      "label": "depends on"
+    },
+    {
+      "source": "mini-proxy",
+      "target": "ramda",
+      "label": "peer dependency"
+    },
+    {
+      "source": "buffer",
+      "target": "ramda",
+      "label": "depends on"
+    },
+    {
+      "source": "ramda",
+      "target": "flat-migrator",
+      "label": "depends on"
+    },
+    {
+      "source": "rxjs",
+      "target": "nestjs",
+      "label": "depends on"
+    },
+    {
+      "source": "react",
+      "target": "rxjs",
+      "label": "dev dependency"
+    },
+    {
+      "source": "@util/next-util",
+      "target": "rxjs",
+      "label": "depends on"
+    },
+    {
+      "source": "hash",
+      "target": "rxjs",
+      "label": "depends on"
+    },
+    {
+      "source": "semver",
+      "target": "rxjs",
+      "label": "dev dependency"
+    },
+    {
+      "source": "rxjs",
+      "target": "react-query",
+      "label": "depends on"
+    },
+    {
+      "source": "@data/re-bridge",
+      "target": "rxjs",
+      "label": "depends on"
+    },
+    {
+      "source": "koa",
+      "target": "rxjs",
+      "label": "peer dependency"
+    },
+    {
+      "source": "@net/fast-queue-hub",
+      "target": "rxjs",
+      "label": "depends on"
+    },
+    {
+      "source": "cluster",
+      "target": "rxjs",
+      "label": "depends on"
+    },
+    {
+      "source": "dayjs",
+      "target": "rxjs",
+      "label": "peer dependency"
+    },
+    {
+      "source": "nano-router-pro",
+      "target": "rxjs",
+      "label": "dev dependency"
+    },
+    {
+      "source": "serialize",
+      "target": "rxjs",
+      "label": "depends on"
+    },
+    {
+      "source": "rxjs",
+      "target": "underscore",
+      "label": "depends on"
+    },
+    {
+      "source": "tsx",
+      "target": "rxjs",
+      "label": "depends on"
+    },
+    {
+      "source": "@data/mocker",
+      "target": "rxjs",
+      "label": "depends on"
+    },
+    {
+      "source": "rxjs",
+      "target": "drizzle-orm",
+      "label": "depends on"
+    },
+    {
+      "source": "quick-compress-core",
+      "target": "rxjs",
+      "label": "depends on"
+    },
+    {
+      "source": "smart-middleware",
+      "target": "immer",
+      "label": "peer dependency"
+    },
+    {
+      "source": "@data/cache",
+      "target": "immer",
+      "label": "peer dependency"
+    },
+    {
+      "source": "apollo-server",
+      "target": "immer",
+      "label": "depends on"
+    },
+    {
+      "source": "hot-factory",
+      "target": "immer",
+      "label": "depends on"
+    },
+    {
+      "source": "debug",
+      "target": "immer",
+      "label": "depends on"
+    },
+    {
+      "source": "postcss",
+      "target": "immer",
+      "label": "peer dependency"
+    },
+    {
+      "source": "filter",
+      "target": "immer",
+      "label": "peer dependency"
+    },
+    {
+      "source": "simple-bundler",
+      "target": "immer",
+      "label": "peer dependency"
+    },
+    {
+      "source": "pure-compiler",
+      "target": "immer",
+      "label": "dev dependency"
+    },
+    {
+      "source": "luxon",
+      "target": "immer",
+      "label": "depends on"
+    },
+    {
+      "source": "immer",
+      "target": "simple-cluster",
+      "label": "depends on"
+    },
+    {
+      "source": "router-core",
+      "target": "immer",
+      "label": "depends on"
+    },
+    {
+      "source": "@util/smart-worker",
+      "target": "immer",
+      "label": "depends on"
+    },
+    {
+      "source": "encrypt",
+      "target": "immer",
+      "label": "depends on"
+    },
+    {
+      "source": "emitter",
+      "target": "immer",
+      "label": "depends on"
+    },
+    {
+      "source": "immer",
+      "target": "deep-adapter",
+      "label": "dev dependency"
+    },
+    {
+      "source": "ws",
+      "target": "immer",
+      "label": "depends on"
+    },
+    {
+      "source": "immer",
+      "target": "flat-gateway",
+      "label": "depends on"
+    },
+    {
+      "source": "express",
+      "target": "un-connector",
+      "label": "depends on"
+    },
+    {
+      "source": "express",
+      "target": "trpc",
+      "label": "depends on"
+    },
+    {
+      "source": "express",
+      "target": "smart-middleware",
+      "label": "dev dependency"
+    },
+    {
+      "source": "express",
+      "target": "loader-js",
+      "label": "depends on"
+    },
+    {
+      "source": "connector",
+      "target": "express",
+      "label": "depends on"
+    },
+    {
+      "source": "rxjs",
+      "target": "express",
+      "label": "dev dependency"
+    },
+    {
+      "source": "pure-token-ts",
+      "target": "express",
+      "label": "dev dependency"
+    },
+    {
+      "source": "plugin",
+      "target": "express",
+      "label": "depends on"
+    },
+    {
+      "source": "express",
+      "target": "router",
+      "label": "depends on"
+    },
+    {
+      "source": "chalk",
+      "target": "express",
+      "label": "depends on"
+    },
+    {
+      "source": "svelte",
+      "target": "express",
+      "label": "dev dependency"
+    },
+    {
+      "source": "concurrently",
+      "target": "express",
+      "label": "depends on"
+    },
+    {
+      "source": "express",
+      "target": "underscore",
+      "label": "depends on"
+    },
+    {
+      "source": "simple-linter",
+      "target": "express",
+      "label": "depends on"
+    },
+    {
+      "source": "express",
+      "target": "@net/deep-server",
+      "label": "depends on"
+    },
+    {
+      "source": "fastify",
+      "target": "chokidar",
+      "label": "depends on"
+    },
+    {
+      "source": "neo-resolver",
+      "target": "fastify",
+      "label": "depends on"
+    },
+    {
+      "source": "fastify",
+      "target": "@util/mapper",
+      "label": "dev dependency"
+    },
+    {
+      "source": "bunyan",
+      "target": "fastify",
+      "label": "depends on"
+    },
+    {
+      "source": "recharts",
+      "target": "fastify",
+      "label": "dev dependency"
+    },
+    {
+      "source": "knex",
+      "target": "fastify",
+      "label": "dev dependency"
+    },
+    {
+      "source": "lazy-buffer",
+      "target": "fastify",
+      "label": "depends on"
+    },
+    {
+      "source": "connector-js",
+      "target": "fastify",
+      "label": "dev dependency"
+    },
+    {
+      "source": "fastify",
+      "target": "vite",
+      "label": "depends on"
+    },
+    {
+      "source": "date-fns",
+      "target": "fastify",
+      "label": "depends on"
+    },
+    {
+      "source": "node-fetch",
+      "target": "fastify",
+      "label": "depends on"
+    },
+    {
+      "source": "fastify",
+      "target": "quick-reducer-js",
+      "label": "depends on"
+    },
+    {
+      "source": "helper-hub",
+      "target": "fastify",
+      "label": "depends on"
+    },
+    {
+      "source": "ky",
+      "target": "fastify",
+      "label": "depends on"
+    },
+    {
+      "source": "fastify",
+      "target": "transpiler-box",
+      "label": "dev dependency"
+    },
+    {
+      "source": "encrypt-node",
+      "target": "koa",
+      "label": "depends on"
+    },
+    {
+      "source": "safe-token",
+      "target": "koa",
+      "label": "depends on"
+    },
+    {
+      "source": "hot-server-js",
+      "target": "koa",
+      "label": "depends on"
+    },
+    {
+      "source": "koa",
+      "target": "nanoid",
+      "label": "depends on"
+    },
+    {
+      "source": "reducer-lab",
+      "target": "koa",
+      "label": "depends on"
+    },
+    {
+      "source": "@app/safe-gateway-lab",
+      "target": "koa",
+      "label": "depends on"
+    },
+    {
+      "source": "neo-builder",
+      "target": "koa",
+      "label": "depends on"
+    },
+    {
+      "source": "@tools/mini-tester",
+      "target": "koa",
+      "label": "peer dependency"
+    },
+    {
+      "source": "tiny-token",
+      "target": "koa",
+      "label": "dev dependency"
+    },
+    {
+      "source": "koa",
+      "target": "chokidar",
+      "label": "depends on"
+    },
+    {
+      "source": "rxjs",
+      "target": "koa",
+      "label": "dev dependency"
+    },
+    {
+      "source": "koa",
+      "target": "chart.js",
+      "label": "depends on"
+    },
+    {
+      "source": "hot-transpiler",
+      "target": "hapi",
+      "label": "depends on"
+    },
+    {
+      "source": "@app/safe-gateway-lab",
+      "target": "hapi",
+      "label": "depends on"
+    },
+    {
+      "source": "hapi",
+      "target": "@util/safe-seeder",
+      "label": "dev dependency"
+    },
+    {
+      "source": "resolver-plus",
+      "target": "hapi",
+      "label": "depends on"
+    },
+    {
+      "source": "neo-tester",
+      "target": "hapi",
+      "label": "depends on"
+    },
+    {
+      "source": "hapi",
+      "target": "emotion",
+      "label": "peer dependency"
+    },
+    {
+      "source": "fastify",
+      "target": "hapi",
+      "label": "dev dependency"
+    },
+    {
+      "source": "next",
+      "target": "hapi",
+      "label": "depends on"
+    },
+    {
+      "source": "@util/pure-builder-hub",
+      "target": "hapi",
+      "label": "depends on"
+    },
+    {
+      "source": "hapi",
+      "target": "deep-adapter",
+      "label": "depends on"
+    },
+    {
+      "source": "lazy-formatter",
+      "target": "nestjs",
+      "label": "peer dependency"
+    },
+    {
+      "source": "nestjs",
+      "target": "client",
+      "label": "dev dependency"
+    },
+    {
+      "source": "safe-compiler",
+      "target": "nestjs",
+      "label": "depends on"
+    },
+    {
+      "source": "picomatch",
+      "target": "nestjs",
+      "label": "depends on"
+    },
+    {
+      "source": "nestjs",
+      "target": "neo-render",
+      "label": "depends on"
+    },
+    {
+      "source": "commander",
+      "target": "nestjs",
+      "label": "depends on"
+    },
+    {
+      "source": "neo-gateway",
+      "target": "nestjs",
+      "label": "dev dependency"
+    },
+    {
+      "source": "hono",
+      "target": "hash",
+      "label": "depends on"
+    },
+    {
+      "source": "better-sqlite3",
+      "target": "hono",
+      "label": "dev dependency"
+    },
+    {
+      "source": "prettier",
+      "target": "hono",
+      "label": "depends on"
+    },
+    {
+      "source": "hono",
+      "target": "formatter",
+      "label": "dev dependency"
+    },
+    {
+      "source": "react-query",
+      "target": "hono",
+      "label": "depends on"
+    },
+    {
+      "source": "express",
+      "target": "hono",
+      "label": "depends on"
+    },
+    {
+      "source": "react-dom",
+      "target": "hono",
+      "label": "depends on"
+    },
+    {
+      "source": "hono",
+      "target": "concurrently",
+      "label": "dev dependency"
+    },
+    {
+      "source": "webpack",
+      "target": "dayjs",
+      "label": "dev dependency"
+    },
+    {
+      "source": "plugin",
+      "target": "webpack",
+      "label": "depends on"
+    },
+    {
+      "source": "boxen",
+      "target": "webpack",
+      "label": "depends on"
+    },
+    {
+      "source": "deep-builder-core",
+      "target": "webpack",
+      "label": "depends on"
+    },
+    {
+      "source": "webpack",
+      "target": "filter",
+      "label": "depends on"
+    },
+    {
+      "source": "webpack",
+      "target": "merger",
+      "label": "peer dependency"
+    },
+    {
+      "source": "postcss",
+      "target": "vite",
+      "label": "dev dependency"
+    },
+    {
+      "source": "vite",
+      "target": "emotion",
+      "label": "depends on"
+    },
+    {
+      "source": "trpc",
+      "target": "vite",
+      "label": "depends on"
+    },
+    {
+      "source": "vite",
+      "target": "nano-router-pro",
+      "label": "dev dependency"
+    },
+    {
+      "source": "@tools/hot-migrator",
+      "target": "vite",
+      "label": "peer dependency"
+    },
+    {
+      "source": "validate",
+      "target": "vite",
+      "label": "peer dependency"
+    },
+    {
+      "source": "ora",
+      "target": "vite",
+      "label": "depends on"
+    },
+    {
+      "source": "ws",
+      "target": "vite",
+      "label": "dev dependency"
+    },
+    {
+      "source": "vite",
+      "target": "cross-env",
+      "label": "peer dependency"
+    },
+    {
+      "source": "pino",
+      "target": "rollup",
+      "label": "depends on"
+    },
+    {
+      "source": "formatter",
+      "target": "rollup",
+      "label": "depends on"
+    },
+    {
+      "source": "nestjs",
+      "target": "rollup",
+      "label": "peer dependency"
+    },
+    {
+      "source": "micromatch",
+      "target": "rollup",
+      "label": "depends on"
+    },
+    {
+      "source": "rollup",
+      "target": "jotai",
+      "label": "depends on"
+    },
+    {
+      "source": "sass",
+      "target": "rollup",
+      "label": "depends on"
+    },
+    {
+      "source": "rollup",
+      "target": "@dev/client-lab",
+      "label": "depends on"
+    },
+    {
+      "source": "rollup",
+      "target": "@util/encrypt",
+      "label": "depends on"
+    },
+    {
+      "source": "smart-middleware",
+      "target": "rollup",
+      "label": "peer dependency"
+    },
+    {
+      "source": "esbuild",
+      "target": "flat-gateway",
+      "label": "dev dependency"
+    },
+    {
+      "source": "esbuild",
+      "target": "bunyan",
+      "label": "dev dependency"
+    },
+    {
+      "source": "esbuild",
+      "target": "testing-library",
+      "label": "peer dependency"
+    },
+    {
+      "source": "emotion",
+      "target": "esbuild",
+      "label": "dev dependency"
+    },
+    {
+      "source": "neo-builder",
+      "target": "esbuild",
+      "label": "dev dependency"
+    },
+    {
+      "source": "boxen",
+      "target": "esbuild",
+      "label": "depends on"
+    },
+    {
+      "source": "esbuild",
+      "target": "@dev/client-lab",
+      "label": "peer dependency"
+    },
+    {
+      "source": "esbuild",
+      "target": "@tools/server",
+      "label": "depends on"
+    },
+    {
+      "source": "parcel",
+      "target": "trpc",
+      "label": "depends on"
+    },
+    {
+      "source": "parcel",
+      "target": "postcss",
+      "label": "depends on"
+    },
+    {
+      "source": "swr",
+      "target": "parcel",
+      "label": "depends on"
+    },
+    {
+      "source": "@dev/compiler-kit",
+      "target": "parcel",
+      "label": "dev dependency"
+    },
+    {
+      "source": "parcel",
+      "target": "@util/queue",
+      "label": "depends on"
+    },
+    {
+      "source": "parcel",
+      "target": "un-middleware",
+      "label": "dev dependency"
+    },
+    {
+      "source": "easy-resolver",
+      "target": "turbopack",
+      "label": "depends on"
+    },
+    {
+      "source": "turbopack",
+      "target": "got",
+      "label": "dev dependency"
+    },
+    {
+      "source": "turbopack",
+      "target": "router-core",
+      "label": "depends on"
+    },
+    {
+      "source": "next-util",
+      "target": "turbopack",
+      "label": "depends on"
+    },
+    {
+      "source": "swc",
+      "target": "turbopack",
+      "label": "dev dependency"
+    },
+    {
+      "source": "turbopack",
+      "target": "@util/next-util",
+      "label": "peer dependency"
+    },
+    {
+      "source": "lazy-buffer",
+      "target": "turbopack",
+      "label": "dev dependency"
+    },
+    {
+      "source": "turbopack",
+      "target": "vitest",
+      "label": "dev dependency"
+    },
+    {
+      "source": "@data/nano-server-x",
+      "target": "swc",
+      "label": "dev dependency"
+    },
+    {
+      "source": "@lib/migrator-core",
+      "target": "swc",
+      "label": "dev dependency"
+    },
+    {
+      "source": "quick-compress-core",
+      "target": "swc",
+      "label": "depends on"
+    },
+    {
+      "source": "minimatch",
+      "target": "swc",
+      "label": "dev dependency"
+    },
+    {
+      "source": "swc",
+      "target": "@app/watcher",
+      "label": "depends on"
+    },
+    {
+      "source": "swc",
+      "target": "stream",
+      "label": "dev dependency"
+    },
+    {
+      "source": "stream-lab",
+      "target": "swc",
+      "label": "depends on"
+    },
+    {
+      "source": "swc",
+      "target": "echarts",
+      "label": "dev dependency"
+    },
+    {
+      "source": "chart.js",
+      "target": "swc",
+      "label": "depends on"
+    },
+    {
+      "source": "swc",
+      "target": "easy-client",
+      "label": "peer dependency"
+    },
+    {
+      "source": "styled-components",
+      "target": "typescript",
+      "label": "depends on"
+    },
+    {
+      "source": "zod",
+      "target": "typescript",
+      "label": "depends on"
+    },
+    {
+      "source": "typescript",
+      "target": "tanstack-query",
+      "label": "depends on"
+    },
+    {
+      "source": "typescript",
+      "target": "webpack",
+      "label": "depends on"
+    },
+    {
+      "source": "easy-plugin",
+      "target": "typescript",
+      "label": "depends on"
+    },
+    {
+      "source": "@app/migrator",
+      "target": "typescript",
+      "label": "dev dependency"
+    },
+    {
+      "source": "typescript",
+      "target": "super-factory-lite",
+      "label": "depends on"
+    },
+    {
+      "source": "typescript",
+      "target": "mini-compress",
+      "label": "depends on"
+    },
+    {
+      "source": "fast-tester",
+      "target": "babel",
+      "label": "peer dependency"
+    },
+    {
+      "source": "plugin-js",
+      "target": "babel",
+      "label": "dev dependency"
+    },
+    {
+      "source": "babel",
+      "target": "transpiler-box",
+      "label": "peer dependency"
+    },
+    {
+      "source": "babel",
+      "target": "micro-differ",
+      "label": "depends on"
+    },
+    {
+      "source": "babel",
+      "target": "rollup",
+      "label": "depends on"
+    },
+    {
+      "source": "yup",
+      "target": "babel",
+      "label": "depends on"
+    },
+    {
+      "source": "babel",
+      "target": "util",
+      "label": "dev dependency"
+    },
+    {
+      "source": "babel",
+      "target": "@net/proxy",
+      "label": "peer dependency"
+    },
+    {
+      "source": "babel",
+      "target": "webpack",
+      "label": "depends on"
+    },
+    {
+      "source": "koa",
+      "target": "babel",
+      "label": "peer dependency"
+    },
+    {
+      "source": "deep-hook-core",
+      "target": "prettier",
+      "label": "dev dependency"
+    },
+    {
+      "source": "prettier",
+      "target": "ora",
+      "label": "depends on"
+    },
+    {
+      "source": "mocker-lite",
+      "target": "prettier",
+      "label": "depends on"
+    },
+    {
+      "source": "prettier",
+      "target": "@net/fast-queue-hub",
+      "label": "dev dependency"
+    },
+    {
+      "source": "react-query",
+      "target": "prettier",
+      "label": "depends on"
+    },
+    {
+      "source": "micromatch",
+      "target": "prettier",
+      "label": "depends on"
+    },
+    {
+      "source": "prettier",
+      "target": "cluster",
+      "label": "depends on"
+    },
+    {
+      "source": "plugin-ng",
+      "target": "eslint",
+      "label": "peer dependency"
+    },
+    {
+      "source": "svelte",
+      "target": "eslint",
+      "label": "peer dependency"
+    },
+    {
+      "source": "eslint",
+      "target": "tsx",
+      "label": "peer dependency"
+    },
+    {
+      "source": "eslint",
+      "target": "@data/mocker",
+      "label": "depends on"
+    },
+    {
+      "source": "ioredis",
+      "target": "eslint",
+      "label": "dev dependency"
+    },
+    {
+      "source": "plugin-js",
+      "target": "eslint",
+      "label": "depends on"
+    },
+    {
+      "source": "resolver-plus",
+      "target": "eslint",
+      "label": "depends on"
+    },
+    {
+      "source": "echarts",
+      "target": "eslint",
+      "label": "depends on"
+    },
+    {
+      "source": "joi",
+      "target": "biome",
+      "label": "depends on"
+    },
+    {
+      "source": "biome",
+      "target": "compiler",
+      "label": "depends on"
+    },
+    {
+      "source": "biome",
+      "target": "plugin-js",
+      "label": "depends on"
+    },
+    {
+      "source": "dotenv",
+      "target": "biome",
+      "label": "depends on"
+    },
+    {
+      "source": "webpack",
+      "target": "biome",
+      "label": "depends on"
+    },
+    {
+      "source": "deep-hook-core",
+      "target": "jest",
+      "label": "depends on"
+    },
+    {
+      "source": "plugin-ng",
+      "target": "jest",
+      "label": "depends on"
+    },
+    {
+      "source": "solid-js",
+      "target": "jest",
+      "label": "peer dependency"
+    },
+    {
+      "source": "util-x",
+      "target": "jest",
+      "label": "dev dependency"
+    },
+    {
+      "source": "hot-server-js",
+      "target": "jest",
+      "label": "dev dependency"
+    },
+    {
+      "source": "jest",
+      "target": "neo-builder",
+      "label": "depends on"
+    },
+    {
+      "source": "@tools/mapper-lab",
+      "target": "jest",
+      "label": "dev dependency"
+    },
+    {
+      "source": "nestjs",
+      "target": "jest",
+      "label": "peer dependency"
+    },
+    {
+      "source": "vitest",
+      "target": "ajv",
+      "label": "peer dependency"
+    },
+    {
+      "source": "util-ng",
+      "target": "vitest",
+      "label": "depends on"
+    },
+    {
+      "source": "@pkg/transform",
+      "target": "vitest",
+      "label": "dev dependency"
+    },
+    {
+      "source": "vitest",
+      "target": "cache-2",
+      "label": "depends on"
+    },
+    {
+      "source": "minimatch",
+      "target": "vitest",
+      "label": "dev dependency"
+    },
+    {
+      "source": "inquirer",
+      "target": "vitest",
+      "label": "depends on"
+    },
+    {
+      "source": "vitest",
+      "target": "faker",
+      "label": "dev dependency"
+    },
+    {
+      "source": "vitest",
+      "target": "jimp",
+      "label": "dev dependency"
+    },
+    {
+      "source": "vitest",
+      "target": "hot-filter",
+      "label": "dev dependency"
+    },
+    {
+      "source": "validate",
+      "target": "mocha",
+      "label": "depends on"
+    },
+    {
+      "source": "linker",
+      "target": "mocha",
+      "label": "dev dependency"
+    },
+    {
+      "source": "echarts",
+      "target": "mocha",
+      "label": "depends on"
+    },
+    {
+      "source": "mocha",
+      "target": "@pkg/flat-minifier",
+      "label": "dev dependency"
+    },
+    {
+      "source": "mocha",
+      "target": "serialize",
+      "label": "depends on"
+    },
+    {
+      "source": "mocha",
+      "target": "quick-cache",
+      "label": "depends on"
+    },
+    {
+      "source": "drizzle-orm",
+      "target": "mocha",
+      "label": "dev dependency"
+    },
+    {
+      "source": "postcss",
+      "target": "mocha",
+      "label": "depends on"
+    },
+    {
+      "source": "mocha",
+      "target": "worker",
+      "label": "depends on"
+    },
+    {
+      "source": "mocha",
+      "target": "jotai",
+      "label": "depends on"
+    },
+    {
+      "source": "@dev/auto-emitter",
+      "target": "chai",
+      "label": "peer dependency"
+    },
+    {
+      "source": "chai",
+      "target": "@util/mini-migrator",
+      "label": "depends on"
+    },
+    {
+      "source": "chai",
+      "target": "postcss",
+      "label": "dev dependency"
+    },
+    {
+      "source": "factory",
+      "target": "chai",
+      "label": "dev dependency"
+    },
+    {
+      "source": "un-connector",
+      "target": "chai",
+      "label": "depends on"
+    },
+    {
+      "source": "chai",
+      "target": "morgan",
+      "label": "depends on"
+    },
+    {
+      "source": "superagent",
+      "target": "chai",
+      "label": "depends on"
+    },
+    {
+      "source": "mocker",
+      "target": "chai",
+      "label": "depends on"
+    },
+    {
+      "source": "redux-toolkit",
+      "target": "chai",
+      "label": "depends on"
+    },
+    {
+      "source": "playwright",
+      "target": "react-dom",
+      "label": "peer dependency"
+    },
+    {
+      "source": "glob",
+      "target": "playwright",
+      "label": "dev dependency"
+    },
+    {
+      "source": "playwright",
+      "target": "mini-server",
+      "label": "depends on"
+    },
+    {
+      "source": "playwright",
+      "target": "hyper-validate",
+      "label": "depends on"
+    },
+    {
+      "source": "@util/mini-migrator",
+      "target": "playwright",
+      "label": "depends on"
+    },
+    {
+      "source": "cypress",
+      "target": "cross-env",
+      "label": "depends on"
+    },
+    {
+      "source": "winston",
+      "target": "cypress",
+      "label": "depends on"
+    },
+    {
+      "source": "deep-hook-core",
+      "target": "cypress",
+      "label": "depends on"
+    },
+    {
+      "source": "eslint",
+      "target": "cypress",
+      "label": "peer dependency"
+    },
+    {
+      "source": "cypress",
+      "target": "builder",
+      "label": "depends on"
+    },
+    {
+      "source": "cypress",
+      "target": "worker",
+      "label": "depends on"
+    },
+    {
+      "source": "router-core",
+      "target": "cypress",
+      "label": "dev dependency"
+    },
+    {
+      "source": "cool-router",
+      "target": "cypress",
+      "label": "depends on"
+    },
+    {
+      "source": "cypress",
+      "target": "handler",
+      "label": "depends on"
+    },
+    {
+      "source": "chai",
+      "target": "cypress",
+      "label": "dev dependency"
+    },
+    {
+      "source": "chart.js",
+      "target": "testing-library",
+      "label": "depends on"
+    },
+    {
+      "source": "@net/fast-queue-hub",
+      "target": "testing-library",
+      "label": "dev dependency"
+    },
+    {
+      "source": "testing-library",
+      "target": "chokidar",
+      "label": "depends on"
+    },
+    {
+      "source": "testing-library",
+      "target": "hot-filter",
+      "label": "peer dependency"
+    },
+    {
+      "source": "playwright",
+      "target": "testing-library",
+      "label": "depends on"
+    },
+    {
+      "source": "testing-library",
+      "target": "lodash",
+      "label": "dev dependency"
+    },
+    {
+      "source": "testing-library",
+      "target": "safe-compiler",
+      "label": "peer dependency"
+    },
+    {
+      "source": "deep-hook-core",
+      "target": "testing-library",
+      "label": "depends on"
+    },
+    {
+      "source": "got",
+      "target": "testing-library",
+      "label": "depends on"
+    },
+    {
+      "source": "sorter",
+      "target": "testing-library",
+      "label": "dev dependency"
+    },
+    {
+      "source": "deep-hook-core",
+      "target": "tailwindcss",
+      "label": "depends on"
+    },
+    {
+      "source": "client",
+      "target": "tailwindcss",
+      "label": "depends on"
+    },
+    {
+      "source": "tailwindcss",
+      "target": "pure-validate",
+      "label": "depends on"
+    },
+    {
+      "source": "chai",
+      "target": "tailwindcss",
+      "label": "depends on"
+    },
+    {
+      "source": "plugin-ng",
+      "target": "tailwindcss",
+      "label": "dev dependency"
+    },
+    {
+      "source": "tailwindcss",
+      "target": "underscore",
+      "label": "depends on"
+    },
+    {
+      "source": "util",
+      "target": "tailwindcss",
+      "label": "peer dependency"
+    },
+    {
+      "source": "postcss",
+      "target": "fast-pool",
+      "label": "peer dependency"
+    },
+    {
+      "source": "postcss",
+      "target": "tanstack-query",
+      "label": "depends on"
+    },
+    {
+      "source": "postcss",
+      "target": "@lib/ultra-migrator",
+      "label": "depends on"
+    },
+    {
+      "source": "builder",
+      "target": "postcss",
+      "label": "dev dependency"
+    },
+    {
+      "source": "chokidar",
+      "target": "postcss",
+      "label": "depends on"
+    },
+    {
+      "source": "parser",
+      "target": "postcss",
+      "label": "depends on"
+    },
+    {
+      "source": "postcss",
+      "target": "validate-ng",
+      "label": "depends on"
+    },
+    {
+      "source": "postcss",
+      "target": "mongoose",
+      "label": "peer dependency"
+    },
+    {
+      "source": "buffer",
+      "target": "sass",
+      "label": "dev dependency"
+    },
+    {
+      "source": "sass",
+      "target": "node-fetch",
+      "label": "depends on"
+    },
+    {
+      "source": "@data/cache",
+      "target": "sass",
+      "label": "depends on"
+    },
+    {
+      "source": "sass",
+      "target": "merger",
+      "label": "depends on"
+    },
+    {
+      "source": "sass",
+      "target": "knex",
+      "label": "peer dependency"
+    },
+    {
+      "source": "sass",
+      "target": "quick-compress-core",
+      "label": "depends on"
+    },
+    {
+      "source": "resolver",
+      "target": "sass",
+      "label": "depends on"
+    },
+    {
+      "source": "sass",
+      "target": "sharp",
+      "label": "peer dependency"
+    },
+    {
+      "source": "neo-middleware-node",
+      "target": "styled-components",
+      "label": "depends on"
+    },
+    {
+      "source": "@data/cache",
+      "target": "styled-components",
+      "label": "depends on"
+    },
+    {
+      "source": "styled-components",
+      "target": "@util/smart-worker",
+      "label": "dev dependency"
+    },
+    {
+      "source": "styled-components",
+      "target": "worker",
+      "label": "depends on"
+    },
+    {
+      "source": "styled-components",
+      "target": "ora",
+      "label": "dev dependency"
+    },
+    {
+      "source": "styled-components",
+      "target": "chai",
+      "label": "depends on"
+    },
+    {
+      "source": "styled-components",
+      "target": "lazy-formatter",
+      "label": "depends on"
+    },
+    {
+      "source": "styled-components",
+      "target": "got",
+      "label": "dev dependency"
+    },
+    {
+      "source": "stream-lab",
+      "target": "emotion",
+      "label": "dev dependency"
+    },
+    {
+      "source": "joi",
+      "target": "emotion",
+      "label": "dev dependency"
+    },
+    {
+      "source": "redux-toolkit",
+      "target": "emotion",
+      "label": "dev dependency"
+    },
+    {
+      "source": "ws",
+      "target": "emotion",
+      "label": "dev dependency"
+    },
+    {
+      "source": "emotion",
+      "target": "plugin-js",
+      "label": "depends on"
+    },
+    {
+      "source": "knex",
+      "target": "emotion",
+      "label": "depends on"
+    },
+    {
+      "source": "axios",
+      "target": "testing-library",
+      "label": "depends on"
+    },
+    {
+      "source": "axios",
+      "target": "plugin",
+      "label": "depends on"
+    },
+    {
+      "source": "util-ng",
+      "target": "axios",
+      "label": "peer dependency"
+    },
+    {
+      "source": "super-render",
+      "target": "axios",
+      "label": "peer dependency"
+    },
+    {
+      "source": "axios",
+      "target": "babel",
+      "label": "depends on"
+    },
+    {
+      "source": "lazy-formatter",
+      "target": "axios",
+      "label": "depends on"
+    },
+    {
+      "source": "axios",
+      "target": "sharp",
+      "label": "dev dependency"
+    },
+    {
+      "source": "node-fetch",
+      "target": "tester",
+      "label": "depends on"
+    },
+    {
+      "source": "ws",
+      "target": "node-fetch",
+      "label": "depends on"
+    },
+    {
+      "source": "pure-compiler",
+      "target": "node-fetch",
+      "label": "dev dependency"
+    },
+    {
+      "source": "simple-linter",
+      "target": "node-fetch",
+      "label": "depends on"
+    },
+    {
+      "source": "hono",
+      "target": "node-fetch",
+      "label": "depends on"
+    },
+    {
+      "source": "simple-linter",
+      "target": "got",
+      "label": "dev dependency"
+    },
+    {
+      "source": "emitter",
+      "target": "got",
+      "label": "depends on"
+    },
+    {
+      "source": "got",
+      "target": "smart-middleware",
+      "label": "depends on"
+    },
+    {
+      "source": "recharts",
+      "target": "got",
+      "label": "dev dependency"
+    },
+    {
+      "source": "zod",
+      "target": "got",
+      "label": "depends on"
+    },
+    {
+      "source": "nestjs",
+      "target": "got",
+      "label": "dev dependency"
+    },
+    {
+      "source": "hot-factory",
+      "target": "superagent",
+      "label": "depends on"
+    },
+    {
+      "source": "underscore",
+      "target": "superagent",
+      "label": "dev dependency"
+    },
+    {
+      "source": "ora",
+      "target": "ky",
+      "label": "depends on"
+    },
+    {
+      "source": "ky",
+      "target": "pg",
+      "label": "depends on"
+    },
+    {
+      "source": "yup",
+      "target": "tsx",
+      "label": "depends on"
+    },
+    {
+      "source": "yup",
+      "target": "hot-server-js",
+      "label": "depends on"
+    },
+    {
+      "source": "prisma",
+      "target": "hot-transpiler",
+      "label": "depends on"
+    },
+    {
+      "source": "prisma",
+      "target": "un-connector",
+      "label": "depends on"
+    },
+    {
+      "source": "knex",
+      "target": "prisma",
+      "label": "depends on"
+    },
+    {
+      "source": "typeorm",
+      "target": "hot-factory",
+      "label": "peer dependency"
+    },
+    {
+      "source": "typeorm",
+      "target": "@dev/client-lab",
+      "label": "dev dependency"
+    },
+    {
+      "source": "sequelize",
+      "target": "source-map",
+      "label": "dev dependency"
+    },
+    {
+      "source": "serialize",
+      "target": "redis",
+      "label": "dev dependency"
+    },
+    {
+      "source": "@data/cache",
+      "target": "mysql2",
+      "label": "dev dependency"
+    },
+    {
+      "source": "safe-hook-hub",
+      "target": "socket.io",
+      "label": "peer dependency"
+    },
+    {
+      "source": "router",
+      "target": "graphql",
+      "label": "depends on"
+    },
+    {
+      "source": "apollo-server",
+      "target": "auto-scheduler",
+      "label": "depends on"
+    },
+    {
+      "source": "super-factory-lite",
+      "target": "apollo-server",
+      "label": "peer dependency"
+    },
+    {
+      "source": "chalk",
+      "target": "react-router",
+      "label": "dev dependency"
+    },
+    {
+      "source": "chalk",
+      "target": "re-queue-x",
+      "label": "depends on"
+    },
+    {
+      "source": "nodemon",
+      "target": "cool-worker",
+      "label": "dev dependency"
+    },
+    {
+      "source": "ts-node",
+      "target": "un-middleware",
+      "label": "peer dependency"
+    },
+    {
+      "source": "ts-node",
+      "target": "jimp",
+      "label": "dev dependency"
+    },
+    {
+      "source": "winston",
+      "target": "moment",
+      "label": "depends on"
+    },
+    {
+      "source": "@app/migrator",
+      "target": "moment",
+      "label": "depends on"
+    },
+    {
+      "source": "moment",
+      "target": "lazy-buffer",
+      "label": "dev dependency"
+    },
+    {
+      "source": "nodemon",
+      "target": "d3",
+      "label": "peer dependency"
+    },
+    {
+      "source": "render",
+      "target": "three",
+      "label": "peer dependency"
+    },
+    {
+      "source": "server",
+      "target": "zustand",
+      "label": "depends on"
+    },
+    {
+      "source": "mocker-io",
+      "target": "mobx",
+      "label": "peer dependency"
+    },
+    {
+      "source": "mobx",
+      "target": "nestjs",
+      "label": "peer dependency"
+    },
+    {
+      "source": "inquirer",
+      "target": "react-router",
+      "label": "depends on"
+    },
+    {
+      "source": "swr",
+      "target": "rollup",
+      "label": "depends on"
+    },
+    {
+      "source": "swr",
+      "target": "micro-differ",
+      "label": "depends on"
+    },
+    {
+      "source": "sharp",
+      "target": "canvas",
+      "label": "dev dependency"
+    },
+    {
+      "source": "canvas",
+      "target": "ajv",
+      "label": "dev dependency"
+    },
+    {
+      "source": "puppeteer",
+      "target": "hot-factory",
+      "label": "depends on"
+    },
+    {
+      "source": "jimp",
+      "target": "puppeteer",
+      "label": "depends on"
+    },
+    {
+      "source": "@dev/cache",
+      "target": "puppeteer",
+      "label": "depends on"
+    },
+    {
+      "source": "compiler",
+      "target": "fs-extra",
+      "label": "dev dependency"
+    },
+    {
+      "source": "immer",
+      "target": "fs-extra",
+      "label": "depends on"
+    },
+    {
+      "source": "rimraf",
+      "target": "encrypt-node",
+      "label": "dev dependency"
+    },
+    {
+      "source": "mkdirp",
+      "target": "@dev/cache",
+      "label": "depends on"
+    },
+    {
+      "source": "@util/encrypt",
+      "target": "debug",
+      "label": "depends on"
+    },
+    {
+      "source": "debug",
+      "target": "@data/token",
+      "label": "depends on"
+    },
+    {
+      "source": "source-map",
+      "target": "hash-hub",
+      "label": "peer dependency"
+    },
+    {
+      "source": "source-map",
+      "target": "recharts",
+      "label": "peer dependency"
+    },
+    {
+      "source": "fastify",
+      "target": "source-map-support",
+      "label": "dev dependency"
+    },
+    {
+      "source": "source-map-support",
+      "target": "immer",
+      "label": "depends on"
+    },
+    {
+      "source": "token",
+      "target": "cache-io",
+      "label": "dev dependency"
+    },
+    {
+      "source": "faker",
+      "target": "token",
+      "label": "peer dependency"
+    },
+    {
+      "source": "koa",
+      "target": "tiny-buffer-box",
+      "label": "depends on"
+    },
+    {
+      "source": "serialize",
+      "target": "tiny-buffer-box",
+      "label": "depends on"
+    },
+    {
+      "source": "pool",
+      "target": "echarts",
+      "label": "depends on"
+    },
+    {
+      "source": "tiny-buffer-box",
+      "target": "handler",
+      "label": "depends on"
+    },
+    {
+      "source": "handler",
+      "target": "nestjs",
+      "label": "depends on"
+    },
+    {
+      "source": "@util/mapper",
+      "target": "graphql",
+      "label": "depends on"
+    },
+    {
+      "source": "@util/mapper",
+      "target": "auto-scheduler",
+      "label": "depends on"
+    },
+    {
+      "source": "mapper",
+      "target": "transpiler-box",
+      "label": "depends on"
+    },
+    {
+      "source": "@dev/cache",
+      "target": "gateway",
+      "label": "depends on"
+    },
+    {
+      "source": "cool-router",
+      "target": "esbuild",
+      "label": "dev dependency"
+    },
+    {
+      "source": "cool-router",
+      "target": "mocker-lite",
+      "label": "peer dependency"
+    },
+    {
+      "source": "winston",
+      "target": "pure-validate",
+      "label": "depends on"
+    },
+    {
+      "source": "minifier",
+      "target": "@net/fast-queue-hub",
+      "label": "depends on"
+    },
+    {
+      "source": "minifier",
+      "target": "reducer-lab",
+      "label": "dev dependency"
+    },
+    {
+      "source": "neo-render",
+      "target": "minifier",
+      "label": "dev dependency"
+    },
+    {
+      "source": "seeder",
+      "target": "config",
+      "label": "depends on"
+    },
+    {
+      "source": "config",
+      "target": "mini-server",
+      "label": "depends on"
+    },
+    {
+      "source": "tiny-token",
+      "target": "@dev/cache",
+      "label": "depends on"
+    },
+    {
+      "source": "hyper-adapter",
+      "target": "@util/mapper",
+      "label": "depends on"
+    },
+    {
+      "source": "buffer-x",
+      "target": "hyper-adapter",
+      "label": "depends on"
+    },
+    {
+      "source": "neo-gateway",
+      "target": "fast-pool",
+      "label": "peer dependency"
+    },
+    {
+      "source": "fast-pool",
+      "target": "mapper",
+      "label": "dev dependency"
+    },
+    {
+      "source": "simple-cluster",
+      "target": "fast-formatter",
+      "label": "depends on"
+    },
+    {
+      "source": "un-connector",
+      "target": "@app/next-worker",
+      "label": "depends on"
+    },
+    {
+      "source": "flat-migrator",
+      "target": "@app/next-worker",
+      "label": "dev dependency"
+    },
+    {
+      "source": "micro-logger",
+      "target": "util-ng",
+      "label": "dev dependency"
+    },
+    {
+      "source": "@util/pure-builder-hub",
+      "target": "mysql2",
+      "label": "peer dependency"
+    },
+    {
+      "source": "joi",
+      "target": "@util/pure-builder-hub",
+      "label": "dev dependency"
+    },
+    {
+      "source": "encrypt-node",
+      "target": "resolver",
+      "label": "dev dependency"
+    },
+    {
+      "source": "easy-plugin",
+      "target": "migrator",
+      "label": "dev dependency"
+    },
+    {
+      "source": "next-util",
+      "target": "@tools/merger",
+      "label": "dev dependency"
+    },
+    {
+      "source": "next-util",
+      "target": "mongoose",
+      "label": "depends on"
+    },
+    {
+      "source": "worker",
+      "target": "reducer",
+      "label": "peer dependency"
+    },
+    {
+      "source": "reducer",
+      "target": "redis",
+      "label": "depends on"
+    },
+    {
+      "source": "auto-scheduler",
+      "target": "mini-compress",
+      "label": "depends on"
+    },
+    {
+      "source": "sorter",
+      "target": "mini-compress",
+      "label": "dev dependency"
+    },
+    {
+      "source": "@util/next-util",
+      "target": "deep-builder-core",
+      "label": "dev dependency"
+    },
+    {
+      "source": "deep-builder-core",
+      "target": "seeder",
+      "label": "depends on"
+    },
+    {
+      "source": "deep-hook-core",
+      "target": "safe-hook-hub",
+      "label": "depends on"
+    },
+    {
+      "source": "safe-hook-hub",
+      "target": "super-factory-lite",
+      "label": "peer dependency"
+    },
+    {
+      "source": "@util/next-util",
+      "target": "@util/queue",
+      "label": "depends on"
+    },
+    {
+      "source": "@util/queue",
+      "target": "rimraf",
+      "label": "depends on"
+    },
+    {
+      "source": "helper-hub",
+      "target": "plugin-ng",
+      "label": "depends on"
+    },
+    {
+      "source": "@data/nano-server-x",
+      "target": "adapter",
+      "label": "dev dependency"
+    },
+    {
+      "source": "encrypt-lab",
+      "target": "adapter",
+      "label": "depends on"
+    },
+    {
+      "source": "cool-env",
+      "target": "ajv",
+      "label": "depends on"
+    },
+    {
+      "source": "cool-env",
+      "target": "cache-io",
+      "label": "depends on"
+    },
+    {
+      "source": "fast-formatter",
+      "target": "pool",
+      "label": "dev dependency"
+    },
+    {
+      "source": "fast-formatter",
+      "target": "filter",
+      "label": "dev dependency"
+    },
+    {
+      "source": "connector-js",
+      "target": "drizzle-orm",
+      "label": "depends on"
+    },
+    {
+      "source": "hono",
+      "target": "connector-js",
+      "label": "depends on"
+    },
+    {
+      "source": "@tools/parser-plus",
+      "target": "yup",
+      "label": "dev dependency"
+    },
+    {
+      "source": "easy-cluster",
+      "target": "@util/next-util",
+      "label": "peer dependency"
+    },
+    {
+      "source": "redux-toolkit",
+      "target": "cache",
+      "label": "depends on"
+    },
+    {
+      "source": "parcel",
+      "target": "easy-resolver",
+      "label": "depends on"
+    },
+    {
+      "source": "lodash",
+      "target": "quick-reducer-js",
+      "label": "depends on"
+    },
+    {
+      "source": "mongoose",
+      "target": "@util/safe-seeder",
+      "label": "depends on"
+    },
+    {
+      "source": "tanstack-query",
+      "target": "@util/safe-seeder",
+      "label": "peer dependency"
+    },
+    {
+      "source": "@app/watcher",
+      "target": "chai",
+      "label": "depends on"
+    },
+    {
+      "source": "parcel",
+      "target": "@app/watcher",
+      "label": "depends on"
+    },
+    {
+      "source": "lazy-factory-js",
+      "target": "mapper",
+      "label": "dev dependency"
+    },
+    {
+      "source": "cache-io",
+      "target": "lazy-factory-js",
+      "label": "depends on"
+    },
+    {
+      "source": "mini-mocker-box",
+      "target": "safe-hook-hub",
+      "label": "dev dependency"
+    },
+    {
+      "source": "chai",
+      "target": "mini-mocker-box",
+      "label": "peer dependency"
+    },
+    {
+      "source": "winston",
+      "target": "@lib/mapper",
+      "label": "depends on"
+    },
+    {
+      "source": "@lib/mapper",
+      "target": "super-factory-lite",
+      "label": "peer dependency"
+    },
+    {
+      "source": "seeder",
+      "target": "quick-env",
+      "label": "depends on"
+    },
+    {
+      "source": "env",
+      "target": "react",
+      "label": "depends on"
+    },
+    {
+      "source": "easy-client",
+      "target": "env",
+      "label": "depends on"
+    },
+    {
+      "source": "typeorm",
+      "target": "re-queue-x",
+      "label": "depends on"
+    },
+    {
+      "source": "re-queue-x",
+      "target": "simple-cluster",
+      "label": "depends on"
+    },
+    {
+      "source": "@pkg/easy-watcher-js",
+      "target": "worker",
+      "label": "depends on"
+    },
+    {
+      "source": "@pkg/easy-watcher-js",
+      "target": "tiny-differ",
+      "label": "peer dependency"
+    },
+    {
+      "source": "server",
+      "target": "simple-bundler",
+      "label": "depends on"
+    },
+    {
+      "source": "simple-bundler",
+      "target": "compiler",
+      "label": "dev dependency"
+    },
+    {
+      "source": "neo-tester",
+      "target": "webpack",
+      "label": "depends on"
+    },
+    {
+      "source": "neo-tester",
+      "target": "mkdirp",
+      "label": "depends on"
+    },
+    {
+      "source": "swr",
+      "target": "re-builder-box",
+      "label": "peer dependency"
+    },
+    {
+      "source": "quick-buffer",
+      "target": "nano-router-pro",
+      "label": "depends on"
+    },
+    {
+      "source": "fast-pool",
+      "target": "quick-buffer",
+      "label": "depends on"
+    },
+    {
+      "source": "emotion",
+      "target": "fast-tester",
+      "label": "depends on"
+    },
+    {
+      "source": "fast-tester",
+      "target": "neo-builder",
+      "label": "depends on"
+    },
+    {
+      "source": "source-map",
+      "target": "hyper-validate",
+      "label": "dev dependency"
+    },
+    {
+      "source": "next-compress",
+      "target": "@util/mini-migrator",
+      "label": "peer dependency"
+    },
+    {
+      "source": "quick-env",
+      "target": "next-compress",
+      "label": "dev dependency"
+    },
+    {
+      "source": "next-compress",
+      "target": "un-connector",
+      "label": "dev dependency"
+    },
+    {
+      "source": "@pkg/config",
+      "target": "cool-router",
+      "label": "peer dependency"
+    },
+    {
+      "source": "babel",
+      "target": "@lib/ultra-parser",
+      "label": "depends on"
+    },
+    {
+      "source": "lazy-linter",
+      "target": "@lib/ultra-parser",
+      "label": "depends on"
+    },
+    {
+      "source": "swr",
+      "target": "@lib/ultra-parser",
+      "label": "depends on"
+    },
+    {
+      "source": "easy-cluster",
+      "target": "bundler-plus",
+      "label": "depends on"
+    },
+    {
+      "source": "@dev/client-lab",
+      "target": "safe-encrypt",
+      "label": "dev dependency"
+    },
+    {
+      "source": "lazy-linter",
+      "target": "quick-buffer",
+      "label": "depends on"
+    },
+    {
+      "source": "cool-env",
+      "target": "lazy-linter",
+      "label": "depends on"
+    },
+    {
+      "source": "cool-util",
+      "target": "express",
+      "label": "depends on"
+    },
+    {
+      "source": "deep-server",
+      "target": "eslint",
+      "label": "depends on"
+    },
+    {
+      "source": "util",
+      "target": "deep-server",
+      "label": "depends on"
+    },
+    {
+      "source": "deep-server",
+      "target": "hapi",
+      "label": "dev dependency"
+    },
+    {
+      "source": "@tools/hot-migrator",
+      "target": "encrypt-core",
+      "label": "peer dependency"
+    },
+    {
+      "source": "canvas",
+      "target": "encrypt-core",
+      "label": "depends on"
+    },
+    {
+      "source": "encrypt-core",
+      "target": "render",
+      "label": "depends on"
+    },
+    {
+      "source": "hash-hub",
+      "target": "@data/re-bridge",
+      "label": "depends on"
+    },
+    {
+      "source": "yargs",
+      "target": "@tools/ultra-builder-core",
+      "label": "dev dependency"
+    },
+    {
+      "source": "minimatch",
+      "target": "neo-filter",
+      "label": "depends on"
+    },
+    {
+      "source": "@util/safe-seeder",
+      "target": "neo-filter",
+      "label": "depends on"
+    },
+    {
+      "source": "cool-env",
+      "target": "fast-formatter",
+      "label": "depends on"
+    },
+    {
+      "source": "cool-env",
+      "target": "connector-js",
+      "label": "dev dependency"
+    },
+    {
+      "source": "cool-env",
+      "target": "hot-factory",
+      "label": "peer dependency"
+    },
+    {
+      "source": "cluster",
+      "target": "hot-factory",
+      "label": "depends on"
+    },
+    {
+      "source": "fast-formatter",
+      "target": "connector-js",
+      "label": "dev dependency"
+    },
+    {
+      "source": "fast-formatter",
+      "target": "hot-factory",
+      "label": "depends on"
+    },
+    {
+      "source": "connector-js",
+      "target": "deep-adapter",
+      "label": "peer dependency"
+    },
+    {
+      "source": "@tools/parser-plus",
+      "target": "util-ng",
+      "label": "depends on"
+    },
+    {
+      "source": "@tools/parser-plus",
+      "target": "cache",
+      "label": "dev dependency"
+    },
+    {
+      "source": "util-ng",
+      "target": "easy-cluster",
+      "label": "depends on"
+    },
+    {
+      "source": "cache",
+      "target": "easy-resolver",
+      "label": "dev dependency"
+    },
+    {
+      "source": "@tools/merger",
+      "target": "@util/safe-seeder",
+      "label": "depends on"
+    },
+    {
+      "source": "tester",
+      "target": "@util/safe-seeder",
+      "label": "depends on"
+    },
+    {
+      "source": "tester",
+      "target": "cool-worker",
+      "label": "depends on"
+    },
+    {
+      "source": "quick-reducer-js",
+      "target": "@util/safe-seeder",
+      "label": "dev dependency"
+    },
+    {
+      "source": "quick-reducer-js",
+      "target": "safe-token",
+      "label": "peer dependency"
+    },
+    {
+      "source": "@util/safe-seeder",
+      "target": "plugin-ng",
+      "label": "peer dependency"
+    },
+    {
+      "source": "@util/safe-seeder",
+      "target": "cool-worker",
+      "label": "dev dependency"
+    },
+    {
+      "source": "plugin-ng",
+      "target": "safe-token",
+      "label": "depends on"
+    },
+    {
+      "source": "plugin-ng",
+      "target": "cool-worker",
+      "label": "depends on"
+    },
+    {
+      "source": "@tools/mapper-lab",
+      "target": "lazy-factory-js",
+      "label": "peer dependency"
+    },
+    {
+      "source": "@tools/mapper-lab",
+      "target": "@tools/mini-tester",
+      "label": "peer dependency"
+    },
+    {
+      "source": "merger",
+      "target": "lazy-factory-js",
+      "label": "depends on"
+    },
+    {
+      "source": "merger",
+      "target": "@tools/mini-tester",
+      "label": "depends on"
+    },
+    {
+      "source": "@app/watcher",
+      "target": "lazy-factory-js",
+      "label": "depends on"
+    },
+    {
+      "source": "@app/watcher",
+      "target": "@tools/mini-tester",
+      "label": "depends on"
+    },
+    {
+      "source": "mocker-io",
+      "target": "gateway",
+      "label": "depends on"
+    },
+    {
+      "source": "mysql2",
+      "target": "filter",
+      "label": "peer dependency"
+    },
+    {
+      "source": "winston",
+      "target": "chalk",
+      "label": "depends on"
+    },
+    {
+      "source": "turbopack",
+      "target": "filter",
+      "label": "dev dependency"
+    },
+    {
+      "source": "tsx",
+      "target": "seeder",
+      "label": "depends on"
+    },
+    {
+      "source": "jimp",
+      "target": "@util/safe-seeder",
+      "label": "depends on"
+    },
+    {
+      "source": "simple-bundler",
+      "target": "safe-hook-hub",
+      "label": "dev dependency"
+    },
+    {
+      "source": "@app/safe-gateway-lab",
+      "target": "reducer",
+      "label": "depends on"
+    },
+    {
+      "source": "redis",
+      "target": "cypress",
+      "label": "depends on"
+    },
+    {
+      "source": "neo-render",
+      "target": "cool-router",
+      "label": "dev dependency"
+    },
+    {
+      "source": "hot-filter",
+      "target": "apollo-server",
+      "label": "peer dependency"
+    },
+    {
+      "source": "winston",
+      "target": "solid-js",
+      "label": "depends on"
+    },
+    {
+      "source": "joi",
+      "target": "worker",
+      "label": "dev dependency"
+    },
+    {
+      "source": "validate",
+      "target": "un-connector",
+      "label": "dev dependency"
+    },
+    {
+      "source": "buffer-x",
+      "target": "encrypt",
+      "label": "depends on"
+    },
+    {
+      "source": "tanstack-query",
+      "target": "axios",
+      "label": "depends on"
+    },
+    {
+      "source": "mini-server",
+      "target": "neo-gateway",
+      "label": "dev dependency"
+    },
+    {
+      "source": "safe-compiler",
+      "target": "client",
+      "label": "dev dependency"
+    },
+    {
+      "source": "lazy-buffer",
+      "target": "next",
+      "label": "peer dependency"
+    },
+    {
+      "source": "buffer-x",
+      "target": "koa",
+      "label": "dev dependency"
+    },
+    {
+      "source": "cypress",
+      "target": "factory",
+      "label": "peer dependency"
+    },
+    {
+      "source": "tsx",
+      "target": "hot-factory",
+      "label": "depends on"
+    },
+    {
+      "source": "resolver",
+      "target": "simple-cluster",
+      "label": "depends on"
+    },
+    {
+      "source": "encrypt-lab",
+      "target": "simple-linter",
+      "label": "depends on"
+    },
+    {
+      "source": "hot-server-js",
+      "target": "hono",
+      "label": "depends on"
+    },
+    {
+      "source": "ajv",
+      "target": "ioredis",
+      "label": "dev dependency"
+    },
+    {
+      "source": "testing-library",
+      "target": "recharts",
+      "label": "dev dependency"
+    },
+    {
+      "source": "yup",
+      "target": "chart.js",
+      "label": "depends on"
+    },
+    {
+      "source": "turbopack",
+      "target": "connector",
+      "label": "depends on"
+    },
+    {
+      "source": "chai",
+      "target": "inquirer",
+      "label": "depends on"
+    },
+    {
+      "source": "tiny-token",
+      "target": "tailwindcss",
+      "label": "depends on"
+    },
+    {
+      "source": "neo-render",
+      "target": "jest",
+      "label": "peer dependency"
+    },
+    {
+      "source": "smart-middleware",
+      "target": "easy-client",
+      "label": "peer dependency"
+    },
+    {
+      "source": "encrypt-node",
+      "target": "connector-js",
+      "label": "depends on"
+    },
+    {
+      "source": "@tools/parser-plus",
+      "target": "immer",
+      "label": "depends on"
+    },
+    {
+      "source": "token",
+      "target": "rollup",
+      "label": "depends on"
+    },
+    {
+      "source": "bundler-plus",
+      "target": "chai",
+      "label": "depends on"
+    },
+    {
+      "source": "nodemon",
+      "target": "mocker-io",
+      "label": "depends on"
+    },
+    {
+      "source": "hyper-validate",
+      "target": "mini-mocker-box",
+      "label": "peer dependency"
+    },
+    {
+      "source": "easy-cluster",
+      "target": "express",
+      "label": "depends on"
+    },
+    {
+      "source": "un-middleware",
+      "target": "sorter",
+      "label": "dev dependency"
+    },
+    {
+      "source": "validate",
+      "target": "boxen",
+      "label": "depends on"
+    },
+    {
+      "source": "neo-gateway",
+      "target": "pool",
+      "label": "peer dependency"
+    },
+    {
+      "source": "router",
+      "target": "bunyan",
+      "label": "depends on"
+    },
+    {
+      "source": "worker",
+      "target": "bundler-plus",
+      "label": "dev dependency"
+    },
+    {
+      "source": "@app/safe-gateway-lab",
+      "target": "neo-filter",
+      "label": "depends on"
+    },
+    {
+      "source": "styled-components",
+      "target": "easy-plugin",
+      "label": "dev dependency"
+    },
+    {
+      "source": "fast-tester",
+      "target": "re-builder-box",
+      "label": "dev dependency"
+    },
+    {
+      "source": "next",
+      "target": "parcel",
+      "label": "depends on"
+    }
+  ]
+}

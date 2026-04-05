@@ -24,6 +24,5 @@ graphs_for_manual_testing/
 coverage
 test-results
 playwright-report
-cosmos-test.png
 .vitest-attachments/
 src/components/__tests__/__screenshots__/

@@ -25,4 +25,4 @@ coverage
 test-results
 playwright-report
 .vitest-attachments/
-src/components/__tests__/__screenshots__/
+src/graph/components/__tests__/__screenshots__/

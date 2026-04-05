@@ -20,7 +20,7 @@ test.describe('Homepage', () => {
 
   test('renders all major sections', async ({ page }) => {
     await expect(page.getByText(/GPU-accelerated/i).first()).toBeVisible()
-    await expect(page.getByText(/dependency graph/i).first()).toBeVisible()
+    await expect(page.getByText(/What people visualize/i).first()).toBeVisible()
     await expect(page.getByText(/How it works/i).first()).toBeVisible()
     await expect(page.getByText(/Simple JSON input/i).first()).toBeVisible()
   })

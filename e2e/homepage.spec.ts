@@ -42,7 +42,7 @@ test.describe('Homepage', () => {
   test('SEO: content is in the HTML source without JS', async ({ page }) => {
     const response = await page.request.get('/')
     const html = await response.text()
-    expect(html).toContain('Explore million-node graphs')
+    expect(html).toContain('hiding in your graph')
     expect(html).toContain('GPU-accelerated')
     expect(html).toContain('og:title')
   })

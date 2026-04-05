@@ -3,17 +3,285 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="/favicon.ico" />
+
+    <!-- SEO -->
     <title>Knotviz — Explore Million-Node Graphs in Your Browser</title>
+    <meta name="description" content="GPU-accelerated graph visualization for 1M+ nodes. Drag-and-drop JSON, filter by properties, color by values. Free, client-side, no signup." />
+    <link rel="canonical" href="https://www.knotviz.com" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Knotviz — Explore Million-Node Graphs in Your Browser" />
+    <meta property="og:description" content="GPU-accelerated graph visualization tool. Filter, color, and analyze large graphs entirely in your browser." />
+    <meta property="og:image" content="https://www.knotviz.com/screenshots/hero.png" />
+    <meta property="og:url" content="https://www.knotviz.com" />
+    <meta property="og:site_name" content="Knotviz" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Knotviz — Explore Million-Node Graphs in Your Browser" />
+    <meta name="twitter:description" content="GPU-accelerated graph visualization for 1M+ nodes. Drag-and-drop JSON, filter by properties, color by values." />
+    <meta name="twitter:image" content="https://www.knotviz.com/screenshots/hero.png" />
+
+    <!-- Favicon -->
+    <link rel="icon" href="/favicon.ico" />
   </head>
-  <body class="flex h-screen items-center justify-center bg-white text-gray-900">
-    <div class="text-center">
-      <h1 class="text-4xl font-bold">Knotviz</h1>
-      <p class="mt-4 text-gray-500">Homepage coming soon</p>
-      <a href="/graph" class="mt-6 inline-block rounded-lg bg-blue-600 px-6 py-2 text-white hover:bg-blue-700">
-        Open Knotviz
-      </a>
-    </div>
+  <body class="bg-white text-gray-900 antialiased">
+
+    <!-- Hero -->
+    <section class="px-6 py-20 text-center">
+      <div class="mx-auto max-w-4xl">
+        <img src="/logo-hero.png" alt="Knotviz logo" class="mx-auto h-14 sm:h-16" />
+        <h1 class="mt-8 text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">
+          Explore million-node graphs in your browser
+        </h1>
+        <p class="mx-auto mt-6 max-w-2xl text-lg text-gray-600 sm:text-xl">
+          GPU-accelerated, client-side graph visualization. Drag and drop a JSON file — no server, no signup.
+        </p>
+        <a href="/graph" class="mt-8 inline-block rounded-lg bg-blue-600 px-8 py-3 text-lg font-medium text-white transition-colors hover:bg-blue-700">
+          Open Knotviz
+        </a>
+      </div>
+    </section>
+
+    <!-- Feature Cards -->
+    <section class="bg-gray-50 px-6 py-20">
+      <div class="mx-auto max-w-6xl">
+        <h2 class="text-center text-3xl font-bold">Key capabilities</h2>
+        <div class="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+
+          <!-- GPU-accelerated -->
+          <div class="rounded-xl bg-white p-6 shadow-sm">
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+              <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+            </div>
+            <h3 class="mt-4 text-lg font-semibold">GPU-accelerated</h3>
+            <p class="mt-2 text-sm text-gray-600">Renders 1M+ nodes at 60fps using WebGL via Cosmos.gl. Force-directed simulation runs entirely on the GPU.</p>
+          </div>
+
+          <!-- Property filtering -->
+          <div class="rounded-xl bg-white p-6 shadow-sm">
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+              <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+              </svg>
+            </div>
+            <h3 class="mt-4 text-lg font-semibold">Property filtering</h3>
+            <p class="mt-2 text-sm text-gray-600">Filter nodes by any property — numbers, strings, dates, booleans, and tags. Combine multiple filters with AND logic.</p>
+          </div>
+
+          <!-- Color gradients -->
+          <div class="rounded-xl bg-white p-6 shadow-sm">
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+              <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
+                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
+                <circle cx="6.5" cy="12" r=".5" fill="currentColor"/>
+                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+              </svg>
+            </div>
+            <h3 class="mt-4 text-lg font-semibold">Color gradients</h3>
+            <p class="mt-2 text-sm text-gray-600">Color nodes by property values with customizable palettes. Visualize patterns at a glance with continuous or discrete scales.</p>
+          </div>
+
+          <!-- Edge analysis -->
+          <div class="rounded-xl bg-white p-6 shadow-sm">
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+              <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" x2="6" y1="3" y2="15"/>
+                <circle cx="18" cy="6" r="3"/>
+                <circle cx="6" cy="18" r="3"/>
+                <path d="M18 9a9 9 0 0 1-9 9"/>
+              </svg>
+            </div>
+            <h3 class="mt-4 text-lg font-semibold">Edge analysis</h3>
+            <p class="mt-2 text-sm text-gray-600">Control edge visibility with percentage, max outgoing, and max incoming filters. Focus on the connections that matter.</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Use Cases -->
+    <section class="px-6 py-20">
+      <div class="mx-auto max-w-6xl">
+        <h2 class="text-center text-3xl font-bold">Built for real-world graphs</h2>
+        <p class="mx-auto mt-4 max-w-2xl text-center text-gray-600">From dependency trees to citation networks — if it has nodes and edges, Knotviz can visualize it.</p>
+        <div class="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+
+          <!-- Software dependencies -->
+          <div class="rounded-xl border border-gray-200 p-6">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 text-amber-600">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m7.5 4.27 9 5.15"/>
+                <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>
+                <path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/>
+              </svg>
+            </div>
+            <h3 class="mt-3 font-semibold">Software dependency graphs</h3>
+            <p class="mt-1 text-xs text-gray-500">Developers, DevOps</p>
+            <p class="mt-2 text-sm text-gray-600">Visualize npm/pip/Maven dependency trees to find vulnerability chains, circular dependencies, and bloated transitive imports. Color by license type to spot GPL contamination.</p>
+          </div>
+
+          <!-- Knowledge graphs -->
+          <div class="rounded-xl border border-gray-200 p-6">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 text-purple-600">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+              </svg>
+            </div>
+            <h3 class="mt-3 font-semibold">Knowledge graphs &amp; ontologies</h3>
+            <p class="mt-1 text-xs text-gray-500">Data scientists, researchers</p>
+            <p class="mt-2 text-sm text-gray-600">Explore medical ontologies (SNOMED, ICD), legal knowledge graphs, or scientific taxonomies. Filter by entity type, navigate relationship chains, identify isolated clusters.</p>
+          </div>
+
+          <!-- Infrastructure -->
+          <div class="rounded-xl border border-gray-200 p-6">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 text-green-600">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="20" height="8" x="2" y="2" rx="2" ry="2"/>
+                <rect width="20" height="8" x="2" y="14" rx="2" ry="2"/>
+                <line x1="6" x2="6.01" y1="6" y2="6"/>
+                <line x1="6" x2="6.01" y1="18" y2="18"/>
+              </svg>
+            </div>
+            <h3 class="mt-3 font-semibold">Infrastructure &amp; API mapping</h3>
+            <p class="mt-1 text-xs text-gray-500">Platform engineers, SREs</p>
+            <p class="mt-2 text-sm text-gray-600">Map microservice call graphs, Kubernetes pod dependencies, or data pipeline DAGs. Find single points of failure by filtering to high-degree nodes.</p>
+          </div>
+
+          <!-- Citation networks -->
+          <div class="rounded-xl border border-gray-200 p-6">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/>
+                <path d="M22 10v6"/>
+                <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>
+              </svg>
+            </div>
+            <h3 class="mt-3 font-semibold">Citation &amp; research networks</h3>
+            <p class="mt-1 text-xs text-gray-500">Academics, R&amp;D teams</p>
+            <p class="mt-2 text-sm text-gray-600">Load citation graphs from OpenAlex, Semantic Scholar, or PubMed. Discover key papers by degree, trace influence through citation chains, color by field or year.</p>
+          </div>
+
+          <!-- Financial -->
+          <div class="rounded-xl border border-gray-200 p-6">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-100 text-rose-600">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" x2="12" y1="2" y2="22"/>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
+            <h3 class="mt-3 font-semibold">Financial transaction analysis</h3>
+            <p class="mt-1 text-xs text-gray-500">Analysts, compliance teams</p>
+            <p class="mt-2 text-sm text-gray-600">Visualize account-to-account money flows. Use edge weight filtering to surface high-value transfers, color by account type, identify hub accounts with unusual connectivity.</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="bg-gray-50 px-6 py-20">
+      <div class="mx-auto max-w-6xl">
+        <h2 class="text-center text-3xl font-bold">How it works</h2>
+        <div class="mt-12 grid items-center gap-12 lg:grid-cols-2">
+
+          <!-- Steps -->
+          <div class="space-y-8">
+            <div class="flex gap-4">
+              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">1</div>
+              <div>
+                <h3 class="text-lg font-semibold">Drop</h3>
+                <p class="mt-1 text-gray-600">Drag a JSON file onto the canvas. Your data stays in your browser — nothing is uploaded.</p>
+              </div>
+            </div>
+            <div class="flex gap-4">
+              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">2</div>
+              <div>
+                <h3 class="text-lg font-semibold">Explore</h3>
+                <p class="mt-1 text-gray-600">Pan, zoom, and run force-directed simulation to untangle the graph. Hover nodes to see details.</p>
+              </div>
+            </div>
+            <div class="flex gap-4">
+              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">3</div>
+              <div>
+                <h3 class="text-lg font-semibold">Analyze</h3>
+                <p class="mt-1 text-gray-600">Filter by properties, color by values, control edge visibility. Export the enriched graph when done.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Screenshot -->
+          <div class="overflow-hidden rounded-xl border border-gray-200 shadow-lg">
+            <img src="/screenshots/hero.png" alt="Knotviz app screenshot showing a graph with 300 nodes, color gradient applied" class="w-full" />
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Input Format -->
+    <section class="px-6 py-20">
+      <div class="mx-auto max-w-4xl">
+        <h2 class="text-center text-3xl font-bold">Simple JSON input</h2>
+        <p class="mx-auto mt-4 max-w-2xl text-center text-gray-600">
+          Knotviz accepts a JSON file with <code class="rounded bg-gray-100 px-1.5 py-0.5 text-sm">nodes</code> and <code class="rounded bg-gray-100 px-1.5 py-0.5 text-sm">edges</code> arrays. Add optional properties for filtering and coloring.
+        </p>
+        <div class="mt-8 overflow-hidden rounded-xl border border-gray-200 bg-gray-900 text-sm">
+          <div class="flex items-center gap-2 border-b border-gray-700 px-4 py-2 text-xs text-gray-400">
+            <span>graph.json</span>
+          </div>
+          <pre class="overflow-x-auto p-4 text-gray-300"><code>{
+  "version": "1",
+  "nodes": [
+    { "id": "a", "label": "Node A", "properties": { "type": "server", "cpu": 85 } },
+    { "id": "b", "label": "Node B", "properties": { "type": "database", "cpu": 42 } },
+    { "id": "c", "label": "Node C", "properties": { "type": "server", "cpu": 91 } }
+  ],
+  "edges": [
+    { "source": "a", "target": "b", "label": "connects to" },
+    { "source": "a", "target": "c", "label": "depends on" }
+  ]
+}</code></pre>
+        </div>
+        <p class="mt-4 text-center text-sm text-gray-500">
+          Full schema documentation is available in the app's schema dialog.
+        </p>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="bg-blue-600 px-6 py-16 text-center text-white">
+      <div class="mx-auto max-w-4xl">
+        <h2 class="text-3xl font-bold">Ready to explore your graph?</h2>
+        <p class="mt-4 text-lg text-blue-100">Free, client-side, no signup required.</p>
+        <a href="/graph" class="mt-8 inline-block rounded-lg bg-white px-8 py-3 text-lg font-medium text-blue-600 transition-colors hover:bg-blue-50">
+          Open Knotviz
+        </a>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-200 px-6 py-12">
+      <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 sm:flex-row">
+        <div class="flex items-center gap-3">
+          <img src="/logo.png" alt="Knotviz" class="h-6" />
+        </div>
+        <p class="text-sm text-gray-500">Built for graphs with 1M+ nodes</p>
+        <a href="https://github.com/mhamas/knotviz" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 text-sm text-gray-500 transition-colors hover:text-gray-900">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+          </svg>
+          GitHub
+        </a>
+      </div>
+    </footer>
+
     <script type="module" src="/src/homepage/main.ts"></script>
   </body>
 </html>

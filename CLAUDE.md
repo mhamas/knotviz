@@ -1,6 +1,11 @@
-# Graph Visualizer — Project Context
+# Knotviz — Project Context
 
-Single-page React + TypeScript app that lets a user drag-and-drop a JSON graph file, visualizes it using **@cosmos.gl/graph** (GPU-accelerated WebGL), and lets them run and tune a **GPU force-directed simulation** targeting 1M+ nodes.
+Vite Multi-Page App (MPA) with two independent entry points:
+
+- **Homepage** (`/`) — static HTML + Tailwind marketing page, SEO-friendly, no React. Content lives directly in `index.html`.
+- **Graph app** (`/graph`) — React + TypeScript SPA that lets a user drag-and-drop a JSON graph file, visualizes it using **@cosmos.gl/graph** (GPU-accelerated WebGL), and lets them run and tune a **GPU force-directed simulation** targeting 1M+ nodes.
+
+Path alias: `@/` → `src/graph/` (all graph app imports use `@/`).
 
 Production-grade graph visualization tool. Prioritize performance, correctness, and maintainability.
 
@@ -24,7 +29,7 @@ Production-grade graph visualization tool. Prioritize performance, correctness, 
 
 ## Input Format
 
-The app accepts a single `.json` file dropped onto the drop zone. The file must conform to a versioned JSON schema (schema stored in `src/lib/graphSchema.json`). On load, the file is validated against the schema before rendering.
+The app accepts a single `.json` file dropped onto the drop zone. The file must conform to a versioned JSON schema (schema stored in `src/graph/lib/graphSchema.json`). On load, the file is validated against the schema before rendering.
 
 **Top-level fields:** `version` (required, string — e.g. `"1"`), `nodes` (array), `edges` (array). **Node fields:** `id` (required), `label` (optional), `properties` (optional — key/value pairs where values are `number`, `string`, `boolean`, `string[]` (array of strings), or ISO 8601 date strings). **Edge fields:** `source`, `target` (both required), `label` (optional).
 
@@ -35,45 +40,51 @@ Date property values are stored and filtered as **ISO 8601 strings** — no conv
 ## File Structure
 
 ```
-grapphy/
-├── plan/                # Product spec, implementation plan, roadmap tasks
-├── e2e/                 # Playwright E2E tests
-│   ├── fixtures/        # Test graph files (sample, all-positions, partial, invalid, empty, weighted)
+knotviz/
+├── index.html                  # Homepage (static HTML + Tailwind) → serves at /
+├── graph/
+│   └── index.html              # Graph SPA HTML entry → serves at /graph
+├── plan/                       # Product spec, implementation plan, roadmap tasks
+├── e2e/                        # Playwright E2E tests
+│   ├── fixtures/               # Test graph files (sample, screenshot, invalid, empty, etc.)
+│   ├── homepage.spec.ts        # Homepage E2E tests
 │   ├── drop-zone.spec.ts
 │   ├── graph-view.spec.ts
 │   ├── simulation.spec.ts
 │   ├── filters.spec.ts
-│   ├── node-tooltip.spec.ts
-│   ├── file-management.spec.ts
-│   ├── position-loading.spec.ts
-│   └── reset-and-export.spec.ts
+│   └── ...                     # Other graph app E2E specs
 ├── src/
-│   ├── components/
-│   │   ├── ui/          # shadcn/ui generated components (lint-excluded)
-│   │   ├── sidebar/     # Reusable sidebar design system (see below)
-│   │   ├── filters/     # Filter UI components (NumberFilter, BooleanFilter, PropertyFilterPanel)
-│   │   ├── DropZone.tsx, GraphView.tsx, LeftSidebar.tsx, RightSidebar.tsx
-│   │   ├── FiltersTab.tsx
-│   │   ├── CanvasControls.tsx, FilenameLabel.tsx, KeyboardShortcutsHelp.tsx
-│   │   └── ErrorBoundary.tsx
-│   ├── hooks/
-│   │   ├── useCosmos.ts         # Core: Cosmos.gl lifecycle, worker comms, camera, simulation
-│   │   ├── useFilterState.ts    # Filter UI state (matching computed in worker)
-│   │   ├── useColorGradient.ts  # Pure gradient computation (used by tests; worker handles runtime)
-│   │   ├── useFileDrop.ts, useSpacebarToggle.ts, useDebounce.ts
-│   ├── workers/
-│   │   └── appearanceWorker.ts  # Web Worker: filter matching + gradient + link visibility
-│   ├── lib/
-│   │   ├── buildGraph.ts, validateGraph.ts, parseJSON.ts
-│   │   ├── applyNullDefaults.ts, detectPropertyTypes.ts
-│   │   ├── graphSchema.json, utils.ts
-│   ├── components/
-│   │   ├── __tests__/   # Vitest Browser Mode component tests
-│   ├── test/            # Vitest unit tests for lib/ functions only
-│   │   ├── buildGraph.test.ts, validateGraph.test.ts
-│   │   ├── applyNullDefaults.test.ts, detectPropertyTypes.test.ts
-│   ├── types.ts, App.tsx, main.tsx, index.css
-├── scripts/             # Utility scripts (e.g. csv-to-graph converter)
+│   ├── styles/
+│   │   └── globals.css         # Shared Tailwind theme, tokens, fonts
+│   ├── homepage/
+│   │   └── main.ts             # CSS-only entry (imports globals.css for Tailwind)
+│   ├── graph/                  # Graph mini-app (all graph code lives here)
+│   │   ├── main.tsx            # createRoot entry
+│   │   ├── App.tsx             # Graph root component
+│   │   ├── types.ts
+│   │   ├── components/
+│   │   │   ├── ui/             # shadcn/ui generated components (lint-excluded)
+│   │   │   ├── sidebar/        # Reusable sidebar design system (see below)
+│   │   │   ├── filters/        # Filter UI components
+│   │   │   ├── __tests__/      # Vitest Browser Mode component tests
+│   │   │   ├── DropZone.tsx, GraphView.tsx, LeftSidebar.tsx, RightSidebar.tsx
+│   │   │   └── ...
+│   │   ├── hooks/
+│   │   │   ├── useCosmos.ts    # Core: Cosmos.gl lifecycle, worker comms, camera, simulation
+│   │   │   ├── useFilterState.ts, useFileDrop.ts, useSpacebarToggle.ts, useDebounce.ts
+│   │   ├── workers/
+│   │   │   └── appearanceWorker.ts  # Web Worker: filter matching + gradient + link visibility
+│   │   ├── lib/
+│   │   │   ├── buildGraph.ts, validateGraph.ts, parseJSON.ts
+│   │   │   ├── applyNullDefaults.ts, detectPropertyTypes.ts
+│   │   │   ├── graphSchema.json, utils.ts
+│   │   ├── stores/             # Zustand stores
+│   │   └── test/               # Vitest unit tests for lib/ functions
+│   └── shared/                 # Code shared between apps (future use)
+├── public/                     # Static assets
+│   ├── favicon.ico, logo.png, logo-hero.png
+│   └── screenshots/            # Homepage screenshots
+├── scripts/                    # Utility scripts
 ├── playwright.config.ts, vite.config.ts, postcss.config.js
 ├── tsconfig.json, eslint.config.js, .prettierrc
 ```
@@ -91,10 +102,10 @@ npm run test:all  # typecheck + lint + unit tests + E2E tests (single command)
 Individual commands if needed:
 - `npm run verify` — typecheck + lint + unit tests (no E2E)
 - `npm run typecheck` — TypeScript type checking (strict mode)
-- `npm run lint` — ESLint (warnings from `src/components/ui/` are excluded)
+- `npm run lint` — ESLint (warnings from `src/graph/components/ui/` are excluded)
 - `npm run test` — Vitest unit + component tests (all projects)
-- `npm run test:unit` — Vitest unit tests only (`src/test/`)
-- `npm run test:component` — Vitest Browser Mode component tests only (`src/components/__tests__/`)
+- `npm run test:unit` — Vitest unit tests only (`src/graph/test/`)
+- `npm run test:component` — Vitest Browser Mode component tests only (`src/graph/components/__tests__/`)
 - `npm run test:e2e` — Playwright E2E tests (`e2e/`, Chromium + Firefox)
 - `npm run test:e2e:ui` — Playwright interactive UI runner
 - `npm run build` — Full production build (typecheck + Vite bundle)
@@ -105,7 +116,7 @@ When implementing UI components or making visual changes, use the Playwright MCP
 
 Workflow:
 1. Start the dev server (`npm run dev`) if not already running
-2. Use `browser_navigate` to open `http://localhost:5173`
+2. Use `browser_navigate` to open `http://localhost:5173/graph` (graph app) or `http://localhost:5173/` (homepage)
 3. Use `browser_snapshot` to inspect the DOM and verify component rendering
 4. After code changes, navigate again to refresh and re-check
 
@@ -118,8 +129,8 @@ Use this for: layout issues, component visibility, drag-and-drop flows, tooltip 
 Progress is tracked in `plan/implementation_roadmap/progress_tracking.md`. Before starting work, read that file to find the next task. After completing a task:
 
 1. **Write tests** — every task/feature must include appropriate tests:
-   - **Unit tests** (`src/test/`) for new or changed pure functions in `lib/`.
-   - **Component tests** (`src/components/__tests__/`) for new or changed React components in isolation.
+   - **Unit tests** (`src/graph/test/`) for new or changed pure functions in `lib/`.
+   - **Component tests** (`src/graph/components/__tests__/`) for new or changed React components in isolation.
    - **E2E tests** (`e2e/`) for multi-step user journeys that span the full app (load → interact → verify).
    - Choose the test type that best covers the change. Many tasks warrant multiple types.
 2. Run `npm run test:all` — must pass with zero errors.
@@ -133,7 +144,7 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress.
 
 ---
 
-## UI Component Library (`src/components/sidebar/`)
+## UI Component Library (`src/graph/components/sidebar/`)
 
 All sidebar and panel UI **must** use the shared design system components from `@/components/sidebar`. Do NOT write ad-hoc styled elements with inline Tailwind classes for any of the patterns below — always use the corresponding component. This ensures visual consistency and lets us change the design from a single place.
 
@@ -147,14 +158,14 @@ All sidebar and panel UI **must** use the shared design system components from `
 | `SidebarCheckbox` | Checkbox with styled label | `label`, `checked`, `onCheckedChange` |
 | `StatRow` | Key-value row for metadata (e.g. node/edge counts) | `label`, `value` |
 
-Import via `import { SectionHeading, LabeledSlider, ... } from '@/components/sidebar'`.
+Import via `import { SectionHeading, LabeledSlider, ... } from '@/components/sidebar'` (where `@/` → `src/graph/`).
 
 ### Rules
 
 1. **Always use these components** when building sidebar or panel UI. If a pattern isn't covered, create a new component in `sidebar/` and export it from `sidebar/index.ts` — don't inline it.
 2. **No complex ad-hoc components** outside of the design system. If a UI element will appear more than once or represents a distinct pattern (heading, control, display row), it belongs in `sidebar/`.
 3. **Style changes go in the component**, not at the call site. Use `className` prop only for layout concerns (e.g. `flex-1`, `w-1/2`, `mt-4`), never for colors, fonts, or spacing that are part of the design system.
-4. **shadcn/ui** (`src/components/ui/`) provides low-level primitives (Button, Slider, Checkbox, Popover, AlertDialog). The `sidebar/` layer composes these into app-specific components with consistent styling. Use `ui/` directly only when `sidebar/` doesn't have a suitable wrapper.
+4. **shadcn/ui** (`src/graph/components/ui/`) provides low-level primitives (Button, Slider, Checkbox, Popover, AlertDialog). The `sidebar/` layer composes these into app-specific components with consistent styling. Use `ui/` directly only when `sidebar/` doesn't have a suitable wrapper.
 5. **Icons** — Always use icons from `lucide-react` (`import { Copy, Check, X, ... } from 'lucide-react'`). NEVER use inline SVGs, raw Unicode symbols, or hand-crafted icon markup. Lucide provides a consistent, professionally designed icon set that matches our UI. Browse available icons at https://lucide.dev/icons.
 
 ---
@@ -162,13 +173,13 @@ Import via `import { SectionHeading, LabeledSlider, ... } from '@/components/sid
 ## Key Patterns
 
 - **Cosmos.gl simulation** runs entirely on the GPU. Simulation controls: `start()` / `pause()` / `unpause()`. Camera auto-follows via `fitView(0)` on every tick. User must click "Run" to start; simulation does not auto-start on load.
-- **Appearance pipeline** (filter matching + gradient colors + link visibility) runs in a **Web Worker** (`src/workers/appearanceWorker.ts`) to keep the UI thread free. The worker receives property columns + filter state, computes Float32Arrays for point colors/sizes/link colors, and transfers them back zero-copy.
+- **Appearance pipeline** (filter matching + gradient colors + link visibility) runs in a **Web Worker** (`src/graph/workers/appearanceWorker.ts`) to keep the UI thread free. The worker receives property columns + filter state, computes Float32Arrays for point colors/sizes/link colors, and transfers them back zero-copy.
 - **Property columns** are the shared data format for node properties — flat arrays indexed by node index (`Record<string, (number|string|boolean|undefined)[]>`). Built once on graph load in `GraphView`, shared by `useFilterState` (for initializing filter domains) and the appearance worker (for filter matching + gradient computation).
 - **Node labels** are rendered as HTML overlays (not part of the WebGL canvas). Positions read from `cosmos.getPointPositions()` + `spaceToScreenPosition()`, capped at 300 labels, updated on tick/zoom/drag.
 - **Cosmos data pipeline**: `setPointColors` / `setPointSizes` / `setLinkColors` set data, but it only reaches the GPU when `render()` is called (which triggers `graph.update()` → `create()` → GPU upload). Always call `render(0)` after setting data for static display.
-- **Unit tests** (`src/test/`) cover pure functions in `lib/` and hooks/stores.
-- **Component tests** (`src/components/__tests__/`) render isolated React components in a real Chromium browser via Vitest Browser Mode. These test props, interactions, and rendered output without needing the full app.
-- **E2E tests** (`e2e/`) cover multi-step user journeys (load file → interact → verify) using Playwright. Chromium uses SwiftShader (`--use-gl=angle --use-angle=swiftshader`) for headless WebGL support. 4 GPU-dependent tests are skipped (simulation, tooltip click, position readback).
+- **Unit tests** (`src/graph/test/`) cover pure functions in `lib/` and hooks/stores.
+- **Component tests** (`src/graph/components/__tests__/`) render isolated React components in a real Chromium browser via Vitest Browser Mode. These test props, interactions, and rendered output without needing the full app.
+- **E2E tests** (`e2e/`) cover multi-step user journeys (load file → interact → verify) using Playwright. Graph app tests navigate to `/graph`. Homepage tests navigate to `/`. Chromium uses SwiftShader (`--use-gl=angle --use-angle=swiftshader`) for headless WebGL support. 4 GPU-dependent tests are skipped (simulation, tooltip click, position readback).
 
 ---
 
@@ -178,8 +189,8 @@ Every task or feature **must** include tests. This is non-negotiable.
 
 | Test type | Location | Covers | Command |
 |---|---|---|---|
-| Unit (Vitest) | `src/test/*.test.ts` | Pure functions in `lib/`, hooks, stores | `npm run test:unit` |
-| Component (Vitest Browser) | `src/components/__tests__/*.test.tsx` | Isolated React components with real DOM | `npm run test:component` |
+| Unit (Vitest) | `src/graph/test/*.test.ts` | Pure functions in `lib/`, hooks, stores | `npm run test:unit` |
+| Component (Vitest Browser) | `src/graph/components/__tests__/*.test.tsx` | Isolated React components with real DOM | `npm run test:component` |
 | E2E (Playwright) | `e2e/*.spec.ts` | Multi-step user journeys, full app flows | `npm run test:e2e` |
 
 **Test fixtures** live in `e2e/fixtures/` — graph JSON files for different scenarios (valid, invalid, empty, partial positions, weighted edges, etc.).

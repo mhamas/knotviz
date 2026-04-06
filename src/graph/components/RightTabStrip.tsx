@@ -27,7 +27,7 @@ export function RightTabStrip({
   isDisabled = false,
 }: Props): React.JSX.Element {
   return (
-    <div className={`flex h-screen shrink-0 flex-col items-center gap-1 border-l border-slate-200 bg-slate-50 px-1 pt-2 ${isDisabled ? 'pointer-events-none opacity-40' : ''}`}>
+    <div className={`flex h-full shrink-0 flex-col items-center gap-1 border-l border-slate-200 bg-slate-50 px-1 pt-2 ${isDisabled ? 'pointer-events-none opacity-40' : ''}`}>
       <button
         className="flex h-8 w-8 cursor-pointer items-center justify-center rounded transition-colors"
         style={isColorsOpen

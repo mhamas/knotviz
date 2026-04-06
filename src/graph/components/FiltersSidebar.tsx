@@ -28,7 +28,7 @@ export function FiltersSidebar({
   const hasProperties = propertyMetas.length > 0
 
   return (
-    <div className="flex h-screen w-[300px] shrink-0 flex-col border-l border-slate-200 bg-white">
+    <div className="flex h-full w-[300px] shrink-0 flex-col border-l border-slate-200 bg-white">
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
         <div className="mb-2 flex items-center justify-between">
           <SectionHeading help="Enable filters to show only nodes matching certain property values. Multiple filters combine with AND logic — a node must pass all enabled filters to be visible.">

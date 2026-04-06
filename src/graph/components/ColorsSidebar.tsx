@@ -35,7 +35,7 @@ export function ColorsSidebar({
   const hasProperties = propertyMetas.length > 0
 
   return (
-    <div className="flex h-screen w-[300px] shrink-0 flex-col border-l border-slate-200 bg-white">
+    <div className="flex h-full w-[300px] shrink-0 flex-col border-l border-slate-200 bg-white">
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
         <CollapsibleSection
           label="Colors"

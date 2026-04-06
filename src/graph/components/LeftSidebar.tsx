@@ -111,7 +111,7 @@ export function LeftSidebar({
 
   if (!isOpen) {
     return (
-      <div className="flex h-screen shrink-0 flex-col items-center border-r border-slate-200 bg-slate-50 px-1 pt-2">
+      <div className="flex h-full shrink-0 flex-col items-center border-r border-slate-200 bg-slate-50 px-1 pt-2">
         <button
           className="flex h-8 w-8 cursor-pointer items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600"
           onClick={onToggle}
@@ -125,7 +125,7 @@ export function LeftSidebar({
   }
 
   return (
-    <div className="flex h-screen w-60 shrink-0 flex-col gap-2 border-r border-slate-200 bg-white px-4 pt-4 pb-4">
+    <div className="flex h-full w-60 shrink-0 flex-col gap-2 overflow-y-auto border-r border-slate-200 bg-white px-4 pt-4 pb-4">
       <div className={isDisabled ? 'pointer-events-none opacity-40' : ''}>
       {/* Simulation */}
       <div>

@@ -36,7 +36,7 @@ export function RightSidebar({
 
   return (
     <div
-      className="flex h-screen w-[300px] shrink-0 flex-col border-l border-slate-200 bg-white"
+      className="flex h-full w-[300px] shrink-0 flex-col border-l border-slate-200 bg-white"
       data-testid="right-sidebar"
     >
       <div className="min-h-0 flex-1 overflow-y-auto p-3">

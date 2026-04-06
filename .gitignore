@@ -26,3 +26,6 @@ test-results
 playwright-report
 .vitest-attachments/
 src/graph/components/__tests__/__screenshots__/
+
+# Source assets (unoptimized)
+public/screenshots/example_*

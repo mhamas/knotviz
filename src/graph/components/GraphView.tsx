@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { CosmosGraphData, ColorGradientState, PropertyMeta, PropertyType, PropertyValue } from '../types'
+import type { CosmosGraphData, ColorGradientState, HistogramBucket, PropertyMeta, PropertyType, PropertyValue } from '../types'
+import { computeHistogram } from '../lib/computeHistogram'
 import type { PropertyColumns } from '../hooks/useFilterState'
 import { useCosmos } from '../hooks/useCosmos'
 import { useFileDrop } from '../hooks/useFileDrop'
@@ -85,11 +86,10 @@ export function GraphView({
     cosmosRef,
     visibleNodes,
     keptEdgeIndices,
+    filteredLinkIndices,
     filteredEdgeCount,
     sliderMaxOutgoing,
     sliderMaxIncoming,
-    finalMaxOutgoing,
-    finalMaxIncoming,
   } = useCosmos(
     cosmosData,
     propertyColumns,
@@ -97,6 +97,20 @@ export function GraphView({
     gradientState,
     propertyTypeMap,
   )
+
+  // Outgoing degree histogram from filtered edges
+  const outgoingDegreeHistogram = useMemo((): HistogramBucket[] => {
+    if (filteredLinkIndices.length === 0) return []
+    const outDegree = new Uint32Array(cosmosData.nodeCount)
+    for (let i = 0; i < filteredLinkIndices.length; i += 2) {
+      outDegree[filteredLinkIndices[i]]++
+    }
+    const degrees: number[] = []
+    for (let i = 0; i < cosmosData.nodeCount; i++) {
+      degrees.push(outDegree[i])
+    }
+    return computeHistogram(degrees)
+  }, [filteredLinkIndices, cosmosData.nodeCount])
 
   // Sidebar state
   const [isLeftOpen, setIsLeftOpen] = useState(true)
@@ -223,8 +237,7 @@ export function GraphView({
         filteredEdgeCount={filteredEdgeCount}
         sliderMaxOutgoing={sliderMaxOutgoing}
         sliderMaxIncoming={sliderMaxIncoming}
-        finalMaxOutgoing={finalMaxOutgoing}
-        finalMaxIncoming={finalMaxIncoming}
+        outgoingDegreeHistogram={outgoingDegreeHistogram}
       />
       <div className="relative flex-1 overflow-hidden bg-white">
         <div

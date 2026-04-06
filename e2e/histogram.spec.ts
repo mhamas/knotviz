@@ -1,4 +1,4 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect, type Page, type Locator } from '@playwright/test'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -19,7 +19,12 @@ async function openColorsPanel(page: Page): Promise<void> {
   await expect(page.getByTestId('color-property-select')).toBeVisible()
 }
 
-test.describe('Histogram', () => {
+/** The Statistics collapsible section in the colors sidebar. */
+function statsSection(page: Page): Locator {
+  return page.locator('details', { has: page.getByText('Statistics') })
+}
+
+test.describe('Statistics Histogram', () => {
   test.beforeEach(async ({ page }) => {
     await loadGraph(page, 'sample-graph.json')
     await openColorsPanel(page)
@@ -29,7 +34,7 @@ test.describe('Histogram', () => {
     await page.getByTestId('color-property-select').click()
     await page.getByRole('option', { name: 'age' }).click()
 
-    const histogram = page.getByTestId('histogram')
+    const histogram = statsSection(page).getByTestId('histogram')
     await expect(histogram).toBeVisible()
 
     // 5 nodes → Sturges: ceil(log2(5) + 1) = ceil(3.32) = 4 buckets
@@ -41,14 +46,14 @@ test.describe('Histogram', () => {
     await page.getByTestId('color-property-select').click()
     await page.getByRole('option', { name: 'age' }).click()
 
-    const histogram = page.getByTestId('histogram')
+    const histogram = statsSection(page).getByTestId('histogram')
     await expect(histogram).toBeVisible()
 
     // Hover over the first bar container
     const firstBarContainer = histogram.locator('.flex > div').first()
     await firstBarContainer.hover()
 
-    const tooltip = page.getByTestId('histogram-tooltip')
+    const tooltip = statsSection(page).getByTestId('histogram-tooltip')
     await expect(tooltip).toBeVisible()
     // Tooltip should contain the "from – to: N nodes" pattern
     const text = await tooltip.textContent()
@@ -59,7 +64,7 @@ test.describe('Histogram', () => {
     await page.getByTestId('color-property-select').click()
     await page.getByRole('option', { name: 'joined' }).click()
 
-    const histogram = page.getByTestId('histogram')
+    const histogram = statsSection(page).getByTestId('histogram')
     await expect(histogram).toBeVisible()
 
     const bars = histogram.locator('[data-testid="histogram-bar"]')
@@ -72,18 +77,29 @@ test.describe('Histogram', () => {
     await page.getByRole('option', { name: 'status' }).click()
 
     // Statistics section should show but no histogram (categorical)
-    await expect(page.getByTestId('histogram')).not.toBeVisible()
+    await expect(statsSection(page).getByTestId('histogram')).not.toBeVisible()
   })
 
   test('histogram disappears when property set to None', async ({ page }) => {
     // Select a numeric property
     await page.getByTestId('color-property-select').click()
     await page.getByRole('option', { name: 'age' }).click()
-    await expect(page.getByTestId('histogram')).toBeVisible()
+    await expect(statsSection(page).getByTestId('histogram')).toBeVisible()
 
     // Set back to None
     await page.getByTestId('color-property-select').click()
     await page.getByRole('option', { name: 'None' }).click()
-    await expect(page.getByTestId('histogram')).not.toBeVisible()
+    await expect(statsSection(page).getByTestId('histogram')).not.toBeVisible()
+  })
+})
+
+test.describe('Outgoing Degree Histogram', () => {
+  test('shows outgoing degree histogram after loading graph', async ({ page }) => {
+    await loadGraph(page, 'sample-graph.json')
+    const histogram = page.getByTestId('outgoing-degree-histogram')
+    await expect(histogram).toBeVisible()
+    const bars = histogram.locator('[data-testid="histogram-bar"]')
+    const count = await bars.count()
+    expect(count).toBeGreaterThan(0)
   })
 })

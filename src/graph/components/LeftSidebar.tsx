@@ -10,6 +10,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import type { HistogramBucket } from '../types'
 import {
   CollapsibleSection,
   LabeledSlider,
@@ -18,6 +19,7 @@ import {
   SidebarCheckbox,
   StatRow,
 } from '@/components/sidebar'
+import { Histogram } from './Histogram'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useGraphStore } from '@/stores/useGraphStore'
 
@@ -35,8 +37,7 @@ interface Props {
   filteredEdgeCount?: number
   sliderMaxOutgoing?: number
   sliderMaxIncoming?: number
-  finalMaxOutgoing?: number
-  finalMaxIncoming?: number
+  outgoingDegreeHistogram?: HistogramBucket[]
 }
 
 /**
@@ -61,8 +62,7 @@ export function LeftSidebar({
   filteredEdgeCount = 0,
   sliderMaxOutgoing = 0,
   sliderMaxIncoming = 0,
-  finalMaxOutgoing = 0,
-  finalMaxIncoming = 0,
+  outgoingDegreeHistogram = [],
 }: Props): React.JSX.Element {
   // Store state
   const isGraphLoaded = useGraphStore((s) => s.isGraphLoaded)
@@ -356,9 +356,13 @@ export function LeftSidebar({
         <div className="mt-2 space-y-1">
           <StatRow label="Nodes" value={nodeCount.toLocaleString()} />
           <StatRow label="Edges" value={filteredEdgeCount === edgeCount ? edgeCount.toLocaleString() : `${filteredEdgeCount.toLocaleString()} / ${edgeCount.toLocaleString()}`} />
-          <StatRow label="Max outgoing edges" value={String(finalMaxOutgoing)} />
-          <StatRow label="Max incoming edges" value={String(finalMaxIncoming)} />
         </div>
+        {outgoingDegreeHistogram.length > 0 && (
+          <div className="mt-3" data-testid="outgoing-degree-histogram">
+            <p className="mb-1 text-[10px] font-medium tracking-wide text-slate-400 uppercase">Outgoing edges per node</p>
+            <Histogram buckets={outgoingDegreeHistogram} />
+          </div>
+        )}
       </div>
 
       </div>

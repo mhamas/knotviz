@@ -61,6 +61,7 @@ export interface UseCosmosReturn {
   cosmosRef: React.RefObject<CosmosGraph | null>
   visibleNodes: Uint8Array | null
   keptEdgeIndices: Uint32Array
+  filteredLinkIndices: Float32Array
   filteredEdgeCount: number
   sliderMaxOutgoing: number
   sliderMaxIncoming: number
@@ -666,6 +667,7 @@ export function useCosmos(
     cosmosRef,
     visibleNodes,
     keptEdgeIndices: filteredEdges.keptEdgeIndices,
+    filteredLinkIndices: filteredEdges.linkIndices,
     filteredEdgeCount: filteredEdges.keptEdgeIndices.length,
     sliderMaxOutgoing: filteredEdges.sliderMaxOutgoing,
     sliderMaxIncoming: filteredEdges.sliderMaxIncoming,

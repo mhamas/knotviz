@@ -162,24 +162,27 @@ export function NodeTooltip({
         <X className="h-3.5 w-3.5" />
       </button>
 
-      {/* Header: label + inline copy */}
+      {/* Header: label + ID with copy */}
       <div className="mb-2 pr-5">
-        <h3 className="inline break-words text-sm font-semibold text-slate-900">{label}</h3>
-        <button
-          aria-label="Copy node ID"
-          title="Copy node ID"
-          className="ml-1 inline-flex translate-y-[1px] cursor-pointer rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-          onClick={handleCopyId}
-        >
-          {isCopied ? (
-            <span className="flex items-center gap-0.5 text-[10px] text-green-600">
-              <Check className="h-3 w-3" />
-              Copied
-            </span>
-          ) : (
-            <Copy className="h-3.5 w-3.5" />
-          )}
-        </button>
+        <h3 className="break-words text-sm font-semibold text-slate-900">{label}</h3>
+        <div className="mt-0.5 flex items-center gap-1">
+          <span className="break-all text-[11px] text-slate-400" data-testid="node-tooltip-id">{nodeId}</span>
+          <button
+            aria-label="Copy node ID"
+            title="Copy node ID"
+            className="inline-flex shrink-0 cursor-pointer rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            onClick={handleCopyId}
+          >
+            {isCopied ? (
+              <span className="flex items-center gap-0.5 text-[10px] text-green-600">
+                <Check className="h-3 w-3" />
+                Copied
+              </span>
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Properties — read from columnar arrays by index */}

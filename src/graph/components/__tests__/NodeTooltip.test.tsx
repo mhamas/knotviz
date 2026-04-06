@@ -20,7 +20,7 @@ const metas: PropertyMeta[] = [
 
 const canvasBounds = new DOMRect(0, 0, 800, 600)
 
-test('renders node label as heading', async () => {
+test('renders node label as heading and shows ID below', async () => {
   const screen = await render(
     <NodeTooltip
       nodeId="n1"
@@ -34,6 +34,26 @@ test('renders node label as heading', async () => {
     />,
   )
   await expect.element(screen.getByText('Alice')).toBeVisible()
+  await expect.element(screen.getByTestId('node-tooltip-id')).toHaveTextContent('n1')
+})
+
+test('shows ID as both label and ID when node has no explicit label', async () => {
+  const screen = await render(
+    <NodeTooltip
+      nodeId="n2"
+      screenPosition={{ x: 100, y: 100 }}
+      nodeIndexMap={nodeIndexMap}
+      nodeLabels={nodeLabels}
+      propertyColumns={propertyColumns}
+      propertyMetas={metas}
+      canvasBounds={canvasBounds}
+      onClose={vi.fn()}
+    />,
+  )
+  // Heading should show the ID as label
+  await expect.element(screen.getByRole('heading', { name: 'n2' })).toBeVisible()
+  // ID line should also show the same ID
+  await expect.element(screen.getByTestId('node-tooltip-id')).toHaveTextContent('n2')
 })
 
 test('shows copy button for node ID', async () => {

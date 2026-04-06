@@ -41,6 +41,25 @@
         <a href="/graph" class="mt-8 inline-block rounded-lg bg-blue-600 px-8 py-3 text-lg font-medium text-white transition-colors hover:bg-blue-700">
           Open Knotviz
         </a>
+        <!-- Trust strip -->
+        <div class="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-gray-500">
+          <span class="flex items-center gap-1.5">
+            <svg class="h-4 w-4 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            No install
+          </span>
+          <span class="flex items-center gap-1.5">
+            <svg class="h-4 w-4 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            No signup
+          </span>
+          <span class="flex items-center gap-1.5">
+            <svg class="h-4 w-4 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            No upload
+          </span>
+          <span class="flex items-center gap-1.5">
+            <svg class="h-4 w-4 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            Free &amp; open source
+          </span>
+        </div>
       </div>
     </section>
 
@@ -264,6 +283,64 @@
         <p class="mt-4 text-center text-sm text-gray-500">
           Full schema documentation is available in the app's schema dialog.
         </p>
+      </div>
+    </section>
+
+    <!-- Comparison -->
+    <section class="bg-gray-50 px-6 py-20">
+      <div class="mx-auto max-w-4xl">
+        <h2 class="text-center text-3xl font-bold">Why Knotviz?</h2>
+        <p class="mx-auto mt-4 max-w-2xl text-center text-gray-600">Most graph tools require installing software, setting up servers, or handing over your data. Knotviz works in 5 seconds.</p>
+        <div class="mt-10 overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead>
+              <tr class="border-b border-gray-300">
+                <th class="pb-3 pr-4 font-semibold text-gray-900"></th>
+                <th class="pb-3 pr-4 font-semibold text-blue-600">Knotviz</th>
+                <th class="pb-3 pr-4 font-semibold text-gray-500">Gephi</th>
+                <th class="pb-3 pr-4 font-semibold text-gray-500">Cosmograph</th>
+                <th class="pb-3 font-semibold text-gray-500">Graphistry</th>
+              </tr>
+            </thead>
+            <tbody class="text-gray-600">
+              <tr class="border-b border-gray-200">
+                <td class="py-3 pr-4 font-medium text-gray-900">Setup time</td>
+                <td class="py-3 pr-4 font-medium text-blue-600">5 seconds</td>
+                <td class="py-3 pr-4">30+ min install</td>
+                <td class="py-3 pr-4">Account required</td>
+                <td class="py-3">Python + cloud setup</td>
+              </tr>
+              <tr class="border-b border-gray-200">
+                <td class="py-3 pr-4 font-medium text-gray-900">Cost</td>
+                <td class="py-3 pr-4 font-medium text-blue-600">Free</td>
+                <td class="py-3 pr-4">Free</td>
+                <td class="py-3 pr-4">Free for personal use</td>
+                <td class="py-3">Paid</td>
+              </tr>
+              <tr class="border-b border-gray-200">
+                <td class="py-3 pr-4 font-medium text-gray-900">GPU rendering</td>
+                <td class="py-3 pr-4 font-medium text-blue-600">Yes (WebGL)</td>
+                <td class="py-3 pr-4">No (CPU only)</td>
+                <td class="py-3 pr-4">Yes (WebGL)</td>
+                <td class="py-3">Yes (server-side)</td>
+              </tr>
+              <tr class="border-b border-gray-200">
+                <td class="py-3 pr-4 font-medium text-gray-900">Data privacy</td>
+                <td class="py-3 pr-4 font-medium text-blue-600">Never leaves your machine</td>
+                <td class="py-3 pr-4">Local</td>
+                <td class="py-3 pr-4">Cloud features</td>
+                <td class="py-3">Server-side processing</td>
+              </tr>
+              <tr>
+                <td class="py-3 pr-4 font-medium text-gray-900">Property filtering</td>
+                <td class="py-3 pr-4 font-medium text-blue-600">Numbers, strings, dates, booleans</td>
+                <td class="py-3 pr-4">Basic</td>
+                <td class="py-3 pr-4">DuckDB queries</td>
+                <td class="py-3">SQL-based</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </section>
 

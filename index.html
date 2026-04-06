@@ -247,12 +247,15 @@
             </div>
           </div>
 
-          <!-- Screenshot -->
+          <!-- Video demo -->
           <div class="overflow-hidden rounded-xl border border-gray-200 shadow-lg">
-            <picture>
-              <source srcset="/screenshots/hero.webp" type="image/webp" />
-              <img src="/screenshots/hero.png" alt="Knotviz app showing a graph with hundreds of nodes, color gradient applied, and filter controls visible" class="w-full" loading="lazy" />
-            </picture>
+            <video autoplay loop muted playsinline poster="/screenshots/hero.webp" class="w-full" loading="lazy">
+              <source src="/screenshots/hero-video.mp4" type="video/mp4" />
+              <picture>
+                <source srcset="/screenshots/hero.webp" type="image/webp" />
+                <img src="/screenshots/hero.png" alt="Knotviz app showing a graph with hundreds of nodes, color gradient applied, and filter controls visible" class="w-full" />
+              </picture>
+            </video>
           </div>
 
         </div>

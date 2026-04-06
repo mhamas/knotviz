@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { HistogramBucket } from '../types'
 
 interface DisplayState {
   nodeSize: number
@@ -26,6 +27,9 @@ interface GraphMeta {
   isGraphLoaded: boolean
   nodeCount: number
   edgeCount: number
+  matchingNodeCount: number
+  visibleEdgeCount: number
+  outgoingDegreeHistogram: HistogramBucket[]
 }
 
 interface Actions {
@@ -46,6 +50,7 @@ interface Actions {
   setMaxIncomingDegree: (v: number) => void
   setIsKeepAtLeastOneEdge: (v: boolean) => void
   setGraphLoaded: (nodeCount: number, edgeCount: number) => void
+  setVisibleState: (matchingNodeCount: number, visibleEdgeCount: number, outgoingDegreeHistogram: HistogramBucket[]) => void
   resetStore: () => void
 }
 
@@ -75,6 +80,9 @@ export const STORE_DEFAULTS: DisplayState & SimulationState & GraphMeta = {
   isGraphLoaded: false,
   nodeCount: 0,
   edgeCount: 0,
+  matchingNodeCount: 0,
+  visibleEdgeCount: 0,
+  outgoingDegreeHistogram: [],
 }
 
 /**
@@ -106,6 +114,9 @@ export const useGraphStore = create<GraphStore>()((set) => ({
   setIsKeepAtLeastOneEdge: (v): void => set({ isKeepAtLeastOneEdge: v }),
   setGraphLoaded: (nodeCount, edgeCount): void => {
     set({ isGraphLoaded: true, nodeCount, edgeCount })
+  },
+  setVisibleState: (matchingNodeCount, visibleEdgeCount, outgoingDegreeHistogram): void => {
+    set({ matchingNodeCount, visibleEdgeCount, outgoingDegreeHistogram })
   },
   resetStore: (): void => set(STORE_DEFAULTS),
 }))

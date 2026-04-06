@@ -27,6 +27,9 @@ describe('useGraphStore', () => {
     expect(state.isGraphLoaded).toBe(false)
     expect(state.nodeCount).toBe(0)
     expect(state.edgeCount).toBe(0)
+    expect(state.matchingNodeCount).toBe(0)
+    expect(state.visibleEdgeCount).toBe(0)
+    expect(state.outgoingDegreeHistogram).toEqual([])
   })
 
   it('setNodeSize updates nodeSize', () => {
@@ -104,6 +107,15 @@ describe('useGraphStore', () => {
     expect(useGraphStore.getState().isKeepAtLeastOneEdge).toBe(true)
   })
 
+  it('setVisibleState updates matching counts and histogram', () => {
+    const histogram = [{ from: 0, to: 5, count: 3 }]
+    useGraphStore.getState().setVisibleState(42, 100, histogram)
+    const state = useGraphStore.getState()
+    expect(state.matchingNodeCount).toBe(42)
+    expect(state.visibleEdgeCount).toBe(100)
+    expect(state.outgoingDegreeHistogram).toEqual(histogram)
+  })
+
   it('resetStore returns all fields to defaults', () => {
     // Mutate everything
     const s = useGraphStore.getState()
@@ -124,6 +136,7 @@ describe('useGraphStore', () => {
     s.setMaxIncomingDegree(15)
     s.setIsKeepAtLeastOneEdge(true)
     s.setGraphLoaded(50, 100)
+    s.setVisibleState(30, 80, [{ from: 0, to: 1, count: 5 }])
 
     // Reset
     useGraphStore.getState().resetStore()
@@ -146,5 +159,8 @@ describe('useGraphStore', () => {
     expect(reset.isGraphLoaded).toBe(false)
     expect(reset.nodeCount).toBe(0)
     expect(reset.edgeCount).toBe(0)
+    expect(reset.matchingNodeCount).toBe(0)
+    expect(reset.visibleEdgeCount).toBe(0)
+    expect(reset.outgoingDegreeHistogram).toEqual([])
   })
 })

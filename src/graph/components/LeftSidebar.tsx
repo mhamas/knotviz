@@ -10,7 +10,6 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
-import type { HistogramBucket } from '../types'
 import {
   CollapsibleSection,
   LabeledSlider,
@@ -34,10 +33,8 @@ interface Props {
   isOpen?: boolean
   onToggle?: () => void
   hasPositions?: boolean
-  filteredEdgeCount?: number
   sliderMaxOutgoing?: number
   sliderMaxIncoming?: number
-  outgoingDegreeHistogram?: HistogramBucket[]
 }
 
 /**
@@ -59,10 +56,8 @@ export function LeftSidebar({
   isOpen = true,
   onToggle,
   hasPositions = false,
-  filteredEdgeCount = 0,
   sliderMaxOutgoing = 0,
   sliderMaxIncoming = 0,
-  outgoingDegreeHistogram = [],
 }: Props): React.JSX.Element {
   // Store state
   const isGraphLoaded = useGraphStore((s) => s.isGraphLoaded)
@@ -83,6 +78,9 @@ export function LeftSidebar({
   const isHighlightNeighbors = useGraphStore((s) => s.isHighlightNeighbors)
   const nodeCount = useGraphStore((s) => s.nodeCount)
   const edgeCount = useGraphStore((s) => s.edgeCount)
+  const matchingNodeCount = useGraphStore((s) => s.matchingNodeCount)
+  const visibleEdgeCount = useGraphStore((s) => s.visibleEdgeCount)
+  const outgoingDegreeHistogram = useGraphStore((s) => s.outgoingDegreeHistogram)
 
   // Store actions
   const setRepulsion = useGraphStore((s) => s.setRepulsion)
@@ -354,8 +352,8 @@ export function LeftSidebar({
       <div className="mt-4">
         <SectionHeading>Graph Info</SectionHeading>
         <div className="mt-2 space-y-1">
-          <StatRow label="Nodes" value={nodeCount.toLocaleString()} />
-          <StatRow label="Edges" value={filteredEdgeCount === edgeCount ? edgeCount.toLocaleString() : `${filteredEdgeCount.toLocaleString()} / ${edgeCount.toLocaleString()}`} />
+          <StatRow label="Nodes" value={matchingNodeCount === nodeCount ? nodeCount.toLocaleString() : `${matchingNodeCount.toLocaleString()} / ${nodeCount.toLocaleString()}`} />
+          <StatRow label="Edges" value={visibleEdgeCount === edgeCount ? edgeCount.toLocaleString() : `${visibleEdgeCount.toLocaleString()} / ${edgeCount.toLocaleString()}`} />
         </div>
         {outgoingDegreeHistogram.length > 0 && (
           <div className="mt-3" data-testid="outgoing-degree-histogram">

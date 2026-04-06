@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { CosmosGraphData, ColorGradientState, HistogramBucket, PropertyMeta, PropertyType, PropertyValue } from '../types'
 import { computeHistogram } from '../lib/computeHistogram'
+import { useGraphStore } from '../stores/useGraphStore'
 import type { PropertyColumns } from '../hooks/useFilterState'
 import { useCosmos } from '../hooks/useCosmos'
 import { useFileDrop } from '../hooks/useFileDrop'
@@ -87,7 +88,6 @@ export function GraphView({
     visibleNodes,
     keptEdgeIndices,
     filteredLinkIndices,
-    filteredEdgeCount,
     sliderMaxOutgoing,
     sliderMaxIncoming,
   } = useCosmos(
@@ -98,19 +98,35 @@ export function GraphView({
     propertyTypeMap,
   )
 
-  // Outgoing degree histogram from filtered edges
-  const outgoingDegreeHistogram = useMemo((): HistogramBucket[] => {
-    if (filteredLinkIndices.length === 0) return []
+  // Visible edge count + outgoing degree histogram (respects both node filters and edge filters)
+  const { visibleEdgeCount, outgoingDegreeHistogram } = useMemo(() => {
+    if (filteredLinkIndices.length === 0) return { visibleEdgeCount: 0, outgoingDegreeHistogram: [] as HistogramBucket[] }
     const outDegree = new Uint32Array(cosmosData.nodeCount)
+    let edgeCount = 0
     for (let i = 0; i < filteredLinkIndices.length; i += 2) {
-      outDegree[filteredLinkIndices[i]]++
+      const src = filteredLinkIndices[i]
+      const tgt = filteredLinkIndices[i + 1]
+      if (visibleNodes && (!visibleNodes[src] || !visibleNodes[tgt])) continue
+      outDegree[src]++
+      edgeCount++
     }
     const degrees: number[] = []
-    for (let i = 0; i < cosmosData.nodeCount; i++) {
-      degrees.push(outDegree[i])
+    if (visibleNodes) {
+      for (let i = 0; i < cosmosData.nodeCount; i++) {
+        if (visibleNodes[i]) degrees.push(outDegree[i])
+      }
+    } else {
+      for (let i = 0; i < cosmosData.nodeCount; i++) {
+        degrees.push(outDegree[i])
+      }
     }
-    return computeHistogram(degrees)
-  }, [filteredLinkIndices, cosmosData.nodeCount])
+    return { visibleEdgeCount: edgeCount, outgoingDegreeHistogram: computeHistogram(degrees) }
+  }, [filteredLinkIndices, visibleNodes, cosmosData.nodeCount])
+
+  // Sync visible state to store so LeftSidebar can read it directly
+  useEffect(() => {
+    useGraphStore.getState().setVisibleState(matchingCount, visibleEdgeCount, outgoingDegreeHistogram)
+  }, [matchingCount, visibleEdgeCount, outgoingDegreeHistogram])
 
   // Sidebar state
   const [isLeftOpen, setIsLeftOpen] = useState(true)
@@ -234,10 +250,8 @@ export function GraphView({
         isOpen={isLeftOpen}
         onToggle={(): void => setIsLeftOpen((v) => !v)}
         hasPositions={cosmosData.positionMode === 'all'}
-        filteredEdgeCount={filteredEdgeCount}
         sliderMaxOutgoing={sliderMaxOutgoing}
         sliderMaxIncoming={sliderMaxIncoming}
-        outgoingDegreeHistogram={outgoingDegreeHistogram}
       />
       <div className="relative flex-1 overflow-hidden bg-white">
         <div

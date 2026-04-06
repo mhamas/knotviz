@@ -1,4 +1,5 @@
 import type { NumericStats, DateStats, CategoricalStats, PropertyStatsResult, PropertyType } from '../types'
+import { computeHistogram, computeDateHistogram } from './computeHistogram'
 
 /**
  * Compute a percentile using linear interpolation on a sorted array.
@@ -148,7 +149,9 @@ export function computeFilteredStats(
       if (visible[i] && typeof v === 'number') values.push(v)
     }
     const stats = computeNumericStats(values)
-    return stats ? { type: 'numeric', stats } : null
+    if (!stats) return null
+    const histogram = computeHistogram(values)
+    return { type: 'numeric', stats, histogram }
   }
 
   if (propType === 'date') {
@@ -158,7 +161,9 @@ export function computeFilteredStats(
       if (visible[i] && typeof v === 'string') values.push(v)
     }
     const stats = computeDateStats(values)
-    return stats ? { type: 'date', stats } : null
+    if (!stats) return null
+    const histogram = computeDateHistogram(values)
+    return { type: 'date', stats, histogram }
   }
 
   // string or boolean

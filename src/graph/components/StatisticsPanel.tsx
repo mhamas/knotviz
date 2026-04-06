@@ -1,5 +1,6 @@
-import type { PropertyStatsResult, NumericStats, DateStats, SerializableCategoricalStats } from '../types'
+import type { PropertyStatsResult, NumericStats, DateStats, SerializableCategoricalStats, HistogramBucket, DateHistogramBucket } from '../types'
 import { StatRow } from '@/components/sidebar'
+import { Histogram } from './Histogram'
 
 interface Props {
   stats: PropertyStatsResult | null
@@ -12,7 +13,7 @@ function fmt(v: number): string {
 }
 
 /** Numeric stats table (number property). */
-function NumericStatsTable({ stats }: { stats: NumericStats }): React.JSX.Element {
+function NumericStatsTable({ stats, histogram }: { stats: NumericStats; histogram: HistogramBucket[] }): React.JSX.Element {
   return (
     <div className="space-y-0.5">
       <StatRow label="Total" value={fmt(stats.count)} />
@@ -21,12 +22,13 @@ function NumericStatsTable({ stats }: { stats: NumericStats }): React.JSX.Elemen
       <StatRow label="p25" value={fmt(stats.p25)} />
       <StatRow label="p50" value={fmt(stats.p50)} />
       <StatRow label="p75" value={fmt(stats.p75)} />
+      <Histogram buckets={histogram} />
     </div>
   )
 }
 
 /** Date stats table. */
-function DateStatsTable({ stats }: { stats: DateStats }): React.JSX.Element {
+function DateStatsTable({ stats, histogram }: { stats: DateStats; histogram: DateHistogramBucket[] }): React.JSX.Element {
   return (
     <div className="space-y-0.5">
       <StatRow label="Total" value={fmt(stats.count)} />
@@ -35,6 +37,7 @@ function DateStatsTable({ stats }: { stats: DateStats }): React.JSX.Element {
       <StatRow label="p25" value={stats.p25} />
       <StatRow label="p50" value={stats.p50} />
       <StatRow label="p75" value={stats.p75} />
+      <Histogram buckets={histogram} />
     </div>
   )
 }
@@ -76,8 +79,8 @@ export function StatisticsPanel({ stats, propertyKey }: Props): React.JSX.Elemen
   return (
     <div>
       <span className="mb-2 inline-block rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-700" title={propertyKey}>{propertyKey}</span>
-      {stats.type === 'numeric' && <NumericStatsTable stats={stats.stats} />}
-      {stats.type === 'date' && <DateStatsTable stats={stats.stats} />}
+      {stats.type === 'numeric' && <NumericStatsTable stats={stats.stats} histogram={stats.histogram} />}
+      {stats.type === 'date' && <DateStatsTable stats={stats.stats} histogram={stats.histogram} />}
       {stats.type === 'categorical' && <CategoricalStatsTable stats={stats.stats} />}
     </div>
   )

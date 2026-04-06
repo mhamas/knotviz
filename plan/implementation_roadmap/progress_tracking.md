@@ -36,7 +36,7 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 ## R3: Stats + Export
 
 - [x] 22 — Stats Library
-- [ ] 23 — Histogram
+- [x] 23 — Histogram
 - [x] 24 — StatsTab
 - [x] 25 — Graph Export
 
@@ -54,4 +54,4 @@ Status markers: `[x]` done, `[ ]` not started, `[>]` in progress
 
 ## Next task
 
-**23 — Histogram** (prereq: 22)
+**29 — Netlify Deployment**

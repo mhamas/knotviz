@@ -171,6 +171,11 @@ describe('computeFilteredStats', () => {
       expect(result.stats.min).toBe(10)
       expect(result.stats.max).toBe(50)
       expect(result.stats.mean).toBe(30)
+      expect(result.histogram).toBeDefined()
+      expect(result.histogram.length).toBeGreaterThan(0)
+      expect(result.histogram[0]).toHaveProperty('from')
+      expect(result.histogram[0]).toHaveProperty('to')
+      expect(result.histogram[0]).toHaveProperty('count')
     }
   })
 
@@ -183,6 +188,10 @@ describe('computeFilteredStats', () => {
       expect(result.stats.count).toBe(3)
       expect(result.stats.min).toBe('2020-01-01')
       expect(result.stats.max).toBe('2024-01-01')
+      expect(result.histogram).toBeDefined()
+      expect(result.histogram.length).toBeGreaterThan(0)
+      expect(typeof result.histogram[0].from).toBe('string')
+      expect(typeof result.histogram[0].to).toBe('string')
     }
   })
 

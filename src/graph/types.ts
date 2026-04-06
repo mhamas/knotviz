@@ -135,8 +135,8 @@ export type SerializableCategoricalStats = [string | boolean, number][]
 
 /** Union of stats results returned from the appearance worker. */
 export type PropertyStatsResult =
-  | { type: 'numeric'; stats: NumericStats }
-  | { type: 'date'; stats: DateStats }
+  | { type: 'numeric'; stats: NumericStats; histogram: HistogramBucket[] }
+  | { type: 'date'; stats: DateStats; histogram: DateHistogramBucket[] }
   | { type: 'categorical'; stats: SerializableCategoricalStats }
 
 export interface HistogramBucket {

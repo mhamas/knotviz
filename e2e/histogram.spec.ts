@@ -93,6 +93,33 @@ test.describe('Statistics Histogram', () => {
   })
 })
 
+test.describe('Categorical Statistics', () => {
+  test.beforeEach(async ({ page }) => {
+    await loadGraph(page, 'sample-graph.json')
+    await openColorsPanel(page)
+  })
+
+  test('shows Distinct count for string property', async ({ page }) => {
+    await page.getByTestId('color-property-select').click()
+    await page.getByRole('option', { name: 'status' }).click()
+
+    // status has 3 distinct values: active, inactive, pending
+    const distinct = statsSection(page).getByTestId('stat-distinct')
+    await expect(distinct).toBeVisible()
+    await expect(distinct).toContainText('3')
+  })
+
+  test('shows Distinct count for boolean property', async ({ page }) => {
+    await page.getByTestId('color-property-select').click()
+    await page.getByRole('option', { name: 'active' }).click()
+
+    // active has 2 distinct values: true, false
+    const distinct = statsSection(page).getByTestId('stat-distinct')
+    await expect(distinct).toBeVisible()
+    await expect(distinct).toContainText('2')
+  })
+})
+
 test.describe('Outgoing Degree Histogram', () => {
   test('shows outgoing degree histogram after loading graph', async ({ page }) => {
     await loadGraph(page, 'sample-graph.json')

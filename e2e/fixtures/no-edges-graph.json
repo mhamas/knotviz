@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "nodes": [
+    { "id": "1", "label": "Alpha", "properties": { "type": "server" } },
+    { "id": "2", "label": "Bravo", "properties": { "type": "client" } },
+    { "id": "3", "label": "Charlie", "properties": { "type": "server" } }
+  ],
+  "edges": []
+}

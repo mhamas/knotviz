@@ -87,6 +87,58 @@ test.describe('Filter interplay — Graph Info reacts to node filters', () => {
   })
 })
 
+test.describe('Filter interplay — statistics histogram reacts to node filters', () => {
+  test.beforeEach(async ({ page }) => {
+    await loadGraph(page, 'sample-graph.json')
+    // Open Colors panel and select a numeric property
+    await page.getByLabel('Toggle Colors panel').click()
+    await expect(page.getByTestId('color-property-select')).toBeVisible()
+    await page.getByTestId('color-property-select').click()
+    await page.getByRole('option', { name: 'age' }).click()
+  })
+
+  test('statistics histogram visible with numeric property selected', async ({ page }) => {
+    const statsSection = page.locator('details', { has: page.getByText('Statistics') })
+    const histogram = statsSection.getByTestId('histogram')
+    await expect(histogram).toBeVisible()
+    // 5 nodes → 4 buckets (Sturges)
+    const bars = histogram.locator('[data-testid="histogram-bar"]')
+    await expect(bars).toHaveCount(4)
+  })
+
+  test('statistics histogram updates when node filter applied', async ({ page }) => {
+    const statsSection = page.locator('details', { has: page.getByText('Statistics') })
+
+    // Record stats before filtering
+    const totalBefore = await statsSection.getByTestId('stat-total').textContent()
+
+    // Apply active=true filter → 3 visible nodes
+    const panel = page.getByTestId('filter-panel-active')
+    await panel.getByRole('checkbox').click()
+    await expect(page.getByTestId('filter-match-count')).toHaveText('3/5 nodes match')
+
+    // Stats should update — total count should change from 5 to 3
+    await expect(statsSection.getByTestId('stat-total')).not.toHaveText(totalBefore!)
+    await expect(statsSection.getByTestId('stat-total')).toContainText('3')
+  })
+
+  test('statistics p25/p75 change when node filter narrows the range', async ({ page }) => {
+    const statsSection = page.locator('details', { has: page.getByText('Statistics') })
+
+    // Record p25 before filtering (all 5 nodes: ages 27,28,31,34,45)
+    const p25Before = await statsSection.getByTestId('stat-p25').textContent()
+
+    // Apply active=true filter → ages 27,34,45 (Eve, Alice, Carol)
+    const panel = page.getByTestId('filter-panel-active')
+    await panel.getByRole('checkbox').click()
+    await expect(page.getByTestId('filter-match-count')).toHaveText('3/5 nodes match')
+
+    // p25 should change (from ~28 to ~30.5)
+    const p25After = await statsSection.getByTestId('stat-p25').textContent()
+    expect(p25After).not.toBe(p25Before)
+  })
+})
+
 test.describe('Filter interplay — outgoing degree histogram reacts to node filters', () => {
   test.beforeEach(async ({ page }) => {
     await loadGraph(page, 'sample-graph.json')

@@ -239,4 +239,48 @@ describe('computeFilteredStats', () => {
       expect(result.stats.length).toBe(3) // 3 distinct values
     }
   })
+
+  it('flattens string[] with empty arrays and undefined entries', () => {
+    const visible = new Uint8Array([1, 1, 1, 1])
+    const column: (string[] | undefined)[] = [[], undefined, ['x', 'y'], []]
+    const result = computeFilteredStats(visible, column, 'string[]')!
+    expect(result.type).toBe('categorical')
+    if (result.type === 'categorical') {
+      const map = new Map(result.stats)
+      expect(map.get('x')).toBe(1)
+      expect(map.get('y')).toBe(1)
+      expect(result.stats.length).toBe(2)
+    }
+  })
+
+  it('returns null for string[] when all entries are empty or undefined', () => {
+    const visible = new Uint8Array([1, 1, 1])
+    const column: (string[] | undefined)[] = [[], undefined, []]
+    expect(computeFilteredStats(visible, column, 'string[]')).toBeNull()
+  })
+
+  it('produces histogram for a single visible numeric value', () => {
+    const visible = new Uint8Array([1, 0, 0])
+    const column = [42, 10, 20]
+    const result = computeFilteredStats(visible, column, 'number')!
+    expect(result.type).toBe('numeric')
+    if (result.type === 'numeric') {
+      expect(result.stats.count).toBe(1)
+      expect(result.histogram.length).toBeGreaterThanOrEqual(3)
+      const totalCount = result.histogram.reduce((s, b) => s + b.count, 0)
+      expect(totalCount).toBe(1)
+    }
+  })
+
+  it('produces date histogram for identical dates', () => {
+    const visible = new Uint8Array([1, 1, 1])
+    const column = ['2023-06-15', '2023-06-15', '2023-06-15']
+    const result = computeFilteredStats(visible, column, 'date')!
+    expect(result.type).toBe('date')
+    if (result.type === 'date') {
+      expect(result.histogram.length).toBeGreaterThanOrEqual(3)
+      expect(result.histogram[0].count).toBe(3)
+      expect(result.histogram[0].from).toBe('2023-06-15')
+    }
+  })
 })

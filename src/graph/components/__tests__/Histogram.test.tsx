@@ -84,3 +84,48 @@ test('zero-count bars have zero height', async () => {
   const bars = screen.container.querySelectorAll('[data-testid="histogram-bar"]')
   expect((bars[1] as HTMLElement).style.height).toBe('0%')
 })
+
+test('all equal-count bars render at 100% height', async () => {
+  const buckets: HistogramBucket[] = [
+    { from: 0, to: 10, count: 5 },
+    { from: 10, to: 20, count: 5 },
+    { from: 20, to: 30, count: 5 },
+  ]
+  const screen = await render(<Histogram buckets={buckets} />)
+  const bars = screen.container.querySelectorAll('[data-testid="histogram-bar"]')
+  for (const bar of bars) {
+    expect((bar as HTMLElement).style.height).toBe('100%')
+  }
+})
+
+test('single bucket renders at full height', async () => {
+  const buckets: HistogramBucket[] = [
+    { from: 5, to: 15, count: 10 },
+  ]
+  const screen = await render(<Histogram buckets={buckets} />)
+  const bars = screen.container.querySelectorAll('[data-testid="histogram-bar"]')
+  expect(bars.length).toBe(1)
+  expect((bars[0] as HTMLElement).style.height).toBe('100%')
+})
+
+test('all-zero buckets render with 0% height', async () => {
+  const buckets: HistogramBucket[] = [
+    { from: 0, to: 10, count: 0 },
+    { from: 10, to: 20, count: 0 },
+  ]
+  const screen = await render(<Histogram buckets={buckets} />)
+  const bars = screen.container.querySelectorAll('[data-testid="histogram-bar"]')
+  for (const bar of bars) {
+    expect((bar as HTMLElement).style.height).toBe('0%')
+  }
+})
+
+test('tooltip formats large numbers with locale separators', async () => {
+  const buckets: HistogramBucket[] = [
+    { from: 1000000, to: 2000000, count: 1500000 },
+  ]
+  const screen = await render(<Histogram buckets={buckets} />)
+  const bar = screen.container.querySelector('[data-testid="histogram-bar"]') as HTMLElement
+  expect(bar.title).toContain('1,000,000')
+  expect(bar.title).toContain('1,500,000')
+})

@@ -166,11 +166,17 @@ export function computeFilteredStats(
     return { type: 'date', stats, histogram }
   }
 
-  // string or boolean
+  // string, string[], or boolean — flatten string[] into individual strings
   const values: (string | boolean)[] = []
   for (let i = 0; i < visible.length; i++) {
+    if (!visible[i]) continue
     const v = column[i]
-    if (visible[i] && v !== undefined) values.push(v as string | boolean)
+    if (v === undefined) continue
+    if (Array.isArray(v)) {
+      for (const s of v) values.push(s)
+    } else {
+      values.push(v as string | boolean)
+    }
   }
   const counts = computeCategoricalStats(values)
   if (counts.size === 0) return null

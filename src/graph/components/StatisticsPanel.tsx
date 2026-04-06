@@ -49,6 +49,7 @@ function CategoricalStatsTable({ stats }: { stats: SerializableCategoricalStats 
   return (
     <div className="space-y-0.5">
       <StatRow label="Total" value={fmt(total)} />
+      <StatRow label="Distinct" value={fmt(stats.length)} />
       <div className="my-1 border-t border-slate-100" />
       <div className="max-h-[60vh] space-y-0.5 overflow-y-auto">
         {stats.map(([value, count]) => {

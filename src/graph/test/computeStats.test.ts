@@ -224,4 +224,19 @@ describe('computeFilteredStats', () => {
       expect(result.stats.count).toBe(2)
     }
   })
+
+  it('flattens string[] arrays into individual strings', () => {
+    const visible = new Uint8Array([1, 1, 1])
+    const column: (string[] | undefined)[] = [['a', 'b'], ['b', 'c'], ['a']]
+    const result = computeFilteredStats(visible, column, 'string[]')!
+    expect(result.type).toBe('categorical')
+    if (result.type === 'categorical') {
+      // a appears 2x, b appears 2x, c appears 1x
+      const map = new Map(result.stats)
+      expect(map.get('a')).toBe(2)
+      expect(map.get('b')).toBe(2)
+      expect(map.get('c')).toBe(1)
+      expect(result.stats.length).toBe(3) // 3 distinct values
+    }
+  })
 })

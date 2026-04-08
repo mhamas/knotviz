@@ -530,7 +530,7 @@ export function useCosmos(
   }, [isEdgeDirectionality])
 
   // ── Sync node labels (extracted to useCosmosLabelSync) ──
-  useCosmosLabelSync(cosmosRef, containerRef, labelsRef, isNodeLabelsVisible, data)
+  useCosmosLabelSync(labelsRef, updateLabelsRef, isNodeLabelsVisible, data)
 
   // ── Sync node sizes ──
   // Use pointSizeScale (shader uniform) for instant slider response — no data flush needed.

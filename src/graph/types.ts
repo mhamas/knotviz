@@ -182,6 +182,8 @@ export interface CustomPalette {
   colors: string[]
 }
 
+export type VisualMode = 'color' | 'size' | 'opacity'
+
 export interface ColorGradientState {
   propertyKey: string | null
   /** Built-in palette name or custom palette ID. */
@@ -189,6 +191,11 @@ export interface ColorGradientState {
   isReversed: boolean
   customColors: string[]
   customPalettes: CustomPalette[]
+  visualMode: VisualMode
+  /** [min, max] point size for size mode. Default [1, 10]. */
+  sizeRange: [number, number]
+  /** Minimum opacity for opacity mode. Max is always 1.0. Default 0.15. */
+  opacityMin: number
 }
 
 // ─── Tooltip ───────────────────────────────────────────────────────────────

@@ -4,8 +4,9 @@
  */
 
 import type { SerializableFilter } from '../lib/appearanceUtils'
-import type { PropertyType, PropertyStatsResult } from '../types'
-import { passesFilter, hexToRgbNorm, interpolateStops } from '../lib/appearanceUtils'
+import type { PropertyType, PropertyStatsResult, VisualMode } from '../types'
+import { passesFilter, hexToRgbNorm } from '../lib/appearanceUtils'
+import { applyGradient } from '../lib/applyGradient'
 import { computeFilteredStats } from '../lib/computeStats'
 
 /** Base point size before pointSizeScale is applied by the GPU shader. */
@@ -15,6 +16,9 @@ interface GradientConfig {
   propertyKey: string | null
   paletteStops: string[]
   propType: string | null
+  visualMode: VisualMode
+  sizeRange: [number, number]
+  opacityMin: number
 }
 
 // Persistent state: columns sent once on graph load, reused across messages
@@ -126,12 +130,17 @@ function computeAppearance(input: UpdateMessage): void {
     pointSizes[i] = BASE_POINT_SIZE
   }
 
-  // Step 3: Gradient coloring (computed here, no hex intermediary)
-  if (gradientConfig.propertyKey && gradientConfig.paletteStops.length > 0 && gradientConfig.propType) {
+  // Step 3: Visual mapping (color, size, or opacity)
+  if (gradientConfig.propertyKey && gradientConfig.propType) {
     const col = storedColumns[gradientConfig.propertyKey]
     if (col) {
-      const stops = gradientConfig.paletteStops.map(hexToRgbNorm)
-      applyGradient(pointColors, visible, col, gradientConfig.propType, stops, nodeCount)
+      const stops = gradientConfig.paletteStops.length > 0
+        ? gradientConfig.paletteStops.map(hexToRgbNorm)
+        : [[0.5, 0.5, 0.5] as [number, number, number]]
+      applyGradient(pointColors, pointSizes, visible, col, gradientConfig.propType, stops, nodeCount, gradientConfig.visualMode, {
+        sizeRange: gradientConfig.sizeRange,
+        opacityMin: gradientConfig.opacityMin,
+      })
     }
   }
 
@@ -174,116 +183,4 @@ function computeAppearance(input: UpdateMessage): void {
   ;(self.postMessage as any)(msg, [
     pointColors.buffer, pointSizes.buffer, linkColors.buffer, visible.buffer,
   ])
-}
-
-
-/** Apply gradient colors directly into pointColors for visible nodes. */
-function applyGradient(
-  pointColors: Float32Array,
-  visible: Uint8Array,
-  col: (number | string | boolean | string[] | undefined)[],
-  propType: string,
-  stops: [number, number, number][],
-  nodeCount: number,
-): void {
-  if (propType === 'number') {
-    // Find min/max
-    let min = Infinity, max = -Infinity
-    for (let i = 0; i < nodeCount; i++) {
-      if (!visible[i]) continue
-      const v = col[i]
-      if (typeof v !== 'number') continue
-      if (v < min) min = v
-      if (v > max) max = v
-    }
-    if (!isFinite(min)) return
-    const range = max - min
-    for (let i = 0; i < nodeCount; i++) {
-      if (!visible[i]) continue
-      const v = col[i]
-      if (typeof v !== 'number') continue
-      const t = range === 0 ? 0.5 : (v - min) / range
-      const [r, g, b] = interpolateStops(stops, t)
-      const off = i * 4
-      pointColors[off] = r
-      pointColors[off + 1] = g
-      pointColors[off + 2] = b
-      pointColors[off + 3] = 1
-    }
-  } else if (propType === 'date') {
-    // Parse dates to timestamps, find min/max
-    let min = Infinity, max = -Infinity
-    const timestamps = new Float64Array(nodeCount)
-    for (let i = 0; i < nodeCount; i++) {
-      if (!visible[i]) continue
-      const v = col[i]
-      if (typeof v !== 'string') continue
-      const ts = new Date(v).getTime()
-      if (isNaN(ts)) continue
-      timestamps[i] = ts
-      if (ts < min) min = ts
-      if (ts > max) max = ts
-    }
-    if (!isFinite(min)) return
-    const range = max - min
-    for (let i = 0; i < nodeCount; i++) {
-      if (!visible[i] || typeof col[i] !== 'string') continue
-      const t = range === 0 ? 0.5 : (timestamps[i] - min) / range
-      const [r, g, b] = interpolateStops(stops, t)
-      const off = i * 4
-      pointColors[off] = r
-      pointColors[off + 1] = g
-      pointColors[off + 2] = b
-      pointColors[off + 3] = 1
-    }
-  } else if (propType === 'boolean') {
-    const falseColor = stops[0]
-    const trueColor = stops[stops.length - 1]
-    for (let i = 0; i < nodeCount; i++) {
-      if (!visible[i]) continue
-      const v = col[i]
-      if (typeof v !== 'boolean') continue
-      const [r, g, b] = v ? trueColor : falseColor
-      const off = i * 4
-      pointColors[off] = r
-      pointColors[off + 1] = g
-      pointColors[off + 2] = b
-      pointColors[off + 3] = 1
-    }
-  } else if (propType === 'string' || propType === 'string[]') {
-    // Collect distinct values, map to colors round-robin.
-    // For string[], use first element of each array.
-    const distinctMap = new Map<string, number>()
-    const distinctValues: string[] = []
-    for (let i = 0; i < nodeCount; i++) {
-      if (!visible[i]) continue
-      const raw = col[i]
-      const v = Array.isArray(raw) ? raw[0] : raw
-      if (typeof v !== 'string') continue
-      if (!distinctMap.has(v)) {
-        distinctMap.set(v, distinctValues.length)
-        distinctValues.push(v)
-      }
-    }
-    distinctValues.sort()
-    // Rebuild map after sort
-    distinctMap.clear()
-    for (let i = 0; i < distinctValues.length; i++) {
-      distinctMap.set(distinctValues[i], i)
-    }
-    for (let i = 0; i < nodeCount; i++) {
-      if (!visible[i]) continue
-      const raw = col[i]
-      const v = Array.isArray(raw) ? raw[0] : raw
-      if (typeof v !== 'string') continue
-      const idx = distinctMap.get(v)!
-      const stopIdx = idx % stops.length
-      const [r, g, b] = stops[stopIdx]
-      const off = i * 4
-      pointColors[off] = r
-      pointColors[off + 1] = g
-      pointColors[off + 2] = b
-      pointColors[off + 3] = 1
-    }
-  }
 }

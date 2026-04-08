@@ -63,6 +63,9 @@ export function GraphView({
     isReversed: false,
     customColors: [],
     customPalettes: [],
+    visualMode: 'color',
+    sizeRange: [1, 10],
+    opacityMin: 0.15,
   })
 
   // Cosmos rendering (worker handles filter matching + gradient + appearance)

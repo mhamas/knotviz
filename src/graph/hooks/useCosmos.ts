@@ -637,6 +637,9 @@ export function useCosmos(
         propertyKey: gradientState.propertyKey,
         paletteStops,
         propType,
+        visualMode: gradientState.visualMode,
+        sizeRange: gradientState.sizeRange,
+        opacityMin: gradientState.opacityMin,
       },
       statsConfig: {
         propertyKey: gradientState.propertyKey,

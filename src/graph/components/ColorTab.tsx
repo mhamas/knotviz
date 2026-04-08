@@ -180,23 +180,23 @@ export function ColorTab({
             label="Min size"
             value={state.sizeRange[0]}
             min={0.5}
-            max={state.sizeRange[1]}
+            max={20}
             step={0.5}
             defaultValue={[1]}
             onValueChange={(v): void => {
-              const n = Array.isArray(v) ? v[0] : v
+              const n = Math.min(Array.isArray(v) ? v[0] : v, state.sizeRange[1])
               onChange({ ...state, sizeRange: [n, state.sizeRange[1]] })
             }}
           />
           <LabeledSlider
             label="Max size"
             value={state.sizeRange[1]}
-            min={state.sizeRange[0]}
+            min={0.5}
             max={20}
             step={0.5}
             defaultValue={[10]}
             onValueChange={(v): void => {
-              const n = Array.isArray(v) ? v[0] : v
+              const n = Math.max(Array.isArray(v) ? v[0] : v, state.sizeRange[0])
               onChange({ ...state, sizeRange: [state.sizeRange[0], n] })
             }}
           />

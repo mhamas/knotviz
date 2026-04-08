@@ -183,7 +183,7 @@ export function ColorTab({
           </div>
           <Slider
             min={0.5}
-            max={20}
+            max={50}
             step={0.5}
             value={state.sizeRange}
             onValueChange={(v): void => {

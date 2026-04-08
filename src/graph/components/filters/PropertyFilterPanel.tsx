@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { BarChart3 } from 'lucide-react'
 import type {
   BooleanFilterState,
   DateFilterState,
@@ -40,6 +42,13 @@ export function PropertyFilterPanel({
   onStringChange,
   onDateChange,
 }: Props): React.JSX.Element {
+  const [isHistogramVisible, setIsHistogramVisible] = useState(false)
+
+  const isNumber = filterState.type === 'number'
+  const numberState = isNumber ? (filterState as NumberFilterState) : null
+  const isLogScale = numberState?.isLogScale ?? false
+  const isLogAvailable = numberState ? numberState.domainMin >= 0 && numberState.logHistogramBuckets.length > 0 : false
+
   return (
     <div data-testid={`filter-panel-${meta.key}`} className="border-b border-slate-100 pb-2">
       {/* Header */}
@@ -54,6 +63,39 @@ export function PropertyFilterPanel({
           {meta.key}
         </span>
 
+        {/* Number filter toolbar icons — next to the type badge */}
+        {isNumber && (
+          <div className="flex shrink-0 items-center gap-0.5">
+            <button
+              type="button"
+              data-testid="number-filter-log-toggle"
+              disabled={!isLogAvailable}
+              onClick={(): void => onLogScaleChange?.(!isLogScale)}
+              className={`rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
+                isLogScale
+                  ? 'bg-slate-700 text-white'
+                  : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
+              } ${!isLogAvailable ? 'cursor-not-allowed opacity-30' : 'cursor-pointer'}`}
+              title={isLogAvailable ? (isLogScale ? 'Switch to linear scale' : 'Switch to log scale') : 'Log scale unavailable (negative values)'}
+            >
+              log
+            </button>
+            <button
+              type="button"
+              data-testid="number-filter-histogram-toggle"
+              onClick={(): void => setIsHistogramVisible((v) => !v)}
+              className={`rounded p-0.5 transition-colors ${
+                isHistogramVisible
+                  ? 'bg-slate-700 text-white'
+                  : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
+              } cursor-pointer`}
+              title={isHistogramVisible ? 'Hide histogram' : 'Show histogram'}
+            >
+              <BarChart3 className="h-3 w-3" />
+            </button>
+          </div>
+        )}
+
         <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-500">
           {meta.type}
         </span>
@@ -61,11 +103,11 @@ export function PropertyFilterPanel({
 
       {/* Body — always visible, dimmed when disabled */}
       <div className={`mt-1 pl-6 ${!filterState.isEnabled ? 'pointer-events-none opacity-30' : ''}`}>
-        {filterState.type === 'number' && onNumberChange && (
+        {isNumber && onNumberChange && numberState && (
           <NumberFilter
-            state={filterState as NumberFilterState}
+            state={numberState}
             onChange={onNumberChange}
-            onLogScaleChange={onLogScaleChange}
+            isHistogramVisible={isHistogramVisible}
           />
         )}
         {filterState.type === 'boolean' && onBooleanChange && (

@@ -31,7 +31,7 @@ const baseState: NumberFilterState = {
 describe('rendering', () => {
   test('renders slider with min and max inputs', async () => {
     const screen = await render(
-      <NumberFilter state={baseState} onChange={vi.fn()} />,
+      <NumberFilter state={baseState} onChange={vi.fn()} isHistogramVisible={false} />,
     )
     const minInput = screen.getByTestId('number-filter-min')
     const maxInput = screen.getByTestId('number-filter-max')
@@ -41,7 +41,7 @@ describe('rendering', () => {
 
   test('renders slider track', async () => {
     const screen = await render(
-      <NumberFilter state={baseState} onChange={vi.fn()} />,
+      <NumberFilter state={baseState} onChange={vi.fn()} isHistogramVisible={false} />,
     )
     expect(screen.container.querySelector('[data-slot="slider"]')).not.toBeNull()
   })
@@ -55,7 +55,7 @@ describe('rendering', () => {
       domainMax: 0.009,
     }
     const screen = await render(
-      <NumberFilter state={state} onChange={vi.fn()} />,
+      <NumberFilter state={state} onChange={vi.fn()} isHistogramVisible={false} />,
     )
     await expect.element(screen.getByTestId('number-filter-min')).toHaveValue('0.00100')
     await expect.element(screen.getByTestId('number-filter-max')).toHaveValue('0.00900')
@@ -72,7 +72,7 @@ describe('rendering', () => {
       logHistogramBuckets: [{ from: 42, to: 42, count: 5 }, { from: 42, to: 42, count: 0 }, { from: 42, to: 42, count: 0 }],
     }
     const screen = await render(
-      <NumberFilter state={state} onChange={vi.fn()} />,
+      <NumberFilter state={state} onChange={vi.fn()} isHistogramVisible={false} />,
     )
     await expect.element(screen.getByTestId('number-filter-min')).toHaveValue('42.00')
     await expect.element(screen.getByTestId('number-filter-max')).toHaveValue('42.00')
@@ -89,136 +89,44 @@ describe('rendering', () => {
       logHistogramBuckets: [{ from: 0, to: 0, count: 3 }, { from: 0, to: 0, count: 0 }, { from: 0, to: 0, count: 0 }],
     }
     const screen = await render(
-      <NumberFilter state={state} onChange={vi.fn()} />,
+      <NumberFilter state={state} onChange={vi.fn()} isHistogramVisible={false} />,
     )
     await expect.element(screen.getByTestId('number-filter-min')).toHaveValue('0')
     await expect.element(screen.getByTestId('number-filter-max')).toHaveValue('0')
   })
 })
 
-describe('log scale toggle', () => {
-  test('renders log toggle button', async () => {
-    const screen = await render(
-      <NumberFilter state={baseState} onChange={vi.fn()} onLogScaleChange={vi.fn()} />,
-    )
-    const logToggle = screen.getByTestId('number-filter-log-toggle')
-    await expect.element(logToggle).toBeVisible()
-    await expect.element(logToggle).toHaveTextContent('log')
-  })
-
-  test('clicking log toggle calls onLogScaleChange(true) when linear', async () => {
-    const onLogScaleChange = vi.fn()
-    const screen = await render(
-      <NumberFilter state={baseState} onChange={vi.fn()} onLogScaleChange={onLogScaleChange} />,
-    )
-    await screen.getByTestId('number-filter-log-toggle').click()
-    expect(onLogScaleChange).toHaveBeenCalledWith(true)
-  })
-
-  test('clicking log toggle calls onLogScaleChange(false) when already log', async () => {
-    const onLogScaleChange = vi.fn()
-    const state: NumberFilterState = { ...baseState, isLogScale: true }
-    const screen = await render(
-      <NumberFilter state={state} onChange={vi.fn()} onLogScaleChange={onLogScaleChange} />,
-    )
-    await screen.getByTestId('number-filter-log-toggle').click()
-    expect(onLogScaleChange).toHaveBeenCalledWith(false)
-  })
-
-  test('log toggle is disabled when domain has negative values', async () => {
-    const state: NumberFilterState = {
-      ...baseState,
-      domainMin: -10,
-      logHistogramBuckets: [],
-    }
-    const screen = await render(
-      <NumberFilter state={state} onChange={vi.fn()} onLogScaleChange={vi.fn()} />,
-    )
-    const logToggle = screen.getByTestId('number-filter-log-toggle')
-    await expect.element(logToggle).toBeDisabled()
-  })
-
-  test('log toggle is disabled when logHistogramBuckets is empty', async () => {
-    const state: NumberFilterState = {
-      ...baseState,
-      logHistogramBuckets: [],
-    }
-    const screen = await render(
-      <NumberFilter state={state} onChange={vi.fn()} onLogScaleChange={vi.fn()} />,
-    )
-    const logToggle = screen.getByTestId('number-filter-log-toggle')
-    await expect.element(logToggle).toBeDisabled()
-  })
-
-  test('log toggle has highlighted style when active', async () => {
-    const state: NumberFilterState = { ...baseState, isLogScale: true }
-    const screen = await render(
-      <NumberFilter state={state} onChange={vi.fn()} onLogScaleChange={vi.fn()} />,
-    )
-    const logToggle = screen.getByTestId('number-filter-log-toggle').element()
-    expect(logToggle.className).toContain('bg-slate-700')
-  })
-
-  test('disabled log toggle is not clickable', async () => {
-    const state: NumberFilterState = {
-      ...baseState,
-      domainMin: -10,
-      logHistogramBuckets: [],
-    }
-    const screen = await render(
-      <NumberFilter state={state} onChange={vi.fn()} onLogScaleChange={vi.fn()} />,
-    )
-    const logToggle = screen.getByTestId('number-filter-log-toggle')
-    await expect.element(logToggle).toBeDisabled()
-    // Verify the button has opacity-30 styling indicating it's visually disabled
-    expect(logToggle.element().className).toContain('opacity-30')
-  })
-})
-
 describe('histogram', () => {
-  test('histogram is hidden by default', async () => {
+  test('histogram hidden when isHistogramVisible=false', async () => {
     const screen = await render(
-      <NumberFilter state={baseState} onChange={vi.fn()} />,
+      <NumberFilter state={baseState} onChange={vi.fn()} isHistogramVisible={false} />,
     )
     expect(screen.container.querySelector('[data-testid="number-filter-histogram"]')).toBeNull()
   })
 
-  test('histogram can be shown via toggle', async () => {
+  test('histogram shown when isHistogramVisible=true', async () => {
     const screen = await render(
-      <NumberFilter state={baseState} onChange={vi.fn()} />,
+      <NumberFilter state={baseState} onChange={vi.fn()} isHistogramVisible={true} />,
     )
-    await screen.getByTestId('number-filter-histogram-toggle').click()
     expect(screen.container.querySelector('[data-testid="number-filter-histogram"]')).not.toBeNull()
   })
 
-  test('histogram can be hidden again after showing', async () => {
-    const screen = await render(
-      <NumberFilter state={baseState} onChange={vi.fn()} />,
-    )
-    await screen.getByTestId('number-filter-histogram-toggle').click()
-    expect(screen.container.querySelector('[data-testid="number-filter-histogram"]')).not.toBeNull()
-    await screen.getByTestId('number-filter-histogram-toggle').click()
-    expect(screen.container.querySelector('[data-testid="number-filter-histogram"]')).toBeNull()
-  })
-
-  test('no histogram rendered when buckets are empty even after toggle', async () => {
+  test('no histogram rendered when buckets are empty even if visible', async () => {
     const state: NumberFilterState = {
       ...baseState,
       histogramBuckets: [],
       logHistogramBuckets: [],
     }
     const screen = await render(
-      <NumberFilter state={state} onChange={vi.fn()} />,
+      <NumberFilter state={state} onChange={vi.fn()} isHistogramVisible={true} />,
     )
-    await screen.getByTestId('number-filter-histogram-toggle').click()
     expect(screen.container.querySelector('[data-testid="number-filter-histogram"]')).toBeNull()
   })
 
-  test('renders histogram bars when toggled visible', async () => {
+  test('renders histogram bars when visible', async () => {
     const screen = await render(
-      <NumberFilter state={baseState} onChange={vi.fn()} />,
+      <NumberFilter state={baseState} onChange={vi.fn()} isHistogramVisible={true} />,
     )
-    await screen.getByTestId('number-filter-histogram-toggle').click()
     const bars = screen.container.querySelectorAll('[data-testid="histogram-bar"]')
     expect(bars.length).toBe(3)
   })
@@ -238,10 +146,8 @@ describe('histogram', () => {
       ],
     }
     const screen = await render(
-      <NumberFilter state={state} onChange={vi.fn()} />,
+      <NumberFilter state={state} onChange={vi.fn()} isHistogramVisible={true} />,
     )
-    // Show histogram first
-    await screen.getByTestId('number-filter-histogram-toggle').click()
     // Log histogram has 2 buckets → 2 bars
     const bars = screen.container.querySelectorAll('[data-testid="histogram-bar"]')
     expect(bars.length).toBe(2)
@@ -251,7 +157,7 @@ describe('histogram', () => {
 describe('editable min/max text inputs', () => {
   test('typing a valid min and pressing Enter updates the value', async () => {
     const screen = await render(
-      <NumberFilter state={baseState} onChange={vi.fn()} />,
+      <NumberFilter state={baseState} onChange={vi.fn()} isHistogramVisible={false} />,
     )
     const minInput = screen.getByTestId('number-filter-min')
     await minInput.click()
@@ -263,7 +169,7 @@ describe('editable min/max text inputs', () => {
 
   test('typing a valid max and pressing Enter updates the value', async () => {
     const screen = await render(
-      <NumberFilter state={baseState} onChange={vi.fn()} />,
+      <NumberFilter state={baseState} onChange={vi.fn()} isHistogramVisible={false} />,
     )
     const maxInput = screen.getByTestId('number-filter-max')
     await maxInput.click()
@@ -275,33 +181,33 @@ describe('editable min/max text inputs', () => {
 
   test('typing non-numeric text and blurring reverts to previous value', async () => {
     const screen = await render(
-      <NumberFilter state={baseState} onChange={vi.fn()} />,
+      <NumberFilter state={baseState} onChange={vi.fn()} isHistogramVisible={false} />,
     )
     const minInput = screen.getByTestId('number-filter-min')
     await minInput.click()
     await userEvent.clear(minInput.element())
     await userEvent.type(minInput.element(), 'abc')
-    // Blur by clicking the histogram toggle (another element)
-    await screen.getByTestId('number-filter-histogram-toggle').click()
+    // Blur by clicking another element
+    await screen.getByTestId('number-filter-max').click()
     await expect.element(minInput).toHaveValue('0')
   })
 
   test('typing empty string and blurring reverts to previous value', async () => {
     const screen = await render(
-      <NumberFilter state={baseState} onChange={vi.fn()} />,
+      <NumberFilter state={baseState} onChange={vi.fn()} isHistogramVisible={false} />,
     )
     const maxInput = screen.getByTestId('number-filter-max')
     await maxInput.click()
     await userEvent.clear(maxInput.element())
     // Blur by clicking another element
-    await screen.getByTestId('number-filter-histogram-toggle').click()
+    await screen.getByTestId('number-filter-min').click()
     await expect.element(maxInput).toHaveValue('100.00')
   })
 
   test('Escape key reverts without committing', async () => {
     const onChange = vi.fn()
     const screen = await render(
-      <NumberFilter state={baseState} onChange={onChange} />,
+      <NumberFilter state={baseState} onChange={onChange} isHistogramVisible={false} />,
     )
     const minInput = screen.getByTestId('number-filter-min')
     await minInput.click()
@@ -314,7 +220,7 @@ describe('editable min/max text inputs', () => {
 
   test('value above domain is clamped to domainMax', async () => {
     const screen = await render(
-      <NumberFilter state={baseState} onChange={vi.fn()} />,
+      <NumberFilter state={baseState} onChange={vi.fn()} isHistogramVisible={false} />,
     )
     const maxInput = screen.getByTestId('number-filter-max')
     await maxInput.click()
@@ -326,7 +232,7 @@ describe('editable min/max text inputs', () => {
 
   test('value below domain is clamped to domainMin', async () => {
     const screen = await render(
-      <NumberFilter state={baseState} onChange={vi.fn()} />,
+      <NumberFilter state={baseState} onChange={vi.fn()} isHistogramVisible={false} />,
     )
     const minInput = screen.getByTestId('number-filter-min')
     await minInput.click()
@@ -339,7 +245,7 @@ describe('editable min/max text inputs', () => {
   test('min typed larger than current max is clamped to max', async () => {
     const state: NumberFilterState = { ...baseState, min: 20, max: 50 }
     const screen = await render(
-      <NumberFilter state={state} onChange={vi.fn()} />,
+      <NumberFilter state={state} onChange={vi.fn()} isHistogramVisible={false} />,
     )
     const minInput = screen.getByTestId('number-filter-min')
     await minInput.click()
@@ -352,7 +258,7 @@ describe('editable min/max text inputs', () => {
   test('max typed smaller than current min is clamped to min', async () => {
     const state: NumberFilterState = { ...baseState, min: 20, max: 50 }
     const screen = await render(
-      <NumberFilter state={state} onChange={vi.fn()} />,
+      <NumberFilter state={state} onChange={vi.fn()} isHistogramVisible={false} />,
     )
     const maxInput = screen.getByTestId('number-filter-max')
     await maxInput.click()
@@ -369,7 +275,7 @@ describe('editable min/max text inputs', () => {
       domainMax: 100000,
     }
     const screen = await render(
-      <NumberFilter state={state} onChange={vi.fn()} />,
+      <NumberFilter state={state} onChange={vi.fn()} isHistogramVisible={false} />,
     )
     const maxInput = screen.getByTestId('number-filter-max')
     await maxInput.click()

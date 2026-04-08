@@ -1,7 +1,7 @@
 /**
- * Pure function that applies a visual mapping (color, size, or opacity) to
- * per-node arrays based on a property column. Extracted from the appearance
- * worker for testability.
+ * Pure function that applies a visual mapping (color or size) to per-node
+ * arrays based on a property column. Extracted from the appearance worker
+ * for testability.
  */
 
 import type { VisualMode } from '../types'
@@ -32,7 +32,7 @@ export interface VisualModeConfig {
  * @param stops - Palette color stops as normalized [r,g,b] tuples.
  * @param nodeCount - Total number of nodes.
  * @param mode - Visual mapping mode.
- * @param config - Optional size/opacity configuration.
+ * @param config - Optional size configuration.
  */
 export function applyGradient(
   pointColors: Float32Array,
@@ -211,7 +211,7 @@ function applyString(
       pointColors[off + 2] = b
       pointColors[off + 3] = 1
     } else {
-      // For size/opacity, spread string values evenly across [0, 1]
+      // For size mode, spread string values evenly across [0, 1]
       const t = count <= 1 ? 0.5 : idx / (count - 1)
       applyValue(pointColors, pointSizes, i, t, stops, mode, config)
     }

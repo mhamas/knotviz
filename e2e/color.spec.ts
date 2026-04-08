@@ -101,4 +101,40 @@ test.describe('Color Tab', () => {
     // Size range controls should be visible (confirms size mode is active)
     await expect(page.getByTestId('size-range-controls')).toBeVisible()
   })
+
+  test('size mode: selecting numeric property shows size legend', async ({ page }) => {
+    await page.getByTestId('color-property-select').click()
+    await page.getByRole('option', { name: 'age' }).click()
+    await expect(page.getByTestId('size-legend')).toBeVisible()
+  })
+
+  test('size mode: palette selector is hidden', async ({ page }) => {
+    await expect(page.getByTestId('color-palette-select')).not.toBeVisible()
+  })
+
+  test('size mode: editable min/max inputs reflect range values', async ({ page }) => {
+    await expect(page.getByTestId('size-range-min')).toBeVisible()
+    await expect(page.getByTestId('size-range-max')).toBeVisible()
+  })
+
+  test('size mode: typing min value updates the range', async ({ page }) => {
+    const minInput = page.getByTestId('size-range-min')
+    await minInput.click()
+    await minInput.fill('3')
+    await minInput.press('Enter')
+    await expect(minInput).toHaveValue('3')
+  })
+
+  test('switching from size to color shows palette selector', async ({ page }) => {
+    await expect(page.getByTestId('color-palette-select')).not.toBeVisible()
+    await switchToColorMode(page)
+    await expect(page.getByTestId('color-palette-select')).toBeVisible()
+    await expect(page.getByTestId('size-range-controls')).not.toBeVisible()
+  })
+
+  test('Grays palette is available in color mode', async ({ page }) => {
+    await switchToColorMode(page)
+    await page.getByTestId('color-palette-select').click()
+    await expect(page.getByRole('option', { name: 'Grays' })).toBeVisible()
+  })
 })

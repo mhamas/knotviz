@@ -11,7 +11,7 @@ import { FilenameLabel } from './FilenameLabel'
 import { CanvasControls } from './CanvasControls'
 import { LeftSidebar } from './LeftSidebar'
 import { RightTabStrip } from './RightTabStrip'
-import { ColorsSidebar } from './ColorsSidebar'
+import { AnalysisSidebar } from './AnalysisSidebar'
 import { FiltersSidebar } from './FiltersSidebar'
 import { DragOverlay } from './DragOverlay'
 import { NodeTooltip } from './NodeTooltip'
@@ -320,7 +320,7 @@ export function GraphView({
         />
       </div>
       {isColorsOpen && (
-        <ColorsSidebar
+        <AnalysisSidebar
           propertyMetas={propertyMetas}
           gradientState={gradientState}
           onGradientChange={setGradientState}

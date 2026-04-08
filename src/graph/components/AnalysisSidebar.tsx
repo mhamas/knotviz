@@ -16,14 +16,14 @@ interface Props {
 }
 
 /**
- * Right sidebar panel for Colors and Statistics.
- * Colors section is always shown; Stats section appears below when
- * a color property is selected.
+ * Right sidebar panel for Analysis and Statistics.
+ * Analysis section is always shown; Stats section appears below when
+ * a property is selected.
  *
- * @param props - Color/gradient state, stats data, and close callback.
- * @returns Colors sidebar element.
+ * @param props - Gradient/visual state, stats data, and close callback.
+ * @returns Analysis sidebar element.
  */
-export function ColorsSidebar({
+export function AnalysisSidebar({
   propertyMetas,
   gradientState,
   onGradientChange,

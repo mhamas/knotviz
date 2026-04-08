@@ -130,7 +130,7 @@ function computeAppearance(input: UpdateMessage): void {
     pointSizes[i] = BASE_POINT_SIZE
   }
 
-  // Step 3: Visual mapping (color, size, or opacity)
+  // Step 3: Visual mapping (color or size)
   if (gradientConfig.propertyKey && gradientConfig.propType) {
     const col = storedColumns[gradientConfig.propertyKey]
     if (col) {

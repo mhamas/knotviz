@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { X, RefreshCw } from 'lucide-react'
 import type { ColorGradientState, CustomPalette, FilterMap, FilterState, PropertyMeta, PropertyType, VisualMode } from '@/types'
 import type { PropertyColumns } from '@/hooks/useFilterState'
@@ -195,16 +195,15 @@ export function ColorTab({
         </div>
       )}
 
-      {/* Size range controls — dual-thumb slider */}
+      {/* Size range controls — dual-thumb slider + editable inputs */}
       {state.visualMode === 'size' && (
         <div data-testid="size-range-controls">
-          <div className="mb-2 flex items-center justify-between">
+          <div className="mb-2">
             <span className="text-xs font-medium text-slate-700">Size range</span>
-            <span className="text-xs tabular-nums text-slate-500">{state.sizeRange[0]} – {state.sizeRange[1]}</span>
           </div>
           <Slider
             min={0.5}
-            max={50}
+            max={100}
             step={0.5}
             value={state.sizeRange}
             onValueChange={(v): void => {
@@ -212,6 +211,17 @@ export function ColorTab({
               onChange({ ...state, sizeRange: [arr[0], arr[1] ?? arr[0]] })
             }}
           />
+          <div className="mt-1 flex justify-between">
+            <SizeInput
+              value={state.sizeRange[0]}
+              onChange={(v): void => onChange({ ...state, sizeRange: [Math.min(v, state.sizeRange[1]), state.sizeRange[1]] })}
+            />
+            <SizeInput
+              value={state.sizeRange[1]}
+              onChange={(v): void => onChange({ ...state, sizeRange: [state.sizeRange[0], Math.max(v, state.sizeRange[0])] })}
+              isRight
+            />
+          </div>
         </div>
       )}
 
@@ -326,6 +336,48 @@ export function ColorTab({
 }
 
 /** Small horizontal swatch — smooth gradient for 3+ stops, hard split for 2 stops. */
+/** Small editable number input for size range values. */
+function SizeInput({ value, onChange, isRight }: {
+  value: number
+  onChange: (v: number) => void
+  isRight?: boolean
+}): React.JSX.Element {
+  const [editing, setEditing] = useState<string | null>(null)
+  const ref = useRef<HTMLInputElement>(null)
+  const isEscapingRef = useRef(false)
+
+  const commit = (raw: string): void => {
+    const parsed = parseFloat(raw)
+    if (Number.isNaN(parsed) || parsed < 0.5) {
+      setEditing(null)
+      return
+    }
+    const clamped = Math.min(Math.max(parsed, 0.5), 100)
+    onChange(clamped)
+    setEditing(null)
+  }
+
+  return (
+    <input
+      ref={ref}
+      type="text"
+      data-testid={isRight ? 'size-range-max' : 'size-range-min'}
+      className={`w-12 border-b border-transparent bg-transparent text-[11px] text-slate-500 outline-none focus:border-slate-400 ${isRight ? 'text-right' : 'text-left'}`}
+      value={editing ?? String(value)}
+      onFocus={(e): void => { setEditing(String(value)); e.target.select() }}
+      onChange={(e): void => setEditing(e.target.value)}
+      onBlur={(): void => {
+        if (isEscapingRef.current) { isEscapingRef.current = false; return }
+        if (editing !== null) commit(editing)
+      }}
+      onKeyDown={(e): void => {
+        if (e.key === 'Enter') { if (editing !== null) commit(editing); ref.current?.blur() }
+        else if (e.key === 'Escape') { isEscapingRef.current = true; setEditing(null); ref.current?.blur() }
+      }}
+    />
+  )
+}
+
 function GradientSwatch({ stops }: { stops: string[] }): React.JSX.Element {
   const isBinary = stops.length === 2
   const bg = isBinary

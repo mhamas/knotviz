@@ -16,6 +16,7 @@ import {
   SelectSeparator,
   SelectTrigger,
 } from '@/components/ui/select'
+import { Slider } from '@/components/ui/slider'
 import { CreatePaletteModal } from './CreatePaletteModal'
 
 interface Props {
@@ -173,31 +174,21 @@ export function ColorTab({
         </div>
       </div>
 
-      {/* Size range controls */}
+      {/* Size range controls — dual-thumb slider */}
       {state.visualMode === 'size' && (
         <div data-testid="size-range-controls">
-          <LabeledSlider
-            label="Min size"
-            value={state.sizeRange[0]}
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-700">Size range</span>
+            <span className="text-xs tabular-nums text-slate-500">{state.sizeRange[0]} – {state.sizeRange[1]}</span>
+          </div>
+          <Slider
             min={0.5}
             max={20}
             step={0.5}
-            defaultValue={[1]}
+            value={state.sizeRange}
             onValueChange={(v): void => {
-              const n = Math.min(Array.isArray(v) ? v[0] : v, state.sizeRange[1])
-              onChange({ ...state, sizeRange: [n, state.sizeRange[1]] })
-            }}
-          />
-          <LabeledSlider
-            label="Max size"
-            value={state.sizeRange[1]}
-            min={0.5}
-            max={20}
-            step={0.5}
-            defaultValue={[10]}
-            onValueChange={(v): void => {
-              const n = Math.max(Array.isArray(v) ? v[0] : v, state.sizeRange[0])
-              onChange({ ...state, sizeRange: [state.sizeRange[0], n] })
+              const arr = Array.isArray(v) ? v : [v]
+              onChange({ ...state, sizeRange: [arr[0], arr[1] ?? arr[0]] })
             }}
           />
         </div>

@@ -186,17 +186,19 @@ export function useCosmos(
 
       // GPU-sampled points: only visible, pre-sampled subset (fast for 1M+ graphs).
       // Returns space coordinates — must convert to screen via spaceToScreenPosition.
-      const sampled = c.getSampledPointPositionsMap()
+      // When filters are active, skip GPU sampling — it returns a random subset of ALL
+      // nodes, so after the visibility check most get discarded, leaving far fewer labels
+      // than MAX_LABELS. The fallback path properly strides through visible nodes only.
+      const vn = visibleNodesRef.current
+      const sampled = vn ? new Map() : c.getSampledPointPositionsMap()
       const children = container.children
       let count = 0
       const canvasW = containerRef.current?.clientWidth ?? 0
       const canvasH = containerRef.current?.clientHeight ?? 0
-      const vn = visibleNodesRef.current
 
       if (sampled.size > 0) {
         for (const [index, [spaceX, spaceY]] of sampled) {
           if (count >= MAX_LABELS) break
-          if (vn && !vn[index]) continue
           const [screenX, screenY] = c.spaceToScreenPosition([spaceX, spaceY])
           if (screenX < -50 || screenX > canvasW + 50 || screenY < -50 || screenY > canvasH + 50) continue
 

@@ -97,24 +97,25 @@ test.describe('Number filter features', () => {
     await loadGraph(page, 'sample-graph.json')
   })
 
-  test('number filter has log toggle and histogram when enabled', async ({ page }) => {
+  test('number filter has log toggle and histogram toggle when enabled', async ({ page }) => {
     const agePanel = page.getByTestId('filter-panel-age')
     // Enable filter (controls are pointer-events-none when disabled)
     await agePanel.getByRole('checkbox').click()
     await expect(agePanel.getByTestId('number-filter-log-toggle')).toBeVisible()
     await expect(agePanel.getByTestId('number-filter-histogram-toggle')).toBeVisible()
-    await expect(agePanel.getByTestId('number-filter-histogram')).toBeVisible()
+    // Histogram is hidden by default
+    await expect(agePanel.getByTestId('number-filter-histogram')).not.toBeVisible()
   })
 
-  test('histogram can be toggled off and on', async ({ page }) => {
+  test('histogram can be toggled on and off', async ({ page }) => {
     const agePanel = page.getByTestId('filter-panel-age')
     // Enable filter first (controls are dimmed/non-interactive when disabled)
     await agePanel.getByRole('checkbox').click()
-    await expect(agePanel.getByTestId('number-filter-histogram')).toBeVisible()
-    await agePanel.getByTestId('number-filter-histogram-toggle').click()
     await expect(agePanel.getByTestId('number-filter-histogram')).not.toBeVisible()
     await agePanel.getByTestId('number-filter-histogram-toggle').click()
     await expect(agePanel.getByTestId('number-filter-histogram')).toBeVisible()
+    await agePanel.getByTestId('number-filter-histogram-toggle').click()
+    await expect(agePanel.getByTestId('number-filter-histogram')).not.toBeVisible()
   })
 
   test('log toggle can be clicked and does not break filtering', async ({ page }) => {

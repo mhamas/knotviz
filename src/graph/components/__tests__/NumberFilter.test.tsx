@@ -176,32 +176,32 @@ describe('log scale toggle', () => {
 })
 
 describe('histogram', () => {
-  test('histogram is visible by default', async () => {
+  test('histogram is hidden by default', async () => {
     const screen = await render(
       <NumberFilter state={baseState} onChange={vi.fn()} />,
     )
-    expect(screen.container.querySelector('[data-testid="number-filter-histogram"]')).not.toBeNull()
-  })
-
-  test('histogram can be hidden via toggle', async () => {
-    const screen = await render(
-      <NumberFilter state={baseState} onChange={vi.fn()} />,
-    )
-    await screen.getByTestId('number-filter-histogram-toggle').click()
     expect(screen.container.querySelector('[data-testid="number-filter-histogram"]')).toBeNull()
   })
 
-  test('histogram can be re-shown after hiding', async () => {
+  test('histogram can be shown via toggle', async () => {
     const screen = await render(
       <NumberFilter state={baseState} onChange={vi.fn()} />,
     )
-    await screen.getByTestId('number-filter-histogram-toggle').click()
-    expect(screen.container.querySelector('[data-testid="number-filter-histogram"]')).toBeNull()
     await screen.getByTestId('number-filter-histogram-toggle').click()
     expect(screen.container.querySelector('[data-testid="number-filter-histogram"]')).not.toBeNull()
   })
 
-  test('no histogram rendered when buckets are empty', async () => {
+  test('histogram can be hidden again after showing', async () => {
+    const screen = await render(
+      <NumberFilter state={baseState} onChange={vi.fn()} />,
+    )
+    await screen.getByTestId('number-filter-histogram-toggle').click()
+    expect(screen.container.querySelector('[data-testid="number-filter-histogram"]')).not.toBeNull()
+    await screen.getByTestId('number-filter-histogram-toggle').click()
+    expect(screen.container.querySelector('[data-testid="number-filter-histogram"]')).toBeNull()
+  })
+
+  test('no histogram rendered when buckets are empty even after toggle', async () => {
     const state: NumberFilterState = {
       ...baseState,
       histogramBuckets: [],
@@ -210,13 +210,15 @@ describe('histogram', () => {
     const screen = await render(
       <NumberFilter state={state} onChange={vi.fn()} />,
     )
+    await screen.getByTestId('number-filter-histogram-toggle').click()
     expect(screen.container.querySelector('[data-testid="number-filter-histogram"]')).toBeNull()
   })
 
-  test('renders histogram bars', async () => {
+  test('renders histogram bars when toggled visible', async () => {
     const screen = await render(
       <NumberFilter state={baseState} onChange={vi.fn()} />,
     )
+    await screen.getByTestId('number-filter-histogram-toggle').click()
     const bars = screen.container.querySelectorAll('[data-testid="histogram-bar"]')
     expect(bars.length).toBe(3)
   })
@@ -238,6 +240,8 @@ describe('histogram', () => {
     const screen = await render(
       <NumberFilter state={state} onChange={vi.fn()} />,
     )
+    // Show histogram first
+    await screen.getByTestId('number-filter-histogram-toggle').click()
     // Log histogram has 2 buckets → 2 bars
     const bars = screen.container.querySelectorAll('[data-testid="histogram-bar"]')
     expect(bars.length).toBe(2)

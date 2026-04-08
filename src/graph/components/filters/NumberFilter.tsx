@@ -40,7 +40,7 @@ function formatValue(v: number): string {
  */
 export function NumberFilter({ state, onChange, onLogScaleChange }: Props): React.JSX.Element {
   const [localRange, setLocalRange] = useState<[number, number]>([state.min, state.max])
-  const [isHistogramVisible, setIsHistogramVisible] = useState(true)
+  const [isHistogramVisible, setIsHistogramVisible] = useState(false)
   const [editingMin, setEditingMin] = useState<string | null>(null)
   const [editingMax, setEditingMax] = useState<string | null>(null)
   const debouncedOnChange = useDebounce(onChange, 150)
@@ -106,7 +106,7 @@ export function NumberFilter({ state, onChange, onLogScaleChange }: Props): Reac
   return (
     <div className="space-y-1" data-testid="number-filter">
       {/* Toolbar */}
-      <div className="flex items-center justify-end gap-1">
+      <div className="flex items-center justify-start gap-1">
         <button
           type="button"
           data-testid="number-filter-log-toggle"
@@ -127,21 +127,14 @@ export function NumberFilter({ state, onChange, onLogScaleChange }: Props): Reac
           onClick={(): void => setIsHistogramVisible((v) => !v)}
           className={`rounded p-0.5 transition-colors ${
             isHistogramVisible
-              ? 'text-slate-600'
-              : 'text-slate-300 hover:text-slate-500'
+              ? 'bg-slate-700 text-white'
+              : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
           } cursor-pointer`}
           title={isHistogramVisible ? 'Hide histogram' : 'Show histogram'}
         >
           <BarChart3 className="h-3 w-3" />
         </button>
       </div>
-
-      {/* Histogram */}
-      {isHistogramVisible && histogramBuckets.length > 0 && (
-        <div data-testid="number-filter-histogram">
-          <Histogram buckets={histogramBuckets} />
-        </div>
-      )}
 
       {/* Slider */}
       <Slider
@@ -213,6 +206,13 @@ export function NumberFilter({ state, onChange, onLogScaleChange }: Props): Reac
           }}
         />
       </div>
+
+      {/* Histogram (below slider) */}
+      {isHistogramVisible && histogramBuckets.length > 0 && (
+        <div data-testid="number-filter-histogram">
+          <Histogram buckets={histogramBuckets} />
+        </div>
+      )}
     </div>
   )
 }

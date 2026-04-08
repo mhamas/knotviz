@@ -16,8 +16,8 @@ function fmt(v: number): string {
 function NumericStatsTable({ stats, histogram }: { stats: NumericStats; histogram: HistogramBucket[] }): React.JSX.Element {
   return (
     <div className="space-y-0.5">
-      <StatRow label="Total" value={fmt(stats.count)} />
-      <StatRow label="Mean" value={fmt(stats.mean)} />
+      <StatRow label="Total nodes" value={fmt(stats.count)} />
+      <StatRow label="Mean value" value={fmt(stats.mean)} />
       <div className="my-1 border-t border-slate-100" />
       <StatRow label="p25" value={fmt(stats.p25)} />
       <StatRow label="p50" value={fmt(stats.p50)} />
@@ -31,8 +31,8 @@ function NumericStatsTable({ stats, histogram }: { stats: NumericStats; histogra
 function DateStatsTable({ stats, histogram }: { stats: DateStats; histogram: DateHistogramBucket[] }): React.JSX.Element {
   return (
     <div className="space-y-0.5">
-      <StatRow label="Total" value={fmt(stats.count)} />
-      <StatRow label="Mean" value={stats.mean} />
+      <StatRow label="Total nodes" value={fmt(stats.count)} />
+      <StatRow label="Mean value" value={stats.mean} />
       <div className="my-1 border-t border-slate-100" />
       <StatRow label="p25" value={stats.p25} />
       <StatRow label="p50" value={stats.p50} />
@@ -48,7 +48,7 @@ function CategoricalStatsTable({ stats }: { stats: SerializableCategoricalStats 
   for (const [, count] of stats) total += count
   return (
     <div className="space-y-0.5">
-      <StatRow label="Total" value={fmt(total)} />
+      <StatRow label="Total nodes" value={fmt(total)} />
       <StatRow label="Distinct" value={fmt(stats.length)} />
       <div className="my-1 border-t border-slate-100" />
       <div className="max-h-[60vh] space-y-0.5 overflow-y-auto">

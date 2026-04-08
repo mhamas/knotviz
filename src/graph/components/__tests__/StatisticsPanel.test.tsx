@@ -31,8 +31,8 @@ test('renders numeric stats with histogram', async () => {
   }
   const screen = await render(<StatisticsPanel stats={stats} propertyKey="age" />)
   await expect.element(screen.getByText('age')).toBeVisible()
-  await expect.element(screen.getByTestId('stat-total')).toBeVisible()
-  await expect.element(screen.getByTestId('stat-mean')).toBeVisible()
+  await expect.element(screen.getByTestId('stat-total nodes')).toBeVisible()
+  await expect.element(screen.getByTestId('stat-mean value')).toBeVisible()
   // Histogram should render with 3 bars
   const bars = screen.container.querySelectorAll('[data-testid="histogram-bar"]')
   expect(bars.length).toBe(3)
@@ -45,7 +45,7 @@ test('numeric stats with empty histogram renders no histogram', async () => {
     histogram: [],
   }
   const screen = await render(<StatisticsPanel stats={stats} propertyKey="test" />)
-  await expect.element(screen.getByTestId('stat-total')).toBeVisible()
+  await expect.element(screen.getByTestId('stat-total nodes')).toBeVisible()
   expect(screen.container.querySelector('[data-testid="histogram"]')).toBeNull()
 })
 

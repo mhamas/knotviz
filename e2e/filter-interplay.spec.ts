@@ -110,7 +110,7 @@ test.describe('Filter interplay — statistics histogram reacts to node filters'
     const statsSection = page.locator('details', { has: page.getByText('Statistics') })
 
     // Record stats before filtering
-    const totalBefore = await statsSection.getByTestId('stat-total').textContent()
+    const totalBefore = await statsSection.getByTestId('stat-total nodes').textContent()
 
     // Apply active=true filter → 3 visible nodes
     const panel = page.getByTestId('filter-panel-active')
@@ -118,8 +118,8 @@ test.describe('Filter interplay — statistics histogram reacts to node filters'
     await expect(page.getByTestId('filter-match-count')).toHaveText('3/5 nodes match')
 
     // Stats should update — total count should change from 5 to 3
-    await expect(statsSection.getByTestId('stat-total')).not.toHaveText(totalBefore!)
-    await expect(statsSection.getByTestId('stat-total')).toContainText('3')
+    await expect(statsSection.getByTestId('stat-total nodes')).not.toHaveText(totalBefore!)
+    await expect(statsSection.getByTestId('stat-total nodes')).toContainText('3')
   })
 
   test('statistics p25/p75 change when node filter narrows the range', async ({ page }) => {

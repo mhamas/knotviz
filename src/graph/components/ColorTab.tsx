@@ -524,8 +524,8 @@ export function filterContinuousRange(
       max = Math.min(max, filter.max)
     }
     isUniform = min === max
-    minLabel = String(min)
-    maxLabel = String(max)
+    minLabel = Number.isInteger(min) ? String(min) : min.toFixed(2)
+    maxLabel = Number.isInteger(max) ? String(max) : max.toFixed(2)
   } else {
     const sorted = (values as string[]).sort()
     let min = sorted[0]

@@ -260,3 +260,90 @@ describe('applyGradient — custom opacity min', () => {
     expect(pointColors[7]).toBeCloseTo(OPACITY_MAX, 3)
   })
 })
+
+describe('applyGradient — log scale', () => {
+  // With log scale, t = log10(v+1) / log10(max+1) for a [0, max] range
+  // This compresses the upper range and spreads the lower range.
+
+  it('size mode: log scale spreads small values more than linear', () => {
+    // Linear: t for value 10 in [0, 10000] = 10/10000 = 0.001
+    // Log:    t = log10(11)/log10(10001) ≈ 1.041/4.000 ≈ 0.260
+    const { pointColors, visible } = setup(3)
+    const col = [0, 10, 10000]
+
+    // Linear size
+    const linearSizes = new Float32Array(3)
+    linearSizes.fill(4)
+    const linearVisible = new Uint8Array([1, 1, 1])
+    applyGradient(pointColors, linearSizes, linearVisible, col, 'number', viridisStops, 3, 'size')
+    const linearMidSize = linearSizes[1]
+
+    // Log size
+    const logSizes = new Float32Array(3)
+    logSizes.fill(4)
+    applyGradient(pointColors, logSizes, visible, col, 'number', viridisStops, 3, 'size', { isLogScale: true })
+    const logMidSize = logSizes[1]
+
+    // In log scale, value 10 should get a much larger size than linear
+    expect(logMidSize).toBeGreaterThan(linearMidSize)
+    // Min and max should still map to SIZE_MIN and SIZE_MAX
+    expect(logSizes[0]).toBeCloseTo(SIZE_MIN, 3)
+    expect(logSizes[2]).toBeCloseTo(SIZE_MAX, 3)
+  })
+
+  it('opacity mode: log scale gives higher opacity to small values', () => {
+    const { visible } = setup(3)
+    const dummySizes = new Float32Array(3)
+    const col = [0, 10, 10000]
+
+    // Linear opacity
+    const linearColors = new Float32Array(3 * 4)
+    for (let i = 0; i < 3; i++) { linearColors[i * 4 + 3] = 1.0 }
+    const linearVisible = new Uint8Array([1, 1, 1])
+    applyGradient(linearColors, dummySizes, linearVisible, col, 'number', viridisStops, 3, 'opacity')
+    const linearMidAlpha = linearColors[7] // node 1 alpha
+
+    // Log opacity
+    const logColors = new Float32Array(3 * 4)
+    for (let i = 0; i < 3; i++) { logColors[i * 4 + 3] = 1.0 }
+    applyGradient(logColors, dummySizes, visible, col, 'number', viridisStops, 3, 'opacity', { isLogScale: true })
+    const logMidAlpha = logColors[7] // node 1 alpha
+
+    expect(logMidAlpha).toBeGreaterThan(linearMidAlpha)
+  })
+
+  it('color mode: log scale changes gradient distribution', () => {
+    const { visible } = setup(3)
+    const col = [0, 10, 10000]
+
+    // Linear color — node 1 at t≈0.001, very close to first stop
+    const linearColors = new Float32Array(3 * 4)
+    applyGradient(linearColors, new Float32Array(3), new Uint8Array([1, 1, 1]), col, 'number', viridisStops, 3, 'color')
+    const linearG1 = linearColors[5] // node 1 G channel — varies more in Viridis
+
+    // Log color — node 1 at t≈0.26, should be noticeably different
+    const logColors = new Float32Array(3 * 4)
+    applyGradient(logColors, new Float32Array(3), visible, col, 'number', viridisStops, 3, 'color', { isLogScale: true })
+    const logG1 = logColors[5]
+
+    expect(Math.abs(logG1 - linearG1)).toBeGreaterThan(0.05)
+  })
+
+  it('log scale with all-zero values uses midpoint', () => {
+    const { pointColors, pointSizes, visible } = setup(2)
+    const col = [0, 0]
+    applyGradient(pointColors, pointSizes, visible, col, 'number', viridisStops, 2, 'size', { isLogScale: true })
+
+    const midSize = SIZE_MIN + 0.5 * (SIZE_MAX - SIZE_MIN)
+    expect(pointSizes[0]).toBeCloseTo(midSize, 3)
+  })
+
+  it('log scale disabled for date type still works', () => {
+    const { pointColors, pointSizes, visible } = setup(2)
+    const col = ['2020-01-01', '2024-01-01']
+    applyGradient(pointColors, pointSizes, visible, col, 'date', viridisStops, 2, 'size', { isLogScale: true })
+
+    expect(pointSizes[0]).toBeCloseTo(SIZE_MIN, 3)
+    expect(pointSizes[1]).toBeCloseTo(SIZE_MAX, 3)
+  })
+})

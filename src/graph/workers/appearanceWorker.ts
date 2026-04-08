@@ -19,6 +19,7 @@ interface GradientConfig {
   visualMode: VisualMode
   sizeRange: [number, number]
   opacityMin: number
+  isLogScale: boolean
 }
 
 // Persistent state: columns sent once on graph load, reused across messages
@@ -140,6 +141,7 @@ function computeAppearance(input: UpdateMessage): void {
       applyGradient(pointColors, pointSizes, visible, col, gradientConfig.propType, stops, nodeCount, gradientConfig.visualMode, {
         sizeRange: gradientConfig.sizeRange,
         opacityMin: gradientConfig.opacityMin,
+        isLogScale: gradientConfig.isLogScale,
       })
     }
   }

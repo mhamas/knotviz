@@ -196,6 +196,8 @@ export interface ColorGradientState {
   sizeRange: [number, number]
   /** Minimum opacity for opacity mode. Max is always 1.0. Default 0.15. */
   opacityMin: number
+  /** Use log scale for the visual mapping (size/opacity/color). Only affects numeric properties. */
+  isLogScale: boolean
 }
 
 // ─── Tooltip ───────────────────────────────────────────────────────────────

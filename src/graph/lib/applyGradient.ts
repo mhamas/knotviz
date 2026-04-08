@@ -18,12 +18,14 @@ export const OPACITY_MAX = 1.0
 
 type PropertyColumn = (number | string | boolean | string[] | undefined)[]
 
-/** Optional configuration for size and opacity modes. */
+/** Optional configuration for visual modes. */
 export interface VisualModeConfig {
   /** Custom [min, max] size range for size mode. Defaults to [SIZE_MIN, SIZE_MAX]. */
   sizeRange?: [number, number]
   /** Custom minimum opacity for opacity mode. Defaults to OPACITY_MIN. Max is always 1.0. */
   opacityMin?: number
+  /** Use log10(v+1) scaling for the t parameter. Only affects numeric properties. */
+  isLogScale?: boolean
 }
 
 /**
@@ -106,12 +108,17 @@ function applyNumeric(
     if (v > max) max = v
   }
   if (!isFinite(min)) return
-  const range = max - min
+  const isLog = config?.isLogScale && min >= 0
+  const logMin = isLog ? Math.log10(min + 1) : 0
+  const logMax = isLog ? Math.log10(max + 1) : 0
+  const range = isLog ? logMax - logMin : max - min
   for (let i = 0; i < nodeCount; i++) {
     if (!visible[i]) continue
     const v = col[i]
     if (typeof v !== 'number') continue
-    const t = range === 0 ? 0.5 : (v - min) / range
+    const mapped = isLog ? Math.log10(v + 1) : v
+    const base = isLog ? logMin : min
+    const t = range === 0 ? 0.5 : (mapped - base) / range
     applyValue(pointColors, pointSizes, i, t, stops, mode, config)
   }
 }
@@ -139,10 +146,15 @@ function applyDate(
     if (ts > max) max = ts
   }
   if (!isFinite(min)) return
-  const range = max - min
+  const isLog = config?.isLogScale && min >= 0
+  const logMin = isLog ? Math.log10(min + 1) : 0
+  const logMax = isLog ? Math.log10(max + 1) : 0
+  const range = isLog ? logMax - logMin : max - min
   for (let i = 0; i < nodeCount; i++) {
     if (!visible[i] || typeof col[i] !== 'string') continue
-    const t = range === 0 ? 0.5 : (timestamps[i] - min) / range
+    const mapped = isLog ? Math.log10(timestamps[i] + 1) : timestamps[i]
+    const base = isLog ? logMin : min
+    const t = range === 0 ? 0.5 : (mapped - base) / range
     applyValue(pointColors, pointSizes, i, t, stops, mode, config)
   }
 }

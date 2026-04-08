@@ -174,8 +174,8 @@ export function ColorTab({
         </div>
       </div>
 
-      {/* Log scale toggle — for all modes with numeric/date properties */}
-      {state.propertyKey && (selectedType === 'number' || selectedType === 'date') && (
+      {/* Log scale toggle — color mode only */}
+      {state.visualMode === 'color' && state.propertyKey && (selectedType === 'number' || selectedType === 'date') && (
         <div className="flex items-center gap-2">
           <button
             type="button"

@@ -17,6 +17,7 @@ interface Props {
   filterState: FilterState
   onEnabledChange: (isEnabled: boolean) => void
   onNumberChange?: (min: number, max: number) => void
+  onLogScaleChange?: (isLogScale: boolean) => void
   onBooleanChange?: (selected: BooleanFilterState['selected']) => void
   onStringChange?: (selectedValues: Set<string>) => void
   onDateChange?: (after: string, before: string) => void
@@ -34,6 +35,7 @@ export function PropertyFilterPanel({
   filterState,
   onEnabledChange,
   onNumberChange,
+  onLogScaleChange,
   onBooleanChange,
   onStringChange,
   onDateChange,
@@ -63,6 +65,7 @@ export function PropertyFilterPanel({
           <NumberFilter
             state={filterState as NumberFilterState}
             onChange={onNumberChange}
+            onLogScaleChange={onLogScaleChange}
           />
         )}
         {filterState.type === 'boolean' && onBooleanChange && (

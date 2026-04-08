@@ -44,6 +44,9 @@ export interface NumberFilterState {
   max: number
   domainMin: number
   domainMax: number
+  isLogScale: boolean
+  histogramBuckets: HistogramBucket[]
+  logHistogramBuckets: HistogramBucket[]
 }
 
 export interface StringFilterState {

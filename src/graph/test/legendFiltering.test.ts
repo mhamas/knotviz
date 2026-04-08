@@ -103,6 +103,7 @@ describe('filterContinuousRange — number', () => {
   it('returns data min/max when filter is disabled', () => {
     const filter: NumberFilterState = {
       type: 'number', isEnabled: false, min: 50, max: 200, domainMin: 10, domainMax: 500,
+      isLogScale: false, histogramBuckets: [], logHistogramBuckets: [],
     }
     const result = filterContinuousRange(values, 'number', filter)
     expect(result.minLabel).toBe('10')
@@ -112,6 +113,7 @@ describe('filterContinuousRange — number', () => {
   it('clamps to filter range when filter is enabled', () => {
     const filter: NumberFilterState = {
       type: 'number', isEnabled: true, min: 50, max: 200, domainMin: 10, domainMax: 500,
+      isLogScale: false, histogramBuckets: [], logHistogramBuckets: [],
     }
     const result = filterContinuousRange(values, 'number', filter)
     expect(result.minLabel).toBe('50')
@@ -121,6 +123,7 @@ describe('filterContinuousRange — number', () => {
   it('does not expand beyond data range even if filter is wider', () => {
     const filter: NumberFilterState = {
       type: 'number', isEnabled: true, min: 0, max: 1000, domainMin: 0, domainMax: 1000,
+      isLogScale: false, histogramBuckets: [], logHistogramBuckets: [],
     }
     const result = filterContinuousRange(values, 'number', filter)
     expect(result.minLabel).toBe('10')

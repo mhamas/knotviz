@@ -49,6 +49,37 @@ describe('initializeFilters', () => {
     expect(age.isEnabled).toBe(false)
   })
 
+  it('number filter has isLogScale defaulting to false', () => {
+    const filters = initializeFilters(metas, columns)
+    const age = filters.get('age') as NumberFilterState
+    expect(age.isLogScale).toBe(false)
+  })
+
+  it('number filter has precomputed histogram buckets', () => {
+    const filters = initializeFilters(metas, columns)
+    const age = filters.get('age') as NumberFilterState
+    expect(age.histogramBuckets.length).toBeGreaterThanOrEqual(3)
+    const totalCount = age.histogramBuckets.reduce((sum, b) => sum + b.count, 0)
+    expect(totalCount).toBe(5)
+  })
+
+  it('number filter has precomputed log histogram buckets for non-negative domain', () => {
+    const filters = initializeFilters(metas, columns)
+    const age = filters.get('age') as NumberFilterState
+    expect(age.logHistogramBuckets.length).toBeGreaterThanOrEqual(3)
+    const totalCount = age.logHistogramBuckets.reduce((sum, b) => sum + b.count, 0)
+    expect(totalCount).toBe(5)
+  })
+
+  it('number filter has empty log histogram when domain has negative values', () => {
+    const filters = initializeFilters(
+      [{ key: 'x', type: 'number' }],
+      { x: [-10, -5, 0, 5, 10] },
+    )
+    const x = filters.get('x') as NumberFilterState
+    expect(x.logHistogramBuckets).toEqual([])
+  })
+
   it('boolean filter initializes with selected=true', () => {
     const filters = initializeFilters(metas, columns)
     const active = filters.get('active') as BooleanFilterState
@@ -86,14 +117,16 @@ describe('initializeFilters', () => {
     expect(joined.isEnabled).toBe(false)
   })
 
-  it('handles empty columns', () => {
+  it('handles empty columns — histograms are empty', () => {
     const filters = initializeFilters(metas, {})
     const age = filters.get('age') as NumberFilterState
     expect(age.domainMin).toBe(0)
     expect(age.domainMax).toBe(0)
+    expect(age.histogramBuckets).toEqual([])
+    expect(age.logHistogramBuckets).toEqual([])
   })
 
-  it('handles single-value number column', () => {
+  it('handles single-value number column — valid histograms', () => {
     const filters = initializeFilters(
       [{ key: 'x', type: 'number' }],
       { x: [42] },
@@ -101,6 +134,36 @@ describe('initializeFilters', () => {
     const x = filters.get('x') as NumberFilterState
     expect(x.domainMin).toBe(42)
     expect(x.domainMax).toBe(42)
+    expect(x.histogramBuckets).toHaveLength(3)
+    expect(x.histogramBuckets[0].count).toBe(1)
+    expect(x.logHistogramBuckets).toHaveLength(3)
+    expect(x.logHistogramBuckets[0].count).toBe(1)
+  })
+
+  it('all-zero column produces valid histograms', () => {
+    const filters = initializeFilters(
+      [{ key: 'x', type: 'number' }],
+      { x: [0, 0, 0] },
+    )
+    const x = filters.get('x') as NumberFilterState
+    expect(x.domainMin).toBe(0)
+    expect(x.domainMax).toBe(0)
+    expect(x.histogramBuckets).toHaveLength(3)
+    expect(x.logHistogramBuckets).toHaveLength(3)
+    const linearTotal = x.histogramBuckets.reduce((s, b) => s + b.count, 0)
+    const logTotal = x.logHistogramBuckets.reduce((s, b) => s + b.count, 0)
+    expect(linearTotal).toBe(3)
+    expect(logTotal).toBe(3)
+  })
+
+  it('histogram bucket counts equal the number of numeric values', () => {
+    const filters = initializeFilters(metas, columns)
+    const age = filters.get('age') as NumberFilterState
+    const linearTotal = age.histogramBuckets.reduce((s, b) => s + b.count, 0)
+    const logTotal = age.logHistogramBuckets.reduce((s, b) => s + b.count, 0)
+    // age column has 5 numeric values
+    expect(linearTotal).toBe(5)
+    expect(logTotal).toBe(5)
   })
 })
 
@@ -111,6 +174,71 @@ describe('useFilterState hook', () => {
     const age = result.current.filters.get('age') as NumberFilterState
     expect(age.min).toBe(30)
     expect(age.max).toBe(40)
+  })
+
+  it('setNumberLogScale updates isLogScale', () => {
+    const { result } = renderHook(() => useFilterState(metas, columns))
+    act(() => result.current.setNumberLogScale('age', true))
+    const age = result.current.filters.get('age') as NumberFilterState
+    expect(age.isLogScale).toBe(true)
+  })
+
+  it('clearAllFilters resets isLogScale to false', () => {
+    const { result } = renderHook(() => useFilterState(metas, columns))
+    act(() => result.current.setNumberLogScale('age', true))
+    act(() => result.current.clearAllFilters())
+    const age = result.current.filters.get('age') as NumberFilterState
+    expect(age.isLogScale).toBe(false)
+  })
+
+  it('setNumberLogScale preserves min/max range', () => {
+    const { result } = renderHook(() => useFilterState(metas, columns))
+    act(() => result.current.setNumberFilter('age', 30, 40))
+    act(() => result.current.setNumberLogScale('age', true))
+    const age = result.current.filters.get('age') as NumberFilterState
+    expect(age.min).toBe(30)
+    expect(age.max).toBe(40)
+    expect(age.isLogScale).toBe(true)
+  })
+
+  it('setNumberFilter preserves isLogScale', () => {
+    const { result } = renderHook(() => useFilterState(metas, columns))
+    act(() => result.current.setNumberLogScale('age', true))
+    act(() => result.current.setNumberFilter('age', 30, 40))
+    const age = result.current.filters.get('age') as NumberFilterState
+    expect(age.isLogScale).toBe(true)
+    expect(age.min).toBe(30)
+    expect(age.max).toBe(40)
+  })
+
+  it('setNumberLogScale preserves histogramBuckets', () => {
+    const { result } = renderHook(() => useFilterState(metas, columns))
+    const before = (result.current.filters.get('age') as NumberFilterState).histogramBuckets
+    act(() => result.current.setNumberLogScale('age', true))
+    const after = (result.current.filters.get('age') as NumberFilterState).histogramBuckets
+    expect(after).toEqual(before)
+  })
+
+  it('setFilterEnabled preserves isLogScale', () => {
+    const { result } = renderHook(() => useFilterState(metas, columns))
+    act(() => result.current.setNumberLogScale('age', true))
+    act(() => result.current.setFilterEnabled('age', true))
+    const age = result.current.filters.get('age') as NumberFilterState
+    expect(age.isLogScale).toBe(true)
+    expect(age.isEnabled).toBe(true)
+  })
+
+  it('clearAllFilters restores histogramBuckets', () => {
+    const { result } = renderHook(() => useFilterState(metas, columns))
+    const before = (result.current.filters.get('age') as NumberFilterState).histogramBuckets
+    act(() => {
+      result.current.setNumberFilter('age', 30, 40)
+      result.current.setNumberLogScale('age', true)
+    })
+    act(() => result.current.clearAllFilters())
+    const after = (result.current.filters.get('age') as NumberFilterState).histogramBuckets
+    expect(after).toEqual(before)
+    expect((result.current.filters.get('age') as NumberFilterState).isLogScale).toBe(false)
   })
 
   it('setStringFilter updates selectedValues', () => {

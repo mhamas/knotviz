@@ -21,6 +21,7 @@ export function FiltersTab({ propertyMetas, filterHandle, matchingCount, totalNo
     filters,
     resetKey,
     setNumberFilter,
+    setNumberLogScale,
     setStringFilter,
     setDateFilter,
     setBooleanFilter,
@@ -81,6 +82,11 @@ export function FiltersTab({ propertyMetas, filterHandle, matchingCount, totalNo
               onNumberChange={
                 filterState.type === 'number'
                   ? (min, max): void => setNumberFilter(meta.key, min, max)
+                  : undefined
+              }
+              onLogScaleChange={
+                filterState.type === 'number'
+                  ? (isLogScale): void => setNumberLogScale(meta.key, isLogScale)
                   : undefined
               }
               onBooleanChange={

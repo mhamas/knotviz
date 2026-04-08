@@ -12,6 +12,9 @@ test('renders property name and type badge', async () => {
     max: 100,
     domainMin: 0,
     domainMax: 100,
+    isLogScale: false,
+    histogramBuckets: [],
+    logHistogramBuckets: [],
   }
   const screen = await render(
     <PropertyFilterPanel

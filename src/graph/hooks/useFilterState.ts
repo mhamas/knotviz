@@ -9,6 +9,7 @@ import type {
   StringArrayFilterState,
   StringFilterState,
 } from '../types'
+import { computeHistogram, computeLogHistogram } from '../lib/computeHistogram'
 
 /** Columnar property values indexed by node index. */
 export type PropertyColumns = Record<string, (number | string | boolean | string[] | undefined)[]>
@@ -17,6 +18,7 @@ export interface FilterStateHandle {
   filters: FilterMap
   resetKey: number
   setNumberFilter: (key: string, min: number, max: number) => void
+  setNumberLogScale: (key: string, isLogScale: boolean) => void
   setStringFilter: (key: string, values: Set<string>) => void
   setDateFilter: (key: string, after: string, before: string) => void
   setBooleanFilter: (key: string, selected: BooleanFilterState['selected']) => void
@@ -42,14 +44,18 @@ function initializeFilters(
       let domainMin = 0
       let domainMax = 0
       let isFirst = true
+      const numericValues: number[] = []
       if (col) {
         for (let i = 0; i < col.length; i++) {
           const v = col[i]
           if (typeof v !== 'number') continue
+          numericValues.push(v)
           if (isFirst) { domainMin = v; domainMax = v; isFirst = false }
           else { if (v < domainMin) domainMin = v; if (v > domainMax) domainMax = v }
         }
       }
+      const histogramBuckets = computeHistogram(numericValues)
+      const logHistogramBuckets = domainMin >= 0 ? computeLogHistogram(numericValues) : []
       filters.set(meta.key, {
         type: 'number',
         isEnabled: false,
@@ -57,6 +63,9 @@ function initializeFilters(
         max: domainMax,
         domainMin,
         domainMax,
+        isLogScale: false,
+        histogramBuckets,
+        logHistogramBuckets,
       } satisfies NumberFilterState)
     } else if (meta.type === 'boolean') {
       filters.set(meta.key, {
@@ -161,6 +170,13 @@ export function useFilterState(
     [updateFilter],
   )
 
+  const setNumberLogScale = useCallback(
+    (key: string, isLogScale: boolean): void => {
+      updateFilter(key, (prev) => ({ ...prev, isLogScale }) as NumberFilterState)
+    },
+    [updateFilter],
+  )
+
   const setStringFilter = useCallback(
     (key: string, values: Set<string>): void => {
       updateFilter(
@@ -227,6 +243,7 @@ export function useFilterState(
     filters,
     resetKey,
     setNumberFilter,
+    setNumberLogScale,
     setStringFilter,
     setDateFilter,
     setBooleanFilter,

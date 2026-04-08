@@ -91,3 +91,82 @@ test.describe('Filter Pipeline (end-to-end)', () => {
     await expect(page.getByTestId('filter-match-count')).toHaveText('5/5 nodes match')
   })
 })
+
+test.describe('Number filter features', () => {
+  test.beforeEach(async ({ page }) => {
+    await loadGraph(page, 'sample-graph.json')
+  })
+
+  test('number filter has log toggle and histogram when enabled', async ({ page }) => {
+    const agePanel = page.getByTestId('filter-panel-age')
+    // Enable filter (controls are pointer-events-none when disabled)
+    await agePanel.getByRole('checkbox').click()
+    await expect(agePanel.getByTestId('number-filter-log-toggle')).toBeVisible()
+    await expect(agePanel.getByTestId('number-filter-histogram-toggle')).toBeVisible()
+    await expect(agePanel.getByTestId('number-filter-histogram')).toBeVisible()
+  })
+
+  test('histogram can be toggled off and on', async ({ page }) => {
+    const agePanel = page.getByTestId('filter-panel-age')
+    // Enable filter first (controls are dimmed/non-interactive when disabled)
+    await agePanel.getByRole('checkbox').click()
+    await expect(agePanel.getByTestId('number-filter-histogram')).toBeVisible()
+    await agePanel.getByTestId('number-filter-histogram-toggle').click()
+    await expect(agePanel.getByTestId('number-filter-histogram')).not.toBeVisible()
+    await agePanel.getByTestId('number-filter-histogram-toggle').click()
+    await expect(agePanel.getByTestId('number-filter-histogram')).toBeVisible()
+  })
+
+  test('log toggle can be clicked and does not break filtering', async ({ page }) => {
+    const agePanel = page.getByTestId('filter-panel-age')
+    // Enable filter first
+    await agePanel.getByRole('checkbox').click()
+    await expect(page.getByTestId('filter-match-count')).toHaveText('5/5 nodes match')
+    // Toggle log scale
+    await agePanel.getByTestId('number-filter-log-toggle').click()
+    // Match count should remain 5/5 (full range still selected)
+    await expect(page.getByTestId('filter-match-count')).toHaveText('5/5 nodes match')
+  })
+
+  test('typing a value in min input and pressing Enter narrows the filter', async ({ page }) => {
+    const agePanel = page.getByTestId('filter-panel-age')
+    // Enable the age filter
+    await agePanel.getByRole('checkbox').click()
+    await expect(page.getByTestId('filter-match-count')).toHaveText('5/5 nodes match')
+    // Type a min value that excludes the youngest node (age 27)
+    const minInput = agePanel.getByTestId('number-filter-min')
+    await minInput.click()
+    await minInput.fill('30')
+    await minInput.press('Enter')
+    // Wait for debounce + worker round trip
+    await expect(page.getByTestId('filter-match-count')).toHaveText('3/5 nodes match', { timeout: 3000 })
+  })
+
+  test('clear all resets number filter including log scale', async ({ page }) => {
+    const agePanel = page.getByTestId('filter-panel-age')
+    // Enable filter first so we can interact with the log toggle
+    await agePanel.getByRole('checkbox').click()
+    // Toggle log scale on
+    await agePanel.getByTestId('number-filter-log-toggle').click()
+    // Clear all
+    await page.getByTestId('filter-clear-all').click()
+    // Log toggle should be back to inactive (no highlighted style)
+    const logToggle = agePanel.getByTestId('number-filter-log-toggle')
+    await expect(logToggle).toBeVisible()
+  })
+
+  test('log toggle + text input interop: typing value in log mode works correctly', async ({ page }) => {
+    const agePanel = page.getByTestId('filter-panel-age')
+    // Enable the filter
+    await agePanel.getByRole('checkbox').click()
+    // Toggle to log scale
+    await agePanel.getByTestId('number-filter-log-toggle').click()
+    // Type a max value
+    const maxInput = agePanel.getByTestId('number-filter-max')
+    await maxInput.click()
+    await maxInput.fill('35')
+    await maxInput.press('Enter')
+    // Should narrow the results (ages 27, 28, 31, 34 ≤ 35 → 4 match)
+    await expect(page.getByTestId('filter-match-count')).toHaveText('4/5 nodes match', { timeout: 3000 })
+  })
+})

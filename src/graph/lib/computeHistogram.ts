@@ -51,6 +51,57 @@ export function computeHistogram(values: number[]): HistogramBucket[] {
 }
 
 /**
+ * Compute a histogram with equal-width bins in log₁₀ space.
+ * Uses `log10(v + 1)` to handle zeros. Bucket boundaries are converted back
+ * to linear (real) space. Only valid when all values are ≥ 0.
+ *
+ * @param values - Array of non-negative numbers.
+ * @returns Array of histogram buckets with linear-space boundaries.
+ *
+ * @example
+ * computeLogHistogram([0, 1, 10, 100, 1000])
+ * // → buckets with boundaries in real space, equal-width in log space
+ */
+export function computeLogHistogram(values: number[]): HistogramBucket[] {
+  if (values.length === 0) return []
+
+  // Transform to log space
+  const logValues = new Float64Array(values.length)
+  for (let i = 0; i < values.length; i++) {
+    logValues[i] = Math.log10(values[i] + 1)
+  }
+
+  let logMin = logValues[0]
+  let logMax = logValues[0]
+  for (let i = 1; i < logValues.length; i++) {
+    if (logValues[i] < logMin) logMin = logValues[i]
+    if (logValues[i] > logMax) logMax = logValues[i]
+  }
+
+  const bucketCount = Math.min(20, Math.max(3, Math.ceil(Math.log2(values.length) + 1)))
+
+  const logRange = logMax - logMin
+  const logWidth = logRange === 0 ? 0 : logRange / bucketCount
+
+  const buckets: HistogramBucket[] = []
+  for (let i = 0; i < bucketCount; i++) {
+    buckets.push({
+      from: Math.pow(10, logMin + i * logWidth) - 1,
+      to: Math.pow(10, logMin + (i + 1) * logWidth) - 1,
+      count: 0,
+    })
+  }
+
+  for (let i = 0; i < logValues.length; i++) {
+    let idx = logWidth === 0 ? 0 : Math.floor((logValues[i] - logMin) / logWidth)
+    if (idx >= bucketCount) idx = bucketCount - 1
+    buckets[idx].count++
+  }
+
+  return buckets
+}
+
+/**
  * Compute a histogram over a date array (ISO 8601 strings).
  * Internally converts to epoch-ms for bucketing, then converts boundaries
  * back to YYYY-MM-DD strings.

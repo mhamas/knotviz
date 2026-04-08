@@ -578,11 +578,15 @@ export function useCosmos(
     const worker = workerRef.current
     if (!worker) return
 
-    // Serialize filters (convert Sets to arrays for structured clone)
+    // Serialize filters (convert Sets to arrays, strip UI-only fields)
     const serializedFilters: Record<string, unknown> = {}
     for (const [key, f] of filters) {
       if (f.type === 'string' || f.type === 'string[]') {
         serializedFilters[key] = { ...f, selectedValues: Array.from(f.selectedValues) }
+      } else if (f.type === 'number') {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { histogramBuckets, logHistogramBuckets, isLogScale, ...rest } = f
+        serializedFilters[key] = rest
       } else {
         serializedFilters[key] = { ...f }
       }

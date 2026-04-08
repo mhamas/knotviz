@@ -11,19 +11,12 @@ import { interpolateStops } from './appearanceUtils'
 export const SIZE_MIN = 1
 /** Maximum point size for size mode. */
 export const SIZE_MAX = 10
-/** Minimum opacity for opacity mode. */
-export const OPACITY_MIN = 0.15
-/** Maximum opacity for opacity mode. */
-export const OPACITY_MAX = 1.0
-
 type PropertyColumn = (number | string | boolean | string[] | undefined)[]
 
 /** Optional configuration for visual modes. */
 export interface VisualModeConfig {
   /** Custom [min, max] size range for size mode. Defaults to [SIZE_MIN, SIZE_MAX]. */
   sizeRange?: [number, number]
-  /** Custom minimum opacity for opacity mode. Defaults to OPACITY_MIN. Max is always 1.0. */
-  opacityMin?: number
   /** Use log10(v+1) scaling for the t parameter. Only affects numeric properties. */
   isLogScale?: boolean
 }
@@ -83,9 +76,6 @@ function applyValue(
   } else if (mode === 'size') {
     const [sMin, sMax] = config?.sizeRange ?? [SIZE_MIN, SIZE_MAX]
     pointSizes[i] = sMin + t * (sMax - sMin)
-  } else if (mode === 'opacity') {
-    const oMin = config?.opacityMin ?? OPACITY_MIN
-    pointColors[i * 4 + 3] = oMin + t * (OPACITY_MAX - oMin)
   }
 }
 

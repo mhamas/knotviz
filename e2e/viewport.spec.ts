@@ -60,7 +60,7 @@ test.describe('Narrow viewport — right sidebar', () => {
 
     // At 800px (676-976 range), maxTabs=1, so only one right sidebar visible
     // Filters is open by default; opening Colors should work
-    await page.getByLabel('Toggle Colors panel').click()
+    await page.getByLabel('Toggle Analysis panel').click()
     await expect(page.getByTestId('color-property-select')).toBeVisible()
   })
 })

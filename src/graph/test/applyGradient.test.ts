@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { applyGradient, SIZE_MIN, SIZE_MAX, OPACITY_MIN, OPACITY_MAX } from '../lib/applyGradient'
+import { applyGradient, SIZE_MIN, SIZE_MAX } from '../lib/applyGradient'
 import { hexToRgbNorm } from '../lib/appearanceUtils'
 
 const viridisStops: [number, number, number][] = [
@@ -146,65 +146,6 @@ describe('applyGradient — size mode', () => {
   })
 })
 
-describe('applyGradient — opacity mode', () => {
-  it('maps numeric min to OPACITY_MIN and max to OPACITY_MAX', () => {
-    const { pointColors, pointSizes, visible } = setup(2)
-    const col = [0, 100]
-    applyGradient(pointColors, pointSizes, visible, col, 'number', viridisStops, 2, 'opacity')
-
-    expect(pointColors[3]).toBeCloseTo(OPACITY_MIN, 3)   // node 0 alpha
-    expect(pointColors[7]).toBeCloseTo(OPACITY_MAX, 3)   // node 1 alpha
-  })
-
-  it('does not modify RGB channels', () => {
-    const { pointColors, pointSizes, visible } = setup(2)
-    const col = [0, 100]
-    const r0 = pointColors[0], g0 = pointColors[1], b0 = pointColors[2]
-    applyGradient(pointColors, pointSizes, visible, col, 'number', viridisStops, 2, 'opacity')
-
-    expect(pointColors[0]).toBe(r0)
-    expect(pointColors[1]).toBe(g0)
-    expect(pointColors[2]).toBe(b0)
-  })
-
-  it('does not modify pointSizes', () => {
-    const { pointColors, pointSizes, visible } = setup(2)
-    const col = [0, 100]
-    applyGradient(pointColors, pointSizes, visible, col, 'number', viridisStops, 2, 'opacity')
-
-    expect(pointSizes[0]).toBe(4) // unchanged default
-    expect(pointSizes[1]).toBe(4)
-  })
-
-  it('interpolates intermediate opacity values', () => {
-    const { pointColors, pointSizes, visible } = setup(3)
-    const col = [0, 50, 100]
-    applyGradient(pointColors, pointSizes, visible, col, 'number', viridisStops, 3, 'opacity')
-
-    const midOpacity = OPACITY_MIN + 0.5 * (OPACITY_MAX - OPACITY_MIN)
-    expect(pointColors[7]).toBeCloseTo(midOpacity, 3) // node 1 alpha
-  })
-
-  it('uses midpoint opacity when all values are equal', () => {
-    const { pointColors, pointSizes, visible } = setup(2)
-    const col = [42, 42]
-    applyGradient(pointColors, pointSizes, visible, col, 'number', viridisStops, 2, 'opacity')
-
-    const midOpacity = OPACITY_MIN + 0.5 * (OPACITY_MAX - OPACITY_MIN)
-    expect(pointColors[3]).toBeCloseTo(midOpacity, 3)
-    expect(pointColors[7]).toBeCloseTo(midOpacity, 3)
-  })
-
-  it('skips filtered-out nodes', () => {
-    const { pointColors, pointSizes, visible } = setup(3, [0, 2])
-    const col = [0, 50, 100]
-    applyGradient(pointColors, pointSizes, visible, col, 'number', viridisStops, 3, 'opacity')
-
-    // Node 1 alpha should remain 0 (not visible)
-    expect(pointColors[7]).toBe(0)
-  })
-})
-
 describe('applyGradient — custom size range', () => {
   it('uses custom sizeRange when provided', () => {
     const { pointColors, pointSizes, visible } = setup(2)
@@ -230,34 +171,6 @@ describe('applyGradient — custom size range', () => {
 
     expect(pointSizes[0]).toBeCloseTo(SIZE_MIN, 3)
     expect(pointSizes[1]).toBeCloseTo(SIZE_MAX, 3)
-  })
-})
-
-describe('applyGradient — custom opacity min', () => {
-  it('uses custom opacityMin when provided', () => {
-    const { pointColors, pointSizes, visible } = setup(2)
-    const col = [0, 100]
-    applyGradient(pointColors, pointSizes, visible, col, 'number', viridisStops, 2, 'opacity', { opacityMin: 0.4 })
-
-    expect(pointColors[3]).toBeCloseTo(0.4, 3)   // node 0 alpha = opacityMin
-    expect(pointColors[7]).toBeCloseTo(1.0, 3)    // node 1 alpha = 1.0 (max always 1)
-  })
-
-  it('interpolates midpoint with custom opacityMin', () => {
-    const { pointColors, pointSizes, visible } = setup(3)
-    const col = [0, 50, 100]
-    applyGradient(pointColors, pointSizes, visible, col, 'number', viridisStops, 3, 'opacity', { opacityMin: 0.5 })
-
-    expect(pointColors[7]).toBeCloseTo(0.75, 3)  // 0.5 + 0.5*(1.0-0.5) = 0.75
-  })
-
-  it('falls back to defaults when no config provided', () => {
-    const { pointColors, pointSizes, visible } = setup(2)
-    const col = [0, 100]
-    applyGradient(pointColors, pointSizes, visible, col, 'number', viridisStops, 2, 'opacity')
-
-    expect(pointColors[3]).toBeCloseTo(OPACITY_MIN, 3)
-    expect(pointColors[7]).toBeCloseTo(OPACITY_MAX, 3)
   })
 })
 
@@ -289,27 +202,6 @@ describe('applyGradient — log scale', () => {
     // Min and max should still map to SIZE_MIN and SIZE_MAX
     expect(logSizes[0]).toBeCloseTo(SIZE_MIN, 3)
     expect(logSizes[2]).toBeCloseTo(SIZE_MAX, 3)
-  })
-
-  it('opacity mode: log scale gives higher opacity to small values', () => {
-    const { visible } = setup(3)
-    const dummySizes = new Float32Array(3)
-    const col = [0, 10, 10000]
-
-    // Linear opacity
-    const linearColors = new Float32Array(3 * 4)
-    for (let i = 0; i < 3; i++) { linearColors[i * 4 + 3] = 1.0 }
-    const linearVisible = new Uint8Array([1, 1, 1])
-    applyGradient(linearColors, dummySizes, linearVisible, col, 'number', viridisStops, 3, 'opacity')
-    const linearMidAlpha = linearColors[7] // node 1 alpha
-
-    // Log opacity
-    const logColors = new Float32Array(3 * 4)
-    for (let i = 0; i < 3; i++) { logColors[i * 4 + 3] = 1.0 }
-    applyGradient(logColors, dummySizes, visible, col, 'number', viridisStops, 3, 'opacity', { isLogScale: true })
-    const logMidAlpha = logColors[7] // node 1 alpha
-
-    expect(logMidAlpha).toBeGreaterThan(linearMidAlpha)
   })
 
   it('color mode: log scale changes gradient distribution', () => {

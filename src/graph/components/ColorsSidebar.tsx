@@ -38,14 +38,14 @@ export function ColorsSidebar({
     <div className="flex h-full w-[300px] shrink-0 flex-col border-l border-slate-200 bg-white">
       <div className="min-h-0 flex-1 overflow-y-auto p-3">
         <CollapsibleSection
-          label="Colors"
-          help="Map a node property to a color palette. Nodes are colored by their property values — continuously for numbers/dates, or with distinct colors for strings/booleans."
+          label="Analysis"
+          help="Map a node property to a visual encoding — color palette, node size, or both. Works with numbers, dates, strings, and booleans."
           trailing={
             <button
               className="flex h-5 w-5 cursor-pointer items-center justify-center rounded text-slate-400 hover:bg-slate-100 hover:text-slate-600"
               onClick={(e): void => { e.preventDefault(); onClose() }}
-              aria-label="Close Colors panel"
-              title="Collapse colors & stats"
+              aria-label="Close Analysis panel"
+              title="Collapse analysis & stats"
             >
               <PanelRightClose className="h-3.5 w-3.5" />
             </button>

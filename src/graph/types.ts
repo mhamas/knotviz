@@ -175,6 +175,7 @@ export type PaletteName =
   | 'BlueOrange'
   | 'TealRose'
   | 'IndigoAmber'
+  | 'Grays'
 
 export interface CustomPalette {
   id: string
@@ -182,7 +183,7 @@ export interface CustomPalette {
   colors: string[]
 }
 
-export type VisualMode = 'color' | 'size' | 'opacity'
+export type VisualMode = 'color' | 'size'
 
 export interface ColorGradientState {
   propertyKey: string | null
@@ -194,9 +195,7 @@ export interface ColorGradientState {
   visualMode: VisualMode
   /** [min, max] point size for size mode. Default [1, 10]. */
   sizeRange: [number, number]
-  /** Minimum opacity for opacity mode. Max is always 1.0. Default 0.15. */
-  opacityMin: number
-  /** Use log scale for the visual mapping (size/opacity/color). Only affects numeric properties. */
+  /** Use log scale for the visual mapping. Only affects numeric properties. */
   isLogScale: boolean
 }
 

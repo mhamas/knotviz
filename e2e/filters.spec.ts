@@ -21,7 +21,7 @@ test.describe('Right Sidebar', () => {
 
   test('right sidebar shows color and filter controls', async ({ page }) => {
     // Colors panel is collapsed by default — open it
-    await page.getByLabel('Toggle Colors panel').click()
+    await page.getByLabel('Toggle Analysis panel').click()
     await expect(page.getByTestId('color-property-select')).toBeVisible()
     await expect(page.getByTestId('filter-match-count')).toBeVisible()
   })

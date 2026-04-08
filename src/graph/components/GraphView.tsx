@@ -65,7 +65,6 @@ export function GraphView({
     customPalettes: [],
     visualMode: 'color',
     sizeRange: [1, 10],
-    opacityMin: 0.15,
     isLogScale: false,
   })
 

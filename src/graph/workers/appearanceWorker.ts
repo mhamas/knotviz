@@ -18,7 +18,6 @@ interface GradientConfig {
   propType: string | null
   visualMode: VisualMode
   sizeRange: [number, number]
-  opacityMin: number
   isLogScale: boolean
 }
 
@@ -140,7 +139,6 @@ function computeAppearance(input: UpdateMessage): void {
         : [[0.5, 0.5, 0.5] as [number, number, number]]
       applyGradient(pointColors, pointSizes, visible, col, gradientConfig.propType, stops, nodeCount, gradientConfig.visualMode, {
         sizeRange: gradientConfig.sizeRange,
-        opacityMin: gradientConfig.opacityMin,
         isLogScale: gradientConfig.isLogScale,
       })
     }

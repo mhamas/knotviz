@@ -91,7 +91,7 @@ test.describe('Filter interplay — statistics histogram reacts to node filters'
   test.beforeEach(async ({ page }) => {
     await loadGraph(page, 'sample-graph.json')
     // Open Colors panel and select a numeric property
-    await page.getByLabel('Toggle Colors panel').click()
+    await page.getByLabel('Toggle Analysis panel').click()
     await expect(page.getByTestId('color-property-select')).toBeVisible()
     await page.getByTestId('color-property-select').click()
     await page.getByRole('option', { name: 'age' }).click()

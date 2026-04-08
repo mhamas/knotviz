@@ -20,6 +20,7 @@ export const PALETTE_STOPS: Record<PaletteName, string[]> = {
   BlueOrange: ['#3b82f6', '#f97316'],
   TealRose: ['#14b8a6', '#f43f5e'],
   IndigoAmber: ['#6366f1', '#f59e0b'],
+  Grays: ['#f8fafc', '#cbd5e1', '#94a3b8', '#64748b', '#334155', '#1e293b'],
 }
 
 /** Ordered list of all built-in palette names for UI rendering. */

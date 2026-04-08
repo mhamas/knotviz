@@ -16,7 +16,7 @@ async function loadGraph(page: Page, name: string): Promise<void> {
 
 /** Open the Colors panel (collapsed by default after graph load). */
 async function openColorsPanel(page: Page): Promise<void> {
-  await page.getByLabel('Toggle Colors panel').click()
+  await page.getByLabel('Toggle Analysis panel').click()
   await expect(page.getByTestId('color-property-select')).toBeVisible()
 }
 

@@ -10,7 +10,6 @@ const baseState: ColorGradientState = {
   customPalettes: [],
   visualMode: 'color',
   sizeRange: [1, 10],
-  opacityMin: 0.15,
   isLogScale: false,
 }
 
@@ -124,7 +123,6 @@ describe('computeGradientColors', () => {
         customPalettes: [],
         visualMode: 'color',
         sizeRange: [1, 10],
-        opacityMin: 0.15,
         isLogScale: false,
       }
       // Blues has 5 stops. Create 6 distinct values to force wrap.

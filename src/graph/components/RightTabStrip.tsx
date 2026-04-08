@@ -35,8 +35,8 @@ export function RightTabStrip({
           : { color: COLOR_TAB_COLORS }}
         onClick={onToggleColors}
         disabled={isDisabled}
-        aria-label="Toggle Colors panel"
-        title={isColorsOpen ? 'Close colors & stats' : 'Open colors & stats'}
+        aria-label="Toggle Analysis panel"
+        title={isColorsOpen ? 'Close analysis & stats' : 'Open analysis & stats'}
       >
         <Palette className="h-4 w-4" />
       </button>

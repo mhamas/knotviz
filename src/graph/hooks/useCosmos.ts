@@ -639,7 +639,6 @@ export function useCosmos(
         propType,
         visualMode: gradientState.visualMode,
         sizeRange: gradientState.sizeRange,
-        opacityMin: gradientState.opacityMin,
         isLogScale: gradientState.isLogScale,
       },
       statsConfig: {

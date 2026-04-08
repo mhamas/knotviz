@@ -8,7 +8,7 @@ import {
   isBuiltinPalette,
   getPaletteColors,
 } from '@/lib/colorScales'
-import { SectionHeading, LabeledSlider } from '@/components/sidebar'
+import { SectionHeading } from '@/components/sidebar'
 import {
   Select,
   SelectContent,
@@ -156,7 +156,7 @@ export function ColorTab({
       <div>
         <SectionHeading>Mode</SectionHeading>
         <div className="mt-1.5 flex gap-1" data-testid="visual-mode-selector">
-          {(['color', 'size', 'opacity'] as VisualMode[]).map((mode) => (
+          {(['color', 'size'] as VisualMode[]).map((mode) => (
             <button
               key={mode}
               type="button"
@@ -222,25 +222,6 @@ export function ColorTab({
               isRight
             />
           </div>
-        </div>
-      )}
-
-      {/* Opacity min control */}
-      {state.visualMode === 'opacity' && (
-        <div data-testid="opacity-min-control">
-          <LabeledSlider
-            label="Min opacity"
-            value={state.opacityMin}
-            min={0.05}
-            max={0.95}
-            step={0.05}
-            defaultValue={[0.15]}
-            formatValue={(v): string => `${Math.round(v * 100)}%`}
-            onValueChange={(v): void => {
-              const n = Array.isArray(v) ? v[0] : v
-              onChange({ ...state, opacityMin: n })
-            }}
-          />
         </div>
       )}
 
@@ -425,7 +406,6 @@ function ColorLegend({ state, selectedType, propertyColumns, filters, stops }: L
     if (values.length === 0) return <p className="text-xs italic text-slate-400">No data for selected property.</p>
     const range = filterContinuousRange(values, selectedType, filters.get(state.propertyKey))
     if (state.visualMode === 'size') return <SizeLegend range={range} />
-    if (state.visualMode === 'opacity') return <OpacityLegend range={range} />
     return <ContinuousLegend range={range} stops={stops} />
   }
 
@@ -507,29 +487,6 @@ function SizeLegend({
           <span className="inline-block h-5 w-5 rounded-full bg-slate-400" />
           <span className="text-[10px] text-slate-500">{range.maxLabel}</span>
         </div>
-      </div>
-    </div>
-  )
-}
-
-/** Opacity legend: fading bar from transparent to opaque. */
-function OpacityLegend({
-  range,
-}: {
-  range: { minLabel: string; maxLabel: string; isUniform: boolean }
-}): React.JSX.Element {
-  if (range.isUniform) {
-    return <p className="text-xs italic text-slate-400" data-testid="color-legend-uniform">All nodes have the same value — uniform opacity applied.</p>
-  }
-  return (
-    <div data-testid="opacity-legend">
-      <div
-        className="h-3 w-full rounded-sm"
-        style={{ background: 'linear-gradient(to right, rgba(100,116,139,0.15), rgba(100,116,139,1))' }}
-      />
-      <div className="mt-1 flex justify-between text-[10px] text-slate-500">
-        <span>{range.minLabel}</span>
-        <span>{range.maxLabel}</span>
       </div>
     </div>
   )

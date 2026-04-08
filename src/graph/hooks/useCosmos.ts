@@ -216,13 +216,25 @@ export function useCosmos(
           count++
         }
       } else {
-        // Fallback: stride sampling (skip every N nodes to avoid scanning all 1M)
-        const stride = Math.max(1, Math.floor(d.nodeCount / MAX_LABELS))
+        // Fallback: stride sampling from visible nodes only.
+        // Compute visible count so stride fills up to MAX_LABELS from the filtered set.
         const positions = c.getPointPositions()
         if (!positions || positions.length === 0) return
 
-        for (let idx = 0; idx < d.nodeCount && count < MAX_LABELS; idx += stride) {
+        let visibleCount = d.nodeCount
+        if (vn) {
+          visibleCount = 0
+          for (let i = 0; i < vn.length; i++) { if (vn[i]) visibleCount++ }
+        }
+        const stride = Math.max(1, Math.floor(visibleCount / MAX_LABELS))
+
+        let seen = 0
+        for (let idx = 0; idx < d.nodeCount && count < MAX_LABELS; idx++) {
           if (vn && !vn[idx]) continue
+          // Apply stride over visible nodes only
+          if (seen % stride !== 0) { seen++; continue }
+          seen++
+
           const sx = positions[idx * 2]
           const sy = positions[idx * 2 + 1]
           if (sx === undefined || sy === undefined) continue

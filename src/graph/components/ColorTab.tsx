@@ -202,9 +202,9 @@ export function ColorTab({
             <span className="text-xs font-medium text-slate-700">Size range</span>
           </div>
           <Slider
-            min={0.5}
+            min={0.1}
             max={100}
-            step={0.5}
+            step={0.1}
             value={state.sizeRange}
             onValueChange={(v): void => {
               const arr = Array.isArray(v) ? v : [v]
@@ -329,11 +329,11 @@ function SizeInput({ value, onChange, isRight }: {
 
   const commit = (raw: string): void => {
     const parsed = parseFloat(raw)
-    if (Number.isNaN(parsed) || parsed < 0.5) {
+    if (Number.isNaN(parsed) || parsed < 0.1) {
       setEditing(null)
       return
     }
-    const clamped = Math.min(Math.max(parsed, 0.5), 100)
+    const clamped = Math.min(Math.max(parsed, 0.1), 100)
     onChange(clamped)
     setEditing(null)
   }

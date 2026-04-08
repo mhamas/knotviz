@@ -63,7 +63,7 @@ export function GraphView({
     isReversed: false,
     customColors: [],
     customPalettes: [],
-    visualMode: 'color',
+    visualMode: 'size',
     sizeRange: [1, 10],
     isLogScale: false,
   })

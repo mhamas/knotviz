@@ -117,6 +117,8 @@ export function useCosmos(
   const hoveredIndexRef = useRef<number | undefined>(undefined)
   const tooltipNodeIndexRef = useRef<number | undefined>(undefined)
   const isSimRunningRef = useRef(false)
+  const visibleNodesRef = useRef<Uint8Array | null>(null)
+  const updateLabelsRef = useRef<(() => void) | null>(null)
 
   useEffect(() => { dataRef.current = data }, [data])
   useEffect(() => { isHighlightNeighborsRef.current = isHighlightNeighbors }, [isHighlightNeighbors])
@@ -189,10 +191,12 @@ export function useCosmos(
       let count = 0
       const canvasW = containerRef.current?.clientWidth ?? 0
       const canvasH = containerRef.current?.clientHeight ?? 0
+      const vn = visibleNodesRef.current
 
       if (sampled.size > 0) {
         for (const [index, [spaceX, spaceY]] of sampled) {
           if (count >= MAX_LABELS) break
+          if (vn && !vn[index]) continue
           const [screenX, screenY] = c.spaceToScreenPosition([spaceX, spaceY])
           if (screenX < -50 || screenX > canvasW + 50 || screenY < -50 || screenY > canvasH + 50) continue
 
@@ -218,6 +222,7 @@ export function useCosmos(
         if (!positions || positions.length === 0) return
 
         for (let idx = 0; idx < d.nodeCount && count < MAX_LABELS; idx += stride) {
+          if (vn && !vn[idx]) continue
           const sx = positions[idx * 2]
           const sy = positions[idx * 2 + 1]
           if (sx === undefined || sy === undefined) continue
@@ -246,6 +251,7 @@ export function useCosmos(
         (children[i] as HTMLElement).style.display = 'none'
       }
     }
+    updateLabelsRef.current = updateLabels
 
     /** Update hover label position directly on DOM (no React re-render). */
     const updateHoverPosition = (clientX: number, clientY: number): void => {
@@ -552,8 +558,11 @@ export function useCosmos(
       // preserves current simulation state.
       c.render()
       setMatchingCount(mc)
+      visibleNodesRef.current = vn
       setVisibleNodes(vn)
       setPropertyStats(s)
+      // Refresh labels so filtered-out nodes are hidden
+      updateLabelsRef.current?.()
     }
     return () => { worker.terminate(); workerRef.current = null }
   }, [])

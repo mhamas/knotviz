@@ -6,7 +6,7 @@ import type { PropertyColumns } from './useFilterState'
 import { getPaletteColors, isBuiltinPalette } from '@/lib/colorScales'
 import { useGraphStore } from '@/stores/useGraphStore'
 import { COLOR_DEFAULT, COLOR_EDGE_DEFAULT } from '@/lib/colors'
-import { filterEdges, type FilteredEdgesResult } from '@/lib/filterEdges'
+import { filterEdges } from '@/lib/filterEdges'
 import { useCosmosCamera } from './useCosmosCamera'
 import { useCosmosSimulation } from './useCosmosSimulation'
 import { useCosmosRotation } from './useCosmosRotation'
@@ -63,10 +63,6 @@ export interface UseCosmosReturn {
   keptEdgeIndices: Uint32Array
   filteredLinkIndices: Float32Array
   filteredEdgeCount: number
-  sliderMaxOutgoing: number
-  sliderMaxIncoming: number
-  finalMaxOutgoing: number
-  finalMaxIncoming: number
 }
 
 /**
@@ -106,8 +102,6 @@ export function useCosmos(
   const linkSpring = useGraphStore((s) => s.linkSpring)
   const decay = useGraphStore((s) => s.decay)
   const edgePercentage = useGraphStore((s) => s.edgePercentage)
-  const maxOutgoing = useGraphStore((s) => s.maxOutgoing)
-  const maxIncoming = useGraphStore((s) => s.maxIncoming)
   const isKeepAtLeastOneEdge = useGraphStore((s) => s.isKeepAtLeastOneEdge)
 
   // Refs for callback closures
@@ -124,20 +118,16 @@ export function useCosmos(
   useEffect(() => { isHighlightNeighborsRef.current = isHighlightNeighbors }, [isHighlightNeighbors])
   useEffect(() => { isNodeLabelsVisibleRef.current = isNodeLabelsVisible }, [isNodeLabelsVisible])
 
-  // Mark graph as loaded + set degree bounds so sliders know ranges
+  // Mark graph as loaded
   useEffect(() => {
     if (data) {
       useGraphStore.getState().setGraphLoaded(data.nodeCount, data.linkIndices.length / 2)
-      useGraphStore.getState().setMaxOutgoingDegree(data.maxOutgoingDegree)
-      useGraphStore.getState().setMaxOutgoing(data.maxOutgoingDegree)
-      useGraphStore.getState().setMaxIncomingDegree(data.maxIncomingDegree)
-      useGraphStore.getState().setMaxIncoming(data.maxIncomingDegree)
     }
   }, [data])
 
-  // Filtered link indices (edge % + max neighbors)
+  // Filtered link indices (edge %)
   const totalEdgeCount = data ? data.linkIndices.length / 2 : 0
-  const emptyEdgeResult = useMemo((): FilteredEdgesResult => ({ linkIndices: new Float32Array(0), keptEdgeIndices: new Uint32Array(0), sliderMaxOutgoing: 0, sliderMaxIncoming: 0, finalMaxOutgoing: 0, finalMaxIncoming: 0 }), [])
+  const emptyEdgeResult = useMemo(() => ({ linkIndices: new Float32Array(0), keptEdgeIndices: new Uint32Array(0) }), [])
   const filteredEdges = useMemo(() => {
     if (!data) return emptyEdgeResult
     return filterEdges(
@@ -146,13 +136,9 @@ export function useCosmos(
       data.nodeCount,
       totalEdgeCount,
       edgePercentage,
-      maxOutgoing,
-      data.maxOutgoingDegree,
-      maxIncoming,
-      data.maxIncomingDegree,
       isKeepAtLeastOneEdge,
     )
-  }, [data, emptyEdgeResult, totalEdgeCount, edgePercentage, maxOutgoing, maxIncoming, isKeepAtLeastOneEdge])
+  }, [data, emptyEdgeResult, totalEdgeCount, edgePercentage, isKeepAtLeastOneEdge])
   const filteredLinkIndices = filteredEdges.linkIndices
   const filteredLinksRef = useRef(filteredLinkIndices)
   filteredLinksRef.current = filteredLinkIndices
@@ -699,10 +685,6 @@ export function useCosmos(
     keptEdgeIndices: filteredEdges.keptEdgeIndices,
     filteredLinkIndices: filteredEdges.linkIndices,
     filteredEdgeCount: filteredEdges.keptEdgeIndices.length,
-    sliderMaxOutgoing: filteredEdges.sliderMaxOutgoing,
-    sliderMaxIncoming: filteredEdges.sliderMaxIncoming,
-    finalMaxOutgoing: filteredEdges.finalMaxOutgoing,
-    finalMaxIncoming: filteredEdges.finalMaxIncoming,
   }
 }
 

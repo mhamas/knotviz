@@ -106,8 +106,6 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
             edgeLabels: msg.edgeLabels as (string | undefined)[],
             edgeWeights: msg.edgeWeights as Float32Array | undefined,
             edgeSortOrder: msg.edgeSortOrder as Uint32Array,
-            maxOutgoingDegree: msg.maxOutgoingDegree as number,
-            maxIncomingDegree: msg.maxIncomingDegree as number,
           }
 
           const propertyColumns = msg.propertyColumns as PropertyColumns

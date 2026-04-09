@@ -104,20 +104,6 @@ export function buildGraph(nullDefaultResult: NullDefaultResult): CosmosGraphDat
     edgeSortOrder.sort((a, b) => edgeWeights[b] - edgeWeights[a])
   }
 
-  // Compute max outgoing and incoming degree
-  const outDegree = new Uint32Array(nodeCount)
-  const inDegree = new Uint32Array(nodeCount)
-  for (let i = 0; i < validEdgeCount; i++) {
-    outDegree[finalEdgeSources[i]]++
-    inDegree[finalEdgeTargets[i]]++
-  }
-  let maxOutgoingDegree = 0
-  let maxIncomingDegree = 0
-  for (let i = 0; i < nodeCount; i++) {
-    if (outDegree[i] > maxOutgoingDegree) maxOutgoingDegree = outDegree[i]
-    if (inDegree[i] > maxIncomingDegree) maxIncomingDegree = inDegree[i]
-  }
-
   return {
     nodeCount,
     nodeIds,
@@ -131,7 +117,5 @@ export function buildGraph(nullDefaultResult: NullDefaultResult): CosmosGraphDat
     edgeLabels: edgeLabelsList,
     edgeWeights,
     edgeSortOrder,
-    maxOutgoingDegree,
-    maxIncomingDegree,
   }
 }

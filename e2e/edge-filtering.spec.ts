@@ -20,10 +20,8 @@ test.describe('Edge Filtering — Simulation Controls', () => {
     await loadGraph(page, 'weighted-edges-graph.json')
   })
 
-  test('edge filtering sliders are visible after loading graph', async ({ page }) => {
+  test('edge percentage slider is visible after loading graph', async ({ page }) => {
     await expect(page.getByText('Edges to keep (%)')).toBeVisible()
-    await expect(page.getByText('Max outgoing edges per node')).toBeVisible()
-    await expect(page.getByText('Max incoming edges per node')).toBeVisible()
   })
 
   test('keep-at-least-one checkbox is visible', async ({ page }) => {

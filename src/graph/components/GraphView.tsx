@@ -91,8 +91,6 @@ export function GraphView({
     visibleNodes,
     keptEdgeIndices,
     filteredLinkIndices,
-    sliderMaxOutgoing,
-    sliderMaxIncoming,
   } = useCosmos(
     cosmosData,
     propertyColumns,
@@ -253,8 +251,6 @@ export function GraphView({
         isOpen={isLeftOpen}
         onToggle={(): void => setIsLeftOpen((v) => !v)}
         hasPositions={cosmosData.positionMode === 'all'}
-        sliderMaxOutgoing={sliderMaxOutgoing}
-        sliderMaxIncoming={sliderMaxIncoming}
       />
       <div className="relative flex-1 overflow-hidden bg-white">
         <div

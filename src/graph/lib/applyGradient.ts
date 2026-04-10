@@ -74,6 +74,7 @@ function applyValue(
     pointColors[off + 2] = b
     pointColors[off + 3] = 1
   } else if (mode === 'size') {
+    // sqrt(t) so dot area (π·r²) is proportional to value, not radius.
     const [sMin, sMax] = config?.sizeRange ?? [SIZE_MIN, SIZE_MAX]
     pointSizes[i] = sMin + Math.sqrt(t) * (sMax - sMin)
   }

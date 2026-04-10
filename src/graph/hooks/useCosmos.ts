@@ -370,13 +370,12 @@ export function useCosmos(
         const c = cosmosRef.current
         if (!d || !c) return
 
-        // Show hover label via DOM (no React state)
+        // Show hover label via DOM (no React state).
+        // Child divs are pre-created once below the config block to avoid
+        // allocating new DOM nodes on every hover event.
         const el = hoverRef.current
         if (el) {
-          el.textContent = ''
-          const nameDiv = document.createElement('div')
-          nameDiv.textContent = d.nodeLabels[index] ?? d.nodeIds[index]
-          el.appendChild(nameDiv)
+          hoverNameDiv.textContent = d.nodeLabels[index] ?? d.nodeIds[index]
 
           const propKey = analysisPropertyKeyRef.current
           if (propKey) {
@@ -387,13 +386,13 @@ export function useCosmos(
               if (propType === 'number' && typeof val === 'number') formatted = Number.isInteger(val) ? String(val) : val.toFixed(2)
               else if (propType === 'string[]' && Array.isArray(val)) formatted = val.join(', ')
               else formatted = String(val)
-              const valDiv = document.createElement('div')
-              valDiv.textContent = `${propKey}: ${formatted}`
-              valDiv.style.fontWeight = '400'
-              valDiv.style.opacity = '0.7'
-              valDiv.style.fontSize = '10px'
-              el.appendChild(valDiv)
+              hoverPropDiv.textContent = `${propKey}: ${formatted}`
+              hoverPropDiv.style.display = 'block'
+            } else {
+              hoverPropDiv.style.display = 'none'
             }
+          } else {
+            hoverPropDiv.style.display = 'none'
           }
           el.style.display = 'block'
         }
@@ -415,6 +414,19 @@ export function useCosmos(
       },
       onZoom: () => { updateLabels() },
       onDragEnd: () => { updateLabels() },
+    }
+
+    // Pre-create reusable child elements for the hover tooltip so we don't
+    // allocate new DOM nodes on every onPointMouseOver event.
+    const hoverNameDiv = document.createElement('div')
+    const hoverPropDiv = document.createElement('div')
+    hoverPropDiv.style.fontWeight = '400'
+    hoverPropDiv.style.opacity = '0.7'
+    hoverPropDiv.style.fontSize = '10px'
+    hoverPropDiv.style.display = 'none'
+    if (hoverRef.current) {
+      hoverRef.current.appendChild(hoverNameDiv)
+      hoverRef.current.appendChild(hoverPropDiv)
     }
 
     /**
@@ -480,6 +492,8 @@ export function useCosmos(
       div.removeEventListener('pointermove', handlePanMove)
       if (panFrameId) cancelAnimationFrame(panFrameId)
       observer?.disconnect()
+      hoverNameDiv.remove()
+      hoverPropDiv.remove()
       if (cosmos) {
         try { cosmos.destroy() } catch { /* ignore */ }
       }

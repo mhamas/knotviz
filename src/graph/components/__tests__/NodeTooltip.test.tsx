@@ -119,6 +119,24 @@ test('close button calls onClose', async () => {
   expect(handler).toHaveBeenCalledOnce()
 })
 
+test('shows copy label button', async () => {
+  const screen = await render(
+    <NodeTooltip
+      nodeId="n1"
+      screenPosition={{ x: 100, y: 100 }}
+      nodeIndexMap={nodeIndexMap}
+      nodeLabels={nodeLabels}
+      propertyColumns={propertyColumns}
+      propertyMetas={metas}
+      nodePropertiesMetadata={undefined}
+      canvasBounds={canvasBounds}
+      analysisPropertyKey={null}
+      onClose={vi.fn()}
+    />,
+  )
+  await expect.element(screen.getByRole('button', { name: 'Copy label' })).toBeVisible()
+})
+
 test('bolds the analysis property row when analysisPropertyKey is set', async () => {
   const screen = await render(
     <NodeTooltip
@@ -137,9 +155,32 @@ test('bolds the analysis property row when analysisPropertyKey is set', async ()
   // The "age" label should be bold
   const ageLabel = screen.getByText('age')
   await expect.element(ageLabel).toHaveClass('font-bold')
+  // The "age" value should also be bold
+  const ageValue = screen.getByText('30.00')
+  await expect.element(ageValue).toHaveClass('font-bold')
   // The "role" label should NOT be bold
   const roleLabel = screen.getByText('role')
   await expect.element(roleLabel).toHaveClass('font-medium')
+})
+
+test('shows help popover when nodePropertiesMetadata has description', async () => {
+  const screen = await render(
+    <NodeTooltip
+      nodeId="n1"
+      screenPosition={{ x: 100, y: 100 }}
+      nodeIndexMap={nodeIndexMap}
+      nodeLabels={nodeLabels}
+      propertyColumns={propertyColumns}
+      propertyMetas={metas}
+      nodePropertiesMetadata={{ age: { description: 'Age in years' } }}
+      canvasBounds={canvasBounds}
+      analysisPropertyKey={null}
+      onClose={vi.fn()}
+    />,
+  )
+  // The HelpPopover renders a button with aria-label containing "?"
+  const helpButtons = screen.container.querySelectorAll('[data-slot="popover-trigger"]')
+  expect(helpButtons.length).toBeGreaterThanOrEqual(1)
 })
 
 test('shows No properties when no metas', async () => {

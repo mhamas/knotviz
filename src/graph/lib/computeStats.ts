@@ -36,14 +36,10 @@ export function computeNumericStats(values: number[]): NumericStats | null {
   sorted.sort()
 
   const n = sorted.length
+  const min = sorted[0]
+  const max = sorted[n - 1]
   let sum = 0
-  let min = sorted[0]
-  let max = sorted[0]
-  for (let i = 0; i < n; i++) {
-    sum += sorted[i]
-    if (sorted[i] < min) min = sorted[i]
-    if (sorted[i] > max) max = sorted[i]
-  }
+  for (let i = 0; i < n; i++) sum += sorted[i]
 
   const sortedArr = Array.from(sorted)
 

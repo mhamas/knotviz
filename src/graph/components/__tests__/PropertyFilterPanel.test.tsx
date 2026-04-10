@@ -148,6 +148,35 @@ test('body is not dimmed when enabled', async () => {
   expect(body).toBeNull()
 })
 
+test('shows help popover when description is provided', async () => {
+  const meta: PropertyMeta = { key: 'age', type: 'number' }
+  const screen = await render(
+    <PropertyFilterPanel
+      meta={meta}
+      description="Age in years"
+      filterState={numberState}
+      onEnabledChange={vi.fn()}
+      onNumberChange={vi.fn()}
+    />,
+  )
+  const helpTriggers = screen.container.querySelectorAll('[data-slot="popover-trigger"]')
+  expect(helpTriggers.length).toBeGreaterThanOrEqual(1)
+})
+
+test('does not show help popover when description is absent', async () => {
+  const meta: PropertyMeta = { key: 'age', type: 'number' }
+  const screen = await render(
+    <PropertyFilterPanel
+      meta={meta}
+      filterState={numberState}
+      onEnabledChange={vi.fn()}
+      onNumberChange={vi.fn()}
+    />,
+  )
+  const helpTriggers = screen.container.querySelectorAll('[data-slot="popover-trigger"]')
+  expect(helpTriggers.length).toBe(0)
+})
+
 test('renders correct sub-filter for boolean type', async () => {
   const meta: PropertyMeta = { key: 'active', type: 'boolean' }
   const filterState: BooleanFilterState = {

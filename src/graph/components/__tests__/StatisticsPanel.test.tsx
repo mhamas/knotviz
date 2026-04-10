@@ -38,6 +38,17 @@ test('renders numeric stats with histogram', async () => {
   expect(bars.length).toBe(3)
 })
 
+test('renders total value (sum) row for numeric stats', async () => {
+  const stats: PropertyStatsResult = {
+    type: 'numeric',
+    stats: numericStats,
+    histogram: [{ from: 1, to: 10, count: 5 }],
+  }
+  const screen = await render(<StatisticsPanel stats={stats} propertyKey="age" />)
+  await expect.element(screen.getByTestId('stat-total value')).toBeVisible()
+  await expect.element(screen.getByTestId('stat-total value')).toHaveTextContent('25')
+})
+
 test('numeric stats with empty histogram renders no histogram', async () => {
   const stats: PropertyStatsResult = {
     type: 'numeric',

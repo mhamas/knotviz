@@ -125,4 +125,35 @@ describe('streamingJsonGraphParser', () => {
     expect(nodes).toHaveLength(1)
     expect(edges).toHaveLength(0)
   })
+
+  it('skips unknown top-level primitive values (number, boolean, null)', () => {
+    const { nodes } = parse(
+      '{"version":"1","count":42,"flag":true,"nothing":null,"nodes":[{"id":"1"}],"edges":[]}',
+    )
+    expect(nodes).toHaveLength(1)
+  })
+
+  it('skips unknown top-level array values', () => {
+    const { nodes } = parse(
+      '{"version":"1","tags":["a","b"],"nodes":[{"id":"1"}],"edges":[]}',
+    )
+    expect(nodes).toHaveLength(1)
+  })
+
+  it('silently ignores malformed nodePropertiesMetadata', () => {
+    // A string value can't be buffered correctly (missing opening quote),
+    // so JSON.parse fails and the callback is never called.
+    const { metadata, nodes } = parse(
+      '{"version":"1","nodePropertiesMetadata":"not an object","nodes":[{"id":"1"}],"edges":[]}',
+    )
+    expect(nodes).toHaveLength(1)
+    expect(metadata).toBeUndefined()
+  })
+
+  it('handles empty nodePropertiesMetadata object', () => {
+    const { metadata } = parse(
+      '{"version":"1","nodePropertiesMetadata":{},"nodes":[{"id":"1"}],"edges":[]}',
+    )
+    expect(metadata).toEqual({})
+  })
 })

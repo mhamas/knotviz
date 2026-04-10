@@ -20,12 +20,28 @@ describe('computeNumericStats', () => {
   it('computes stats for [1,2,3,4,5]', () => {
     const result = computeNumericStats([1, 2, 3, 4, 5])!
     expect(result.count).toBe(5)
+    expect(result.sum).toBe(15)
     expect(result.min).toBe(1)
     expect(result.max).toBe(5)
     expect(result.mean).toBe(3)
     expect(result.median).toBe(3)
     expect(result.p25).toBe(2)
     expect(result.p75).toBe(4)
+  })
+
+  it('computes correct sum for single element', () => {
+    const result = computeNumericStats([42])!
+    expect(result.sum).toBe(42)
+  })
+
+  it('computes correct sum with negative values', () => {
+    const result = computeNumericStats([-10, -5, 0, 5, 10])!
+    expect(result.sum).toBe(0)
+  })
+
+  it('computes correct sum with decimals', () => {
+    const result = computeNumericStats([0.1, 0.2, 0.3])!
+    expect(result.sum).toBeCloseTo(0.6, 10)
   })
 
   it('computes correct median for even-length array', () => {

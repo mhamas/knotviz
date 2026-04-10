@@ -53,6 +53,38 @@ test.describe('Narrow viewport — left sidebar', () => {
   })
 })
 
+test.describe('Left sidebar panel toggles', () => {
+  test('Analysis and Filters toggle buttons are visible in left sidebar', async ({ page }) => {
+    await loadGraph(page, 'sample-graph.json')
+    await expect(page.getByTestId('left-toggle-analysis')).toBeVisible()
+    await expect(page.getByTestId('left-toggle-filters')).toBeVisible()
+  })
+
+  test('clicking Analysis button in left sidebar opens the Analysis panel', async ({ page }) => {
+    await loadGraph(page, 'sample-graph.json')
+    // Analysis panel should be closed by default
+    await expect(page.getByTestId('color-property-select')).not.toBeVisible()
+    // Click the left sidebar toggle
+    await page.getByTestId('left-toggle-analysis').click()
+    await expect(page.getByTestId('color-property-select')).toBeVisible()
+    // Click again to close
+    await page.getByTestId('left-toggle-analysis').click()
+    await expect(page.getByTestId('color-property-select')).not.toBeVisible()
+  })
+
+  test('clicking Filters button in left sidebar toggles the Filters panel', async ({ page }) => {
+    await loadGraph(page, 'sample-graph.json')
+    // Filters panel is closed by default
+    await expect(page.getByTestId('filter-match-count')).not.toBeVisible()
+    // Open it
+    await page.getByTestId('left-toggle-filters').click()
+    await expect(page.getByTestId('filter-match-count')).toBeVisible()
+    // Close it
+    await page.getByTestId('left-toggle-filters').click()
+    await expect(page.getByTestId('filter-match-count')).not.toBeVisible()
+  })
+})
+
 test.describe('Narrow viewport — right sidebar', () => {
   test('Colors panel opens at medium width with filters auto-collapsed', async ({ page }) => {
     await page.setViewportSize({ width: 800, height: 600 })

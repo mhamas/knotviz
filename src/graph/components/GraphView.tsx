@@ -136,7 +136,7 @@ export function GraphView({
 
   // Right sidebar tab state
   const [wantsColorsOpen, setWantsColorsOpen] = useState(false)
-  const [wantsFiltersOpen, setWantsFiltersOpen] = useState(true)
+  const [wantsFiltersOpen, setWantsFiltersOpen] = useState(false)
   const [maxTabs, setMaxTabs] = useState(2)
 
   // Left sidebar 240px + tab strip ~36px + each right sidebar 300px + min canvas 100px
@@ -253,6 +253,10 @@ export function GraphView({
         isOpen={isLeftOpen}
         onToggle={(): void => setIsLeftOpen((v) => !v)}
         hasPositions={cosmosData.positionMode === 'all'}
+        isAnalysisOpen={isColorsOpen}
+        isFiltersOpen={isFiltersOpen}
+        onToggleAnalysis={toggleColors}
+        onToggleFilters={toggleFilters}
       />
       <div className="relative flex-1 overflow-hidden bg-white">
         <div

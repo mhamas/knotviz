@@ -20,13 +20,15 @@ test.describe('Right Sidebar', () => {
   })
 
   test('right sidebar shows color and filter controls', async ({ page }) => {
-    // Colors panel is collapsed by default — open it
+    // Both panels are closed by default — open them
     await page.getByLabel('Toggle Analysis panel').click()
+    await page.getByLabel('Toggle Filters panel').click()
     await expect(page.getByTestId('color-property-select')).toBeVisible()
     await expect(page.getByTestId('filter-match-count')).toBeVisible()
   })
 
   test('filter panels are visible with match count', async ({ page }) => {
+    await page.getByLabel('Toggle Filters panel').click()
     await expect(page.getByTestId('filter-match-count')).toHaveText('5/5 nodes match')
     await expect(page.getByTestId('filter-panel-active')).toBeVisible()
     await expect(page.getByTestId('filter-panel-age')).toBeVisible()
@@ -39,6 +41,7 @@ test.describe('Right Sidebar', () => {
 test.describe('Filter Pipeline (end-to-end)', () => {
   test.beforeEach(async ({ page }) => {
     await loadGraph(page, 'sample-graph.json')
+    await page.getByLabel('Toggle Filters panel').click()
   })
 
   test('enabling boolean filter reduces match count', async ({ page }) => {
@@ -95,6 +98,7 @@ test.describe('Filter Pipeline (end-to-end)', () => {
 test.describe('Number filter features', () => {
   test.beforeEach(async ({ page }) => {
     await loadGraph(page, 'sample-graph.json')
+    await page.getByLabel('Toggle Filters panel').click()
   })
 
   test('number filter has log toggle and histogram toggle when enabled', async ({ page }) => {

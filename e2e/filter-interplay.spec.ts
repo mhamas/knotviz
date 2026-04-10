@@ -27,6 +27,7 @@ async function loadGraph(page: Page, name: string): Promise<void> {
 test.describe('Filter interplay — Graph Info reacts to node filters', () => {
   test.beforeEach(async ({ page }) => {
     await loadGraph(page, 'sample-graph.json')
+    await page.getByLabel('Toggle Filters panel').click()
   })
 
   test('Graph Info shows all nodes and edges before any filter', async ({ page }) => {
@@ -90,6 +91,7 @@ test.describe('Filter interplay — Graph Info reacts to node filters', () => {
 test.describe('Filter interplay — statistics histogram reacts to node filters', () => {
   test.beforeEach(async ({ page }) => {
     await loadGraph(page, 'sample-graph.json')
+    await page.getByLabel('Toggle Filters panel').click()
     // Open Colors panel and select a numeric property
     await page.getByLabel('Toggle Analysis panel').click()
     await expect(page.getByTestId('color-property-select')).toBeVisible()
@@ -142,6 +144,7 @@ test.describe('Filter interplay — statistics histogram reacts to node filters'
 test.describe('Filter interplay — outgoing degree histogram reacts to node filters', () => {
   test.beforeEach(async ({ page }) => {
     await loadGraph(page, 'sample-graph.json')
+    await page.getByLabel('Toggle Filters panel').click()
   })
 
   test('histogram is present before and after applying node filter', async ({ page }) => {

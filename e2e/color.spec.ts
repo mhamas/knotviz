@@ -90,7 +90,8 @@ test.describe('Color Tab', () => {
   })
 
   test('color controls and filter controls are both visible', async ({ page }) => {
-    // Analysis panel is already open from beforeEach; filters tab is also open by default
+    // Analysis panel is already open from beforeEach; open Filters too
+    await page.getByLabel('Toggle Filters panel').click()
     await expect(page.getByTestId('color-property-select')).toBeVisible()
     await expect(page.getByTestId('filter-match-count')).toBeVisible()
   })

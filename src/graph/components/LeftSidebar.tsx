@@ -9,7 +9,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import { Palette, PanelLeftClose, PanelLeftOpen, SlidersHorizontal } from 'lucide-react'
 import {
   CollapsibleSection,
   LabeledSlider,
@@ -21,6 +21,10 @@ import {
 import { Histogram } from './Histogram'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useGraphStore } from '@/stores/useGraphStore'
+import {
+  COLOR_TAB_COLORS, COLOR_TAB_COLORS_BG,
+  COLOR_TAB_FILTERS, COLOR_TAB_FILTERS_BG,
+} from '@/lib/colors'
 
 interface Props {
   isRunning?: boolean
@@ -33,6 +37,10 @@ interface Props {
   isOpen?: boolean
   onToggle?: () => void
   hasPositions?: boolean
+  isAnalysisOpen?: boolean
+  isFiltersOpen?: boolean
+  onToggleAnalysis?: () => void
+  onToggleFilters?: () => void
 }
 
 /**
@@ -54,6 +62,10 @@ export function LeftSidebar({
   isOpen = true,
   onToggle,
   hasPositions = false,
+  isAnalysisOpen = false,
+  isFiltersOpen = false,
+  onToggleAnalysis,
+  onToggleFilters,
 }: Props): React.JSX.Element {
   // Store state
   const isGraphLoaded = useGraphStore((s) => s.isGraphLoaded)
@@ -319,6 +331,36 @@ export function LeftSidebar({
       </div>
 
       <div className="mt-auto flex flex-col gap-2">
+        {/* Right panel toggles */}
+        <div className="flex gap-1">
+          <button
+            type="button"
+            className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors ${isAnalysisOpen ? 'border-amber-200' : 'border-slate-200 hover:bg-slate-100'} disabled:pointer-events-none disabled:opacity-40`}
+            style={isAnalysisOpen
+              ? { backgroundColor: COLOR_TAB_COLORS_BG, color: COLOR_TAB_COLORS }
+              : { color: '#64748b' }}
+            onClick={onToggleAnalysis}
+            disabled={isDisabled}
+            data-testid="left-toggle-analysis"
+          >
+            <Palette className="h-3.5 w-3.5 shrink-0" />
+            Analysis
+          </button>
+          <button
+            type="button"
+            className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors ${isFiltersOpen ? 'border-blue-200' : 'border-slate-200 hover:bg-slate-100'} disabled:pointer-events-none disabled:opacity-40`}
+            style={isFiltersOpen
+              ? { backgroundColor: COLOR_TAB_FILTERS_BG, color: COLOR_TAB_FILTERS }
+              : { color: '#64748b' }}
+            onClick={onToggleFilters}
+            disabled={isDisabled}
+            data-testid="left-toggle-filters"
+          >
+            <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" />
+            Filters
+          </button>
+        </div>
+
         <SidebarButton onClick={onDownload} disabled={isDisabled}>
           ↓ Download graph
         </SidebarButton>

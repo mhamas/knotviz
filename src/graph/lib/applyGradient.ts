@@ -75,7 +75,7 @@ function applyValue(
     pointColors[off + 3] = 1
   } else if (mode === 'size') {
     const [sMin, sMax] = config?.sizeRange ?? [SIZE_MIN, SIZE_MAX]
-    pointSizes[i] = sMin + t * (sMax - sMin)
+    pointSizes[i] = sMin + Math.sqrt(t) * (sMax - sMin)
   }
 }
 

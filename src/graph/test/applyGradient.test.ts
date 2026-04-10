@@ -83,12 +83,13 @@ describe('applyGradient — size mode', () => {
     expect(pointSizes[1]).toBeCloseTo(SIZE_MAX, 3)
   })
 
-  it('interpolates intermediate values', () => {
+  it('interpolates intermediate values using sqrt scaling (area-proportional)', () => {
     const { pointColors, pointSizes, visible } = setup(3)
     const col = [0, 50, 100]
     applyGradient(pointColors, pointSizes, visible, col, 'number', viridisStops, 3, 'size')
 
-    const midSize = SIZE_MIN + 0.5 * (SIZE_MAX - SIZE_MIN)
+    // t=0.5 → sqrt(0.5) ≈ 0.7071
+    const midSize = SIZE_MIN + Math.sqrt(0.5) * (SIZE_MAX - SIZE_MIN)
     expect(pointSizes[1]).toBeCloseTo(midSize, 3)
   })
 
@@ -109,7 +110,8 @@ describe('applyGradient — size mode', () => {
     const col = [42, 42, 42]
     applyGradient(pointColors, pointSizes, visible, col, 'number', viridisStops, 3, 'size')
 
-    const midSize = SIZE_MIN + 0.5 * (SIZE_MAX - SIZE_MIN)
+    // t=0.5 → sqrt(0.5) ≈ 0.7071
+    const midSize = SIZE_MIN + Math.sqrt(0.5) * (SIZE_MAX - SIZE_MIN)
     expect(pointSizes[0]).toBeCloseTo(midSize, 3)
     expect(pointSizes[1]).toBeCloseTo(midSize, 3)
     expect(pointSizes[2]).toBeCloseTo(midSize, 3)
@@ -156,12 +158,13 @@ describe('applyGradient — custom size range', () => {
     expect(pointSizes[1]).toBeCloseTo(15, 3)
   })
 
-  it('interpolates midpoint with custom range', () => {
+  it('interpolates midpoint with custom range using sqrt scaling', () => {
     const { pointColors, pointSizes, visible } = setup(3)
     const col = [0, 50, 100]
     applyGradient(pointColors, pointSizes, visible, col, 'number', viridisStops, 3, 'size', { sizeRange: [2, 18] })
 
-    expect(pointSizes[1]).toBeCloseTo(10, 3) // 2 + 0.5*(18-2) = 10
+    // t=0.5 → sqrt(0.5) ≈ 0.7071, size = 2 + 0.7071*16 ≈ 13.314
+    expect(pointSizes[1]).toBeCloseTo(2 + Math.sqrt(0.5) * 16, 3)
   })
 
   it('falls back to defaults when no config provided', () => {
@@ -226,7 +229,8 @@ describe('applyGradient — log scale', () => {
     const col = [0, 0]
     applyGradient(pointColors, pointSizes, visible, col, 'number', viridisStops, 2, 'size', { isLogScale: true })
 
-    const midSize = SIZE_MIN + 0.5 * (SIZE_MAX - SIZE_MIN)
+    // t=0.5 → sqrt(0.5) ≈ 0.7071
+    const midSize = SIZE_MIN + Math.sqrt(0.5) * (SIZE_MAX - SIZE_MIN)
     expect(pointSizes[0]).toBeCloseTo(midSize, 3)
   })
 

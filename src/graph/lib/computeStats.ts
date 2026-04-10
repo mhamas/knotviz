@@ -49,6 +49,7 @@ export function computeNumericStats(values: number[]): NumericStats | null {
 
   return {
     count: n,
+    sum,
     min,
     max,
     mean: sum / n,

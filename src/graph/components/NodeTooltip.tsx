@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Copy, Check, X } from 'lucide-react'
-import type { PropertyMeta, PropertyValue } from '../types'
+import type { NodePropertiesMetadata, PropertyMeta, PropertyValue } from '../types'
+import { HelpPopover } from '@/components/sidebar'
 import type { PropertyColumns } from '../hooks/useFilterState'
 
 interface Props {
@@ -10,13 +11,15 @@ interface Props {
   nodeLabels: (string | undefined)[]
   propertyColumns: PropertyColumns
   propertyMetas: PropertyMeta[]
+  nodePropertiesMetadata: NodePropertiesMetadata | undefined
   canvasBounds: DOMRect
+  analysisPropertyKey: string | null
   onClose: () => void
 }
 
-const TOOLTIP_WIDTH = 260
+const TOOLTIP_WIDTH = 310
 const TOOLTIP_MARGIN = 12
-const PROP_NAME_MAX = 20
+const PROP_NAME_MAX = 36
 
 /**
  * Formats a property value for display based on its detected type.
@@ -54,12 +57,15 @@ export function NodeTooltip({
   nodeLabels,
   propertyColumns,
   propertyMetas,
+  nodePropertiesMetadata,
   canvasBounds,
+  analysisPropertyKey,
   onClose,
 }: Props): React.JSX.Element {
   const tooltipRef = useRef<HTMLDivElement>(null)
   const [tooltipHeight, setTooltipHeight] = useState(200)
   const [isCopied, setIsCopied] = useState(false)
+  const [isLabelCopied, setIsLabelCopied] = useState(false)
 
   // Measure tooltip height after initial render
   useEffect(() => {
@@ -164,7 +170,26 @@ export function NodeTooltip({
 
       {/* Header: label + ID with copy */}
       <div className="mb-2 pr-5">
-        <h3 className="break-words text-sm font-semibold text-slate-900">{label}</h3>
+        <div className="flex items-center gap-1">
+          <h3 className="break-words text-sm font-semibold text-slate-900">{label}</h3>
+          <button
+            aria-label="Copy label"
+            title="Copy label"
+            className="inline-flex shrink-0 cursor-pointer rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            onClick={(): void => {
+              navigator.clipboard.writeText(label).then(() => {
+                setIsLabelCopied(true)
+                setTimeout(() => setIsLabelCopied(false), 1500)
+              }).catch(() => {})
+            }}
+          >
+            {isLabelCopied ? (
+              <Check className="h-3 w-3 text-green-600" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </button>
+        </div>
         <div className="mt-0.5 flex items-center gap-1">
           <span className="break-all text-[11px] text-slate-400" data-testid="node-tooltip-id">{nodeId}</span>
           <button
@@ -195,15 +220,20 @@ export function NodeTooltip({
             const displayKey = isTruncated
               ? meta.key.slice(0, PROP_NAME_MAX) + '…'
               : meta.key
+            const desc = nodePropertiesMetadata?.[meta.key]?.description
+            const isAnalysisProperty = meta.key === analysisPropertyKey
             return (
               <div key={meta.key} className="flex items-baseline justify-between gap-2">
-                <span
-                  className="shrink-0 text-[11px] font-medium text-slate-500"
-                  title={isTruncated ? meta.key : undefined}
-                >
-                  {displayKey}
+                <span className="flex shrink-0 items-center gap-1">
+                  <span
+                    className={`text-[11px] ${isAnalysisProperty ? 'font-bold text-slate-700' : 'font-medium text-slate-500'}`}
+                    title={isTruncated ? meta.key : undefined}
+                  >
+                    {displayKey}
+                  </span>
+                  {desc && <HelpPopover>{desc}</HelpPopover>}
                 </span>
-                <span className="break-words text-right text-xs text-slate-800">
+                <span className={`break-words text-right text-xs ${isAnalysisProperty ? 'font-bold text-slate-900' : 'text-slate-800'}`}>
                   {formatValue(value, meta.type)}
                 </span>
               </div>

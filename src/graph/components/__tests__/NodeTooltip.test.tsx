@@ -29,7 +29,9 @@ test('renders node label as heading and shows ID below', async () => {
       nodeLabels={nodeLabels}
       propertyColumns={propertyColumns}
       propertyMetas={metas}
+      nodePropertiesMetadata={undefined}
       canvasBounds={canvasBounds}
+      analysisPropertyKey={null}
       onClose={vi.fn()}
     />,
   )
@@ -46,7 +48,9 @@ test('shows ID as both label and ID when node has no explicit label', async () =
       nodeLabels={nodeLabels}
       propertyColumns={propertyColumns}
       propertyMetas={metas}
+      nodePropertiesMetadata={undefined}
       canvasBounds={canvasBounds}
+      analysisPropertyKey={null}
       onClose={vi.fn()}
     />,
   )
@@ -65,7 +69,9 @@ test('shows copy button for node ID', async () => {
       nodeLabels={nodeLabels}
       propertyColumns={propertyColumns}
       propertyMetas={metas}
+      nodePropertiesMetadata={undefined}
       canvasBounds={canvasBounds}
+      analysisPropertyKey={null}
       onClose={vi.fn()}
     />,
   )
@@ -81,7 +87,9 @@ test('shows formatted properties', async () => {
       nodeLabels={nodeLabels}
       propertyColumns={propertyColumns}
       propertyMetas={metas}
+      nodePropertiesMetadata={undefined}
       canvasBounds={canvasBounds}
+      analysisPropertyKey={null}
       onClose={vi.fn()}
     />,
   )
@@ -101,12 +109,37 @@ test('close button calls onClose', async () => {
       nodeLabels={nodeLabels}
       propertyColumns={propertyColumns}
       propertyMetas={metas}
+      nodePropertiesMetadata={undefined}
       canvasBounds={canvasBounds}
+      analysisPropertyKey={null}
       onClose={handler}
     />,
   )
   await screen.getByRole('button', { name: 'Close' }).click()
   expect(handler).toHaveBeenCalledOnce()
+})
+
+test('bolds the analysis property row when analysisPropertyKey is set', async () => {
+  const screen = await render(
+    <NodeTooltip
+      nodeId="n1"
+      screenPosition={{ x: 100, y: 100 }}
+      nodeIndexMap={nodeIndexMap}
+      nodeLabels={nodeLabels}
+      propertyColumns={propertyColumns}
+      propertyMetas={metas}
+      nodePropertiesMetadata={undefined}
+      canvasBounds={canvasBounds}
+      analysisPropertyKey="age"
+      onClose={vi.fn()}
+    />,
+  )
+  // The "age" label should be bold
+  const ageLabel = screen.getByText('age')
+  await expect.element(ageLabel).toHaveClass('font-bold')
+  // The "role" label should NOT be bold
+  const roleLabel = screen.getByText('role')
+  await expect.element(roleLabel).toHaveClass('font-medium')
 })
 
 test('shows No properties when no metas', async () => {
@@ -118,7 +151,9 @@ test('shows No properties when no metas', async () => {
       nodeLabels={nodeLabels}
       propertyColumns={propertyColumns}
       propertyMetas={[]}
+      nodePropertiesMetadata={undefined}
       canvasBounds={canvasBounds}
+      analysisPropertyKey={null}
       onClose={vi.fn()}
     />,
   )

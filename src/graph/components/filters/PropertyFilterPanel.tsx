@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { BarChart3 } from 'lucide-react'
+import { HelpPopover } from '@/components/sidebar'
 import type {
   BooleanFilterState,
   DateFilterState,
@@ -16,6 +17,7 @@ import { DateFilter } from './DateFilter'
 
 interface Props {
   meta: PropertyMeta
+  description?: string
   filterState: FilterState
   onEnabledChange: (isEnabled: boolean) => void
   onNumberChange?: (min: number, max: number) => void
@@ -34,6 +36,7 @@ interface Props {
  */
 export function PropertyFilterPanel({
   meta,
+  description,
   filterState,
   onEnabledChange,
   onNumberChange,
@@ -59,8 +62,11 @@ export function PropertyFilterPanel({
           onCheckedChange={(v): void => onEnabledChange(v === true)}
         />
 
-        <span className="min-w-0 flex-1 truncate text-xs font-medium text-slate-700" title={meta.key}>
-          {meta.key}
+        <span className="flex min-w-0 flex-1 items-center gap-1">
+          <span className="truncate text-xs font-medium text-slate-700" title={meta.key}>
+            {meta.key}
+          </span>
+          {description && <HelpPopover>{description}</HelpPopover>}
         </span>
 
         {/* Number filter toolbar icons — next to the type badge */}

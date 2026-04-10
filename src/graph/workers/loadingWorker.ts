@@ -110,6 +110,7 @@ async function loadWithStreaming(file: File): Promise<ProcessResult> {
 
   let nodeCount = 0
   let edgeCount = 0
+  let metadata: Record<string, { description: string }> | undefined
 
   // Stream the file directly — never hold the full text in memory.
   // Use File.stream() → ReadableStream<Uint8Array> → TextDecoder → parser
@@ -151,6 +152,9 @@ async function loadWithStreaming(file: File): Promise<ProcessResult> {
         post({ type: 'progress', stage: `Streaming edges… ${edgeCount.toLocaleString()}`, percent: pct })
       }
     },
+    onNodePropertiesMetadata: (m) => {
+      metadata = m
+    },
     onProgress: (processed) => {
       if (nodeCount === 0 && edgeCount === 0) {
         const pct = Math.round((processed / totalBytes) * 20)
@@ -165,7 +169,7 @@ async function loadWithStreaming(file: File): Promise<ProcessResult> {
   post({ type: 'progress', stage: 'Finalizing…', percent: 90 })
   await yieldWorker()
 
-  return builder.finalize()
+  return { ...builder.finalize(), nodePropertiesMetadata: metadata }
 }
 
 // ─── Shared graph building logic ──────────────────────────────────────────
@@ -186,6 +190,7 @@ interface ProcessResult {
   propertyColumns: Record<string, (number | string | boolean | string[] | undefined)[]>
   propertyMetas: PropertyMeta[]
   replacementCount: number
+  nodePropertiesMetadata: Record<string, { description: string }> | undefined
 }
 
 /**
@@ -266,7 +271,7 @@ class GraphBuilder {
     }
   }
 
-  finalize(): ProcessResult {
+  finalize(): Omit<ProcessResult, 'nodePropertiesMetadata'> {
     const nodeCount = this.nodeIds.length
     if (nodeCount === 0) throw new Error('Graph has no nodes to display')
     if (this.skippedNodes > 0) console.warn(`Skipped ${this.skippedNodes} invalid nodes`)
@@ -357,6 +362,7 @@ async function processRawGraph(raw: unknown): Promise<ProcessResult> {
 
   const rawNodes = obj.nodes as unknown[]
   const rawEdges = obj.edges as unknown[]
+  const rawMetadata = obj.nodePropertiesMetadata as Record<string, { description: string }> | undefined
 
   if (rawNodes.length === 0) throw new Error('Graph has no nodes to display')
 
@@ -387,5 +393,5 @@ async function processRawGraph(raw: unknown): Promise<ProcessResult> {
   post({ type: 'progress', stage: 'Finalizing…', percent: 90 })
   await yieldWorker()
 
-  return builder.finalize()
+  return { ...builder.finalize(), nodePropertiesMetadata: rawMetadata }
 }

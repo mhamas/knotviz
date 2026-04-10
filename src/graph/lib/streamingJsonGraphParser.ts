@@ -1,6 +1,6 @@
 /**
  * Streaming JSON parser tailored for the graph format:
- * { "version": "1", "nodes": [ {...}, {...}, ... ], "edges": [ {...}, {...}, ... ] }
+ * { "version": "1", "nodes": [ {...}, {...}, ... ], "edges": [ {...}, {...}, ... ], "nodePropertiesMetadata": {...} }
  *
  * Parses one node/edge object at a time using bracket counting + JSON.parse
  * on each individual item. Never holds the full parsed JSON tree in memory.
@@ -13,6 +13,7 @@ export interface StreamCallbacks {
   onNode: (node: Record<string, unknown>) => void
   onEdge: (edge: Record<string, unknown>) => void
   onProgress: (bytesProcessed: number) => void
+  onNodePropertiesMetadata?: (metadata: Record<string, { description: string }>) => void
 }
 
 type State =
@@ -24,6 +25,7 @@ type State =
   | 'IN_ARRAY'
   | 'IN_ITEM'
   | 'BETWEEN_ITEMS'
+  | 'SKIP_VALUE'
   | 'DONE'
 
 /**
@@ -41,6 +43,12 @@ class GraphJsonParser {
   private bytesProcessed = 0
   private lastProgressAt = 0
   private callbacks: StreamCallbacks
+  /** Depth tracker for SKIP_VALUE state (braces + brackets). */
+  private skipDepth = 0
+  /** Buffer for the value being skipped (used for nodePropertiesMetadata). */
+  private skipBuffer = ''
+  /** Whether to buffer the skipped value (true for nodePropertiesMetadata). */
+  private isBufferingSkip = false
 
   constructor(callbacks: StreamCallbacks) {
     this.callbacks = callbacks
@@ -85,6 +93,8 @@ class GraphJsonParser {
           this.callbacks.onVersion(this.keyBuffer)
           this.keyBuffer = ''
           this.state = 'IN_ROOT'
+        } else if (this.state === 'SKIP_VALUE') {
+          if (this.isBufferingSkip) this.skipBuffer += ch
         }
         return
       }
@@ -110,7 +120,11 @@ class GraphJsonParser {
           } else if (this.currentKey === 'nodes' || this.currentKey === 'edges') {
             this.state = 'IN_ARRAY'
           } else {
-            this.state = 'IN_ROOT'
+            // Unknown top-level key — skip its value, buffering if nodePropertiesMetadata
+            this.state = 'SKIP_VALUE'
+            this.skipDepth = 0
+            this.isBufferingSkip = this.currentKey === 'nodePropertiesMetadata'
+            this.skipBuffer = ''
           }
         }
         break
@@ -150,6 +164,31 @@ class GraphJsonParser {
         }
         break
 
+      case 'SKIP_VALUE':
+        if (this.isBufferingSkip) this.skipBuffer += ch
+        if (ch === '"') {
+          this.inString = true
+        } else if (ch === '{' || ch === '[') {
+          this.skipDepth++
+        } else if (ch === '}' || ch === ']') {
+          if (this.skipDepth > 0) {
+            this.skipDepth--
+            if (this.skipDepth === 0) {
+              this.emitSkippedValue()
+              this.state = 'IN_ROOT'
+            }
+          } else {
+            // The '}' belongs to the root object
+            this.emitSkippedValue()
+            this.state = 'DONE'
+          }
+        } else if (ch === ',' && this.skipDepth === 0) {
+          // End of a primitive value (number, boolean, null)
+          this.emitSkippedValue()
+          this.state = 'IN_ROOT'
+        }
+        break
+
       case 'DONE':
         break
     }
@@ -159,6 +198,7 @@ class GraphJsonParser {
     if (this.state === 'IN_ITEM') this.itemBuffer += ch
     else if (this.state === 'IN_KEY') this.keyBuffer += ch
     else if (this.state === 'IN_VERSION_VALUE') this.keyBuffer += ch
+    else if (this.state === 'SKIP_VALUE' && this.isBufferingSkip) this.skipBuffer += ch
   }
 
   private emitItem(): void {
@@ -169,6 +209,18 @@ class GraphJsonParser {
     } catch {
       // Skip malformed items
     }
+  }
+
+  private emitSkippedValue(): void {
+    if (!this.isBufferingSkip || !this.skipBuffer) return
+    try {
+      const parsed = JSON.parse(this.skipBuffer) as Record<string, { description: string }>
+      this.callbacks.onNodePropertiesMetadata?.(parsed)
+    } catch {
+      // Skip malformed metadata
+    }
+    this.isBufferingSkip = false
+    this.skipBuffer = ''
   }
 }
 

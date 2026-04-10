@@ -4,7 +4,7 @@ import { StatisticsPanel } from '../StatisticsPanel'
 import type { PropertyStatsResult, NumericStats } from '../../types'
 
 const numericStats: NumericStats = {
-  count: 5, min: 1, max: 10, mean: 5, median: 5,
+  count: 5, sum: 25, min: 1, max: 10, mean: 5, median: 5,
   p10: 2, p20: 3, p25: 3, p30: 4, p40: 4,
   p50: 5, p60: 6, p70: 7, p75: 8, p80: 8, p90: 9,
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { CosmosGraphData, ColorGradientState, HistogramBucket, PropertyMeta, PropertyType, PropertyValue } from '../types'
+import type { CosmosGraphData, ColorGradientState, HistogramBucket, NodePropertiesMetadata, PropertyMeta, PropertyType, PropertyValue } from '../types'
 import { computeHistogram } from '../lib/computeHistogram'
 import { useGraphStore } from '../stores/useGraphStore'
 import type { PropertyColumns } from '../hooks/useFilterState'
@@ -30,6 +30,7 @@ interface Props {
   cosmosData: CosmosGraphData
   propertyColumns: PropertyColumns
   propertyMetas: PropertyMeta[]
+  nodePropertiesMetadata: NodePropertiesMetadata | undefined
   filename: string
   onLoadNewFile: (file?: File) => void
 }
@@ -45,6 +46,7 @@ export function GraphView({
   cosmosData,
   propertyColumns,
   propertyMetas,
+  nodePropertiesMetadata,
   filename,
   onLoadNewFile,
 }: Props): React.JSX.Element {
@@ -281,7 +283,9 @@ export function GraphView({
             nodeLabels={cosmosData.nodeLabels}
             propertyColumns={propertyColumns}
             propertyMetas={propertyMetas}
+            nodePropertiesMetadata={nodePropertiesMetadata}
             canvasBounds={tooltipState.canvasBounds}
+            analysisPropertyKey={gradientState.propertyKey}
             onClose={closeTooltip}
           />
         )}
@@ -329,6 +333,7 @@ export function GraphView({
       {isFiltersOpen && (
         <FiltersSidebar
           propertyMetas={propertyMetas}
+          nodePropertiesMetadata={nodePropertiesMetadata}
           filterHandle={filterHandle}
           matchingCount={matchingCount}
           nodeCount={cosmosData.nodeCount}

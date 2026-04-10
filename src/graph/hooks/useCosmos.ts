@@ -113,10 +113,16 @@ export function useCosmos(
   const isSimRunningRef = useRef(false)
   const visibleNodesRef = useRef<Uint8Array | null>(null)
   const updateLabelsRef = useRef<(() => void) | null>(null)
+  const propertyColumnsRef = useRef(propertyColumns)
+  const analysisPropertyKeyRef = useRef(gradientState.propertyKey)
+  const propertyTypeMapRef = useRef(propertyTypeMap)
 
   useEffect(() => { dataRef.current = data }, [data])
   useEffect(() => { isHighlightNeighborsRef.current = isHighlightNeighbors }, [isHighlightNeighbors])
   useEffect(() => { isNodeLabelsVisibleRef.current = isNodeLabelsVisible }, [isNodeLabelsVisible])
+  useEffect(() => { propertyColumnsRef.current = propertyColumns }, [propertyColumns])
+  useEffect(() => { analysisPropertyKeyRef.current = gradientState.propertyKey }, [gradientState.propertyKey])
+  useEffect(() => { propertyTypeMapRef.current = propertyTypeMap }, [propertyTypeMap])
 
   // Mark graph as loaded
   useEffect(() => {
@@ -367,7 +373,28 @@ export function useCosmos(
         // Show hover label via DOM (no React state)
         const el = hoverRef.current
         if (el) {
-          el.textContent = d.nodeLabels[index] ?? d.nodeIds[index]
+          el.textContent = ''
+          const nameDiv = document.createElement('div')
+          nameDiv.textContent = d.nodeLabels[index] ?? d.nodeIds[index]
+          el.appendChild(nameDiv)
+
+          const propKey = analysisPropertyKeyRef.current
+          if (propKey) {
+            const val = propertyColumnsRef.current[propKey]?.[index]
+            if (val !== undefined && val !== null) {
+              const propType = propertyTypeMapRef.current.get(propKey)
+              let formatted: string
+              if (propType === 'number' && typeof val === 'number') formatted = Number.isInteger(val) ? String(val) : val.toFixed(2)
+              else if (propType === 'string[]' && Array.isArray(val)) formatted = val.join(', ')
+              else formatted = String(val)
+              const valDiv = document.createElement('div')
+              valDiv.textContent = `${propKey}: ${formatted}`
+              valDiv.style.fontWeight = '400'
+              valDiv.style.opacity = '0.7'
+              valDiv.style.fontSize = '10px'
+              el.appendChild(valDiv)
+            }
+          }
           el.style.display = 'block'
         }
 

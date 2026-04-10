@@ -5,15 +5,17 @@ function parse(json: string) {
   let version = ''
   const nodes: Record<string, unknown>[] = []
   const edges: Record<string, unknown>[] = []
+  let metadata: Record<string, { description: string }> | undefined
 
   parseJsonGraphSync(json, {
     onVersion: (v) => { version = v },
     onNode: (n) => { nodes.push(n) },
     onEdge: (e) => { edges.push(e) },
+    onNodePropertiesMetadata: (m) => { metadata = m },
     onProgress: () => {},
   })
 
-  return { version, nodes, edges }
+  return { version, nodes, edges, metadata }
 }
 
 describe('streamingJsonGraphParser', () => {
@@ -87,5 +89,40 @@ describe('streamingJsonGraphParser', () => {
     expect(edges).toHaveLength(1)
     expect(edges[0].label).toBe('knows')
     expect(edges[0].weight).toBe(0.8)
+  })
+
+  it('parses nodePropertiesMetadata when present', () => {
+    const { metadata, nodes } = parse(
+      '{"version":"1","nodePropertiesMetadata":{"age":{"description":"Age in years"},"role":{"description":"Job title"}},"nodes":[{"id":"1"}],"edges":[]}',
+    )
+    expect(nodes).toHaveLength(1)
+    expect(metadata).toEqual({
+      age: { description: 'Age in years' },
+      role: { description: 'Job title' },
+    })
+  })
+
+  it('metadata is undefined when nodePropertiesMetadata absent', () => {
+    const { metadata } = parse(
+      '{"version":"1","nodes":[{"id":"1"}],"edges":[]}',
+    )
+    expect(metadata).toBeUndefined()
+  })
+
+  it('nodePropertiesMetadata after nodes/edges still parsed', () => {
+    const { metadata, nodes, edges } = parse(
+      '{"version":"1","nodes":[{"id":"1"}],"edges":[{"source":"1","target":"1"}],"nodePropertiesMetadata":{"x":{"description":"desc"}}}',
+    )
+    expect(nodes).toHaveLength(1)
+    expect(edges).toHaveLength(1)
+    expect(metadata).toEqual({ x: { description: 'desc' } })
+  })
+
+  it('skips unknown top-level fields without breaking parsing', () => {
+    const { nodes, edges } = parse(
+      '{"version":"1","unknownField":{"nested":"value"},"nodes":[{"id":"1"}],"edges":[]}',
+    )
+    expect(nodes).toHaveLength(1)
+    expect(edges).toHaveLength(0)
   })
 })

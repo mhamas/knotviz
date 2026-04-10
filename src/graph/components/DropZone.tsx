@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import type { CosmosGraphData, PropertyMeta, PositionMode } from '../types'
+import type { CosmosGraphData, NodePropertiesMetadata, PropertyMeta, PositionMode } from '../types'
 import type { PropertyColumns } from '../hooks/useFilterState'
 import LoadingWorker from '@/workers/loadingWorker?worker'
 import { SchemaDialog } from './SchemaDialog'
@@ -19,6 +19,7 @@ interface Props {
     cosmosData: CosmosGraphData,
     propertyColumns: PropertyColumns,
     propertyMetas: PropertyMeta[],
+    nodePropertiesMetadata: NodePropertiesMetadata | undefined,
     replacementCount: number,
     filename: string,
   ) => void
@@ -43,6 +44,7 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
     cosmosData: CosmosGraphData
     propertyColumns: PropertyColumns
     propertyMetas: PropertyMeta[]
+    nodePropertiesMetadata: NodePropertiesMetadata | undefined
     positionMode: PositionMode
     filename: string
     replacementCount: number
@@ -110,6 +112,7 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
 
           const propertyColumns = msg.propertyColumns as PropertyColumns
           const propertyMetas = msg.propertyMetas as PropertyMeta[]
+          const nodePropertiesMetadata = msg.nodePropertiesMetadata as NodePropertiesMetadata | undefined
           const replacementCount = msg.replacementCount as number
 
           if (replacementCount > 0) {
@@ -117,13 +120,14 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
               cosmosData,
               propertyColumns,
               propertyMetas,
+              nodePropertiesMetadata,
               positionMode: cosmosData.positionMode,
               filename: file.name,
               replacementCount,
             })
             setIsLoading(false)
           } else {
-            onLoad(cosmosData, propertyColumns, propertyMetas, replacementCount, file.name)
+            onLoad(cosmosData, propertyColumns, propertyMetas, nodePropertiesMetadata, replacementCount, file.name)
           }
         }
       }
@@ -182,7 +186,7 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
 
   const handleConfirmLoad = useCallback((): void => {
     if (pendingLoad) {
-      onLoad(pendingLoad.cosmosData, pendingLoad.propertyColumns, pendingLoad.propertyMetas, pendingLoad.replacementCount, pendingLoad.filename)
+      onLoad(pendingLoad.cosmosData, pendingLoad.propertyColumns, pendingLoad.propertyMetas, pendingLoad.nodePropertiesMetadata, pendingLoad.replacementCount, pendingLoad.filename)
       setPendingLoad(null)
     }
   }, [pendingLoad, onLoad])

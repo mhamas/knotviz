@@ -50,6 +50,21 @@
         }
       }
     },
+    "nodePropertiesMetadata": {
+      "type": "object",
+      "description": "Optional metadata for node properties. Maps property keys to objects with a description field.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["description"],
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "type": "string",
+            "description": "Human-readable description of this property."
+          }
+        }
+      }
+    },
     "edges": {
       "type": "array",
       "description": "Array of edge objects connecting nodes.",

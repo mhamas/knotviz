@@ -17,6 +17,7 @@ function NumericStatsTable({ stats, histogram }: { stats: NumericStats; histogra
   return (
     <div className="space-y-0.5">
       <StatRow label="Total nodes" value={fmt(stats.count)} />
+      <StatRow label="Total value" value={fmt(stats.sum)} />
       <StatRow label="Mean value" value={fmt(stats.mean)} />
       <div className="my-1 border-t border-slate-100" />
       <StatRow label="p25" value={fmt(stats.p25)} />

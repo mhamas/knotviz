@@ -1,11 +1,12 @@
 import { PanelRightClose } from 'lucide-react'
-import type { PropertyMeta } from '../types'
+import type { NodePropertiesMetadata, PropertyMeta } from '../types'
 import type { FilterStateHandle } from '../hooks/useFilterState'
 import { SectionHeading } from '@/components/sidebar'
 import { FiltersTab } from './FiltersTab'
 
 interface Props {
   propertyMetas: PropertyMeta[]
+  nodePropertiesMetadata: NodePropertiesMetadata | undefined
   filterHandle: FilterStateHandle
   matchingCount: number
   nodeCount: number
@@ -20,6 +21,7 @@ interface Props {
  */
 export function FiltersSidebar({
   propertyMetas,
+  nodePropertiesMetadata,
   filterHandle,
   matchingCount,
   nodeCount,
@@ -48,6 +50,7 @@ export function FiltersSidebar({
         ) : (
           <FiltersTab
             propertyMetas={propertyMetas}
+            nodePropertiesMetadata={nodePropertiesMetadata}
             filterHandle={filterHandle}
             matchingCount={matchingCount}
             totalNodeCount={nodeCount}

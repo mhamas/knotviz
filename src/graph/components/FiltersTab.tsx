@@ -1,9 +1,10 @@
-import type { PropertyMeta } from '../types'
+import type { NodePropertiesMetadata, PropertyMeta } from '../types'
 import type { FilterStateHandle } from '../hooks/useFilterState'
 import { PropertyFilterPanel } from './filters/PropertyFilterPanel'
 
 interface Props {
   propertyMetas: PropertyMeta[]
+  nodePropertiesMetadata: NodePropertiesMetadata | undefined
   filterHandle: FilterStateHandle
   matchingCount: number
   totalNodeCount: number
@@ -16,7 +17,7 @@ interface Props {
  * @param props - Property metadata and filter state handle.
  * @returns Filters tab element.
  */
-export function FiltersTab({ propertyMetas, filterHandle, matchingCount, totalNodeCount }: Props): React.JSX.Element {
+export function FiltersTab({ propertyMetas, nodePropertiesMetadata, filterHandle, matchingCount, totalNodeCount }: Props): React.JSX.Element {
   const {
     filters,
     resetKey,
@@ -77,6 +78,7 @@ export function FiltersTab({ propertyMetas, filterHandle, matchingCount, totalNo
             <PropertyFilterPanel
               key={`${meta.key}-${resetKey}`}
               meta={meta}
+              description={nodePropertiesMetadata?.[meta.key]?.description}
               filterState={filterState}
               onEnabledChange={(isEnabled): void => setFilterEnabled(meta.key, isEnabled)}
               onNumberChange={

@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import type { CosmosGraphData, PropertyMeta } from './types'
+import type { CosmosGraphData, NodePropertiesMetadata, PropertyMeta } from './types'
 import type { PropertyColumns } from './hooks/useFilterState'
 import { useGraphStore } from '@/stores/useGraphStore'
 import { DropZone } from './components/DropZone'
@@ -12,6 +12,7 @@ interface LoadedData {
   cosmosData: CosmosGraphData
   propertyColumns: PropertyColumns
   propertyMetas: PropertyMeta[]
+  nodePropertiesMetadata: NodePropertiesMetadata | undefined
   replacementCount: number
   filename: string
 }
@@ -45,9 +46,9 @@ function App(): React.JSX.Element {
           <DropZone
             fileInputRef={fileInputRef}
             pendingFile={pendingFile}
-            onLoad={(cosmosData, propertyColumns, propertyMetas, replacementCount, filename): void => {
+            onLoad={(cosmosData, propertyColumns, propertyMetas, nodePropertiesMetadata, replacementCount, filename): void => {
               setPendingFile(null)
-              setLoadedData({ cosmosData, propertyColumns, propertyMetas, replacementCount, filename })
+              setLoadedData({ cosmosData, propertyColumns, propertyMetas, nodePropertiesMetadata, replacementCount, filename })
             }}
           />
         </div>
@@ -68,6 +69,7 @@ function App(): React.JSX.Element {
         cosmosData={loadedData.cosmosData}
         propertyColumns={loadedData.propertyColumns}
         propertyMetas={loadedData.propertyMetas}
+        nodePropertiesMetadata={loadedData.nodePropertiesMetadata}
         filename={loadedData.filename}
         onLoadNewFile={handleLoadNewFile}
       />

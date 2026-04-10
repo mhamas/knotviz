@@ -72,6 +72,7 @@ export function RightSidebar({
           ) : (
             <FiltersTab
               propertyMetas={propertyMetas}
+              nodePropertiesMetadata={undefined}
               filterHandle={filterHandle}
               matchingCount={matchingCount}
               totalNodeCount={nodeCount}

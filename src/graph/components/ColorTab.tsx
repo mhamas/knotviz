@@ -140,7 +140,7 @@ export function ColorTab({
               {sortedMetas.map((m) => (
                 <SelectItem key={m.key} value={m.key}>
                   <span className="flex min-w-0 items-center gap-2">
-                    <span className="min-w-0 flex-1 truncate">{m.key}</span>
+                    <span className="min-w-0 flex-1 truncate" title={m.key}>{m.key}</span>
                     <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-500">
                       {m.type}
                     </span>

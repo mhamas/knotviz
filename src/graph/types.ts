@@ -20,10 +20,14 @@ export interface EdgeInput {
   weight?: number
 }
 
+/** Maps property key → { description } for node property documentation. */
+export type NodePropertiesMetadata = Record<string, { description: string }>
+
 export interface GraphData {
   version: string
   nodes: NodeInput[]
   edges: EdgeInput[]
+  nodePropertiesMetadata?: NodePropertiesMetadata
 }
 
 // ─── Property system ───────────────────────────────────────────────────────
@@ -93,6 +97,7 @@ export type FilterMap = Map<string, FilterState>
 /** Descriptive statistics for a numeric property. */
 export interface NumericStats {
   count: number
+  sum: number
   min: number
   max: number
   mean: number

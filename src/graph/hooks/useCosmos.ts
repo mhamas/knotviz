@@ -717,7 +717,7 @@ export function useCosmos(
   }, [])
 
   // ── Rotation (extracted — uses refs for Compiler-safe stable identity) ──
-  const { rotationCenter, handleRotateCW, handleRotateCCW } = useCosmosRotation(cosmosRef, containerRef, hoverRef, isSimRunningRef)
+  const { rotationCenter, handleRotateCW, handleRotateCCW } = useCosmosRotation(cosmosRef, containerRef, hoverRef, isSimRunningRef, updateLabelsRef)
 
   // ── Camera controls (extracted) ──
   const { handleZoomIn, handleZoomOut, handleFit } = useCosmosCamera(cosmosRef)

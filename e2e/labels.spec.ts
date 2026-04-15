@@ -141,6 +141,57 @@ test.describe('Show node labels', () => {
     expect(overlayDisplay).toBe('none')
   })
 
+  test('labels follow the graph during shift+wheel rotation', async ({ page }) => {
+    await page.getByRole('checkbox', { name: /Show node labels/ }).check()
+    await page.waitForTimeout(200)
+
+    // Snapshot per-label positions keyed by text content. We pin each label
+    // by its text so we can compare WHERE the same node ended up after
+    // rotation (vs. just whether labels generally moved).
+    const readPositions = async (): Promise<Record<string, [number, number]>> =>
+      await page.evaluate(() => {
+        const overlay = document.querySelector('[data-testid="node-labels"]')
+        if (!overlay) return {}
+        const out: Record<string, [number, number]> = {}
+        for (const el of Array.from(overlay.children) as HTMLElement[]) {
+          if (el.style.display === 'none') continue
+          out[el.textContent ?? ''] = [parseFloat(el.style.left), parseFloat(el.style.top)]
+        }
+        return out
+      })
+
+    const before = await readPositions()
+    expect(Object.keys(before).length).toBeGreaterThan(50)
+
+    // Rotate ~90° via shift+wheel (10 events × 100 px × 0.3 ≈ 300°; pick a
+    // big magnitude so floating-point noise can't masquerade as movement).
+    for (let i = 0; i < 10; i++) {
+      await page.evaluate(() => {
+        document.querySelector('[data-testid="sigma-canvas"]')?.dispatchEvent(
+          new WheelEvent('wheel', { deltaY: 100, shiftKey: true, bubbles: true, cancelable: true }),
+        )
+      })
+    }
+    // Allow rAF + the optional updateLabelsRef call to settle.
+    await page.waitForTimeout(300)
+
+    const after = await readPositions()
+
+    // Find labels that survived the rotation in the visible set, and check
+    // that their screen positions changed substantially. If labels stayed in
+    // place during rotation (the bug we're fixing) every diff would be ~0.
+    const shared = Object.keys(before).filter((k) => k in after)
+    expect(shared.length).toBeGreaterThan(20)
+    let movedFar = 0
+    for (const k of shared) {
+      const dx = after[k][0] - before[k][0]
+      const dy = after[k][1] - before[k][1]
+      if (Math.hypot(dx, dy) > 20) movedFar++
+    }
+    // The vast majority of shared labels should have moved more than 20 px.
+    expect(movedFar / shared.length).toBeGreaterThan(0.5)
+  })
+
   test('label count stays bounded (does not grow without limit on big graphs)', async ({ page }) => {
     await page.getByRole('checkbox', { name: /Show node labels/ }).check()
     await page.waitForTimeout(200)

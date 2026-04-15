@@ -84,9 +84,9 @@ function makeRefs(cosmos: MockCosmos | null): Refs {
 }
 
 /** Render the hook with the supplied refs and expose convenience helpers. */
-function renderRotation(refs: Refs) {
+function renderRotation(refs: Refs, updateLabelsRef?: React.RefObject<(() => void) | null>): ReturnType<typeof renderHook<ReturnType<typeof useCosmosRotation>, void>> {
   return renderHook(() =>
-    useCosmosRotation(refs.cosmosRef, refs.containerRef, refs.hoverRef, refs.isSimRunningRef),
+    useCosmosRotation(refs.cosmosRef, refs.containerRef, refs.hoverRef, refs.isSimRunningRef, updateLabelsRef),
   )
 }
 
@@ -683,6 +683,71 @@ describe('useCosmosRotation', () => {
       act(() => { vi.advanceTimersByTime(20) })
       // The pending rAF was cancelled — no rotation happened
       expect(cosmos.points!.updatePositions).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('label sync (optional updateLabelsRef)', () => {
+    it('invokes updateLabelsRef.current after the fast-path FBO update', () => {
+      const cosmos = makeFastPathCosmos()
+      const refs = makeRefs(cosmos)
+      const updateLabels = vi.fn()
+      const updateLabelsRef = { current: updateLabels as (() => void) | null }
+      const { result } = renderRotation(refs, updateLabelsRef)
+      act(() => result.current.rotatePositionsRef.current(45))
+      expect(updateLabels).toHaveBeenCalledTimes(1)
+      // Order: updatePositions must run BEFORE updateLabels so the sampler
+      // reads the freshly-rotated FBO.
+      const updatePositionsOrder = cosmos.points!.updatePositions!.mock.invocationCallOrder[0]
+      const updateLabelsOrder = updateLabels.mock.invocationCallOrder[0]
+      expect(updatePositionsOrder).toBeLessThan(updateLabelsOrder)
+    })
+
+    it('invokes updateLabelsRef.current after the fallback setPointPositions path', () => {
+      const cosmos = makeFallbackCosmos()
+      const refs = makeRefs(cosmos)
+      const updateLabels = vi.fn()
+      const updateLabelsRef = { current: updateLabels as (() => void) | null }
+      const { result } = renderRotation(refs, updateLabelsRef)
+      act(() => result.current.rotatePositionsRef.current(45))
+      expect(updateLabels).toHaveBeenCalledTimes(1)
+    })
+
+    it('invokes updateLabelsRef on every rotation in a burst', () => {
+      const cosmos = makeFastPathCosmos()
+      const refs = makeRefs(cosmos)
+      const updateLabels = vi.fn()
+      const updateLabelsRef = { current: updateLabels as (() => void) | null }
+      const { result } = renderRotation(refs, updateLabelsRef)
+      act(() => result.current.rotatePositionsRef.current(10))
+      act(() => result.current.rotatePositionsRef.current(10))
+      act(() => result.current.rotatePositionsRef.current(10))
+      expect(updateLabels).toHaveBeenCalledTimes(3)
+    })
+
+    it('does not throw when updateLabelsRef is omitted (back-compat)', () => {
+      const cosmos = makeFastPathCosmos()
+      const refs = makeRefs(cosmos)
+      const { result } = renderRotation(refs)
+      expect(() => act(() => result.current.rotatePositionsRef.current(45))).not.toThrow()
+    })
+
+    it('does not throw when updateLabelsRef.current is null', () => {
+      const cosmos = makeFastPathCosmos()
+      const refs = makeRefs(cosmos)
+      const updateLabelsRef = { current: null as (() => void) | null }
+      const { result } = renderRotation(refs, updateLabelsRef)
+      expect(() => act(() => result.current.rotatePositionsRef.current(45))).not.toThrow()
+    })
+
+    it('does not invoke updateLabels when rotation is gated (sim running)', () => {
+      const cosmos = makeFastPathCosmos()
+      const refs = makeRefs(cosmos)
+      refs.isSimRunningRef.current = true
+      const updateLabels = vi.fn()
+      const updateLabelsRef = { current: updateLabels as (() => void) | null }
+      const { result } = renderRotation(refs, updateLabelsRef)
+      act(() => result.current.rotatePositionsRef.current(45))
+      expect(updateLabels).not.toHaveBeenCalled()
     })
   })
 })

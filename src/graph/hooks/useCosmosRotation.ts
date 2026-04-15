@@ -74,6 +74,10 @@ function getInternals(cosmos: CosmosGraph): CosmosInternals | null {
  * @param containerRef - Ref to the canvas container element (for wheel events).
  * @param hoverRef - Ref to the hover label element (hidden during rotation).
  * @param isSimRunningRef - Ref tracking simulation running state (rotation disabled during sim).
+ * @param updateLabelsRef - Optional ref to a function that re-syncs the label
+ * overlay. When provided, it is invoked after every rotation update so HTML
+ * labels follow the rotated nodes instead of staying at their pre-rotation
+ * screen positions.
  * @returns Rotation state and control callbacks.
  */
 export function useCosmosRotation(
@@ -81,6 +85,7 @@ export function useCosmosRotation(
   containerRef: React.RefObject<HTMLDivElement | null>,
   hoverRef: React.RefObject<HTMLDivElement | null>,
   isSimRunningRef: React.RefObject<boolean>,
+  updateLabelsRef?: React.RefObject<(() => void) | null>,
 ): UseCosmosRotation {
   const [rotationCenter, setRotationCenter] = useState<{ x: number; y: number } | null>(null)
   const hideRotationCenterTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -134,6 +139,11 @@ export function useCosmosRotation(
       cosmos.setPointPositions(positions, true)
       cosmos.render(0)
     }
+
+    // Re-sync the HTML label overlay so labels follow rotated nodes. Cosmos's
+    // sampler reads from the position FBO we just updated, so the next call
+    // returns fresh screen coordinates.
+    updateLabelsRef?.current?.()
 
     // Hide hover label during rotation
     if (hoverRef.current) hoverRef.current.style.display = 'none'

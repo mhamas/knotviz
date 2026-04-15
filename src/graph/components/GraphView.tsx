@@ -266,6 +266,7 @@ export function GraphView({
         />
         <div
           ref={labelsRef}
+          data-testid="node-labels"
           className="pointer-events-none absolute inset-0 overflow-hidden"
         />
         {isSimulationRunning && (

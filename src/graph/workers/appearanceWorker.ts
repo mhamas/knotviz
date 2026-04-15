@@ -178,9 +178,15 @@ function computeAppearance(input: UpdateMessage): void {
     }
   }
 
-  const msg = { pointColors, pointSizes, linkColors, matchingCount, stats, visibleNodes: visible }
+  // When no filters are active, every node is visible — send `null` instead of
+  // an all-1s array. The main thread treats `null` as "no filter mask", which
+  // lets the labels overlay take the cosmos GPU sampling fast path (otherwise
+  // a non-null mask routes labels through the stride-sampling fallback that
+  // doesn't cull off-screen samples gracefully on zoom).
+  const visibleNodes = hasActiveFilters ? visible : null
+  const msg = { pointColors, pointSizes, linkColors, matchingCount, stats, visibleNodes }
+  const transfer: ArrayBufferLike[] = [pointColors.buffer, pointSizes.buffer, linkColors.buffer]
+  if (visibleNodes) transfer.push(visibleNodes.buffer)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(self.postMessage as any)(msg, [
-    pointColors.buffer, pointSizes.buffer, linkColors.buffer, visible.buffer,
-  ])
+  ;(self.postMessage as any)(msg, transfer)
 }

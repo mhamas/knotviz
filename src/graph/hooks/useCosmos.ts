@@ -16,6 +16,20 @@ import AppearanceWorker from '@/workers/appearanceWorker?worker'
 /** Max number of node labels rendered as HTML overlays. */
 const MAX_LABELS = 300
 
+/**
+ * Spacing (px) of cosmos.gl's screen-space sampling grid for label candidates.
+ * Cosmos's `getSampledPointPositionsMap()` returns at most one point per grid
+ * cell, so this value puts a hard cap on how many label candidates we get per
+ * frame: `(screenW / LABEL_SAMPLING_PX) × (screenH / LABEL_SAMPLING_PX)`.
+ *
+ * We want the cap to comfortably exceed `MAX_LABELS`, *and* we want each
+ * cell small enough that zooming in reveals previously-clustered nodes as
+ * distinct labels. At 25 px on a 1280×800 viewport that's ~1640 candidate
+ * cells (vs. 54 with cosmos's 150 px default), so `MAX_LABELS` becomes the
+ * true cap and labels shift to the zoomed-in detail.
+ */
+const LABEL_SAMPLING_PX = 25
+
 /** Parse a hex color string to normalized [r, g, b, a] (all 0.0–1.0). Cached. */
 const rgbaCache = new Map<string, [number, number, number, number]>()
 function hexToRgba(hex: string): [number, number, number, number] {
@@ -189,8 +203,15 @@ export function useCosmos(
       const canvasH = containerRef.current?.clientHeight ?? 0
 
       if (sampled.size > 0) {
+        // Cosmos returns sampled cells in framebuffer-row order (WebGL Y is
+        // bottom-up). Naively taking the first MAX_LABELS would clump labels
+        // into one horizontal band of the screen. Stride across the iteration
+        // order instead so the kept labels are spatially evenly distributed.
+        const stride = Math.max(1, Math.ceil(sampled.size / MAX_LABELS))
+        let seen = 0
         for (const [index, [spaceX, spaceY]] of sampled) {
           if (count >= MAX_LABELS) break
+          if (seen++ % stride !== 0) continue
           const [screenX, screenY] = c.spaceToScreenPosition([spaceX, spaceY])
           if (screenX < -50 || screenX > canvasW + 50 || screenY < -50 || screenY > canvasH + 50) continue
 
@@ -303,6 +324,8 @@ export function useCosmos(
       simulationDecay: decay,
       pointGreyoutOpacity: 0.1,
       linkGreyoutOpacity: 0.1,
+      // Override cosmos's 150 px default — see LABEL_SAMPLING_PX docstring.
+      pointSamplingDistance: LABEL_SAMPLING_PX,
       attribution: '',
       onSimulationStart: () => {
         isSimRunningRef.current = true
@@ -588,7 +611,7 @@ export function useCosmos(
         linkColors: Float32Array
         matchingCount: number
         stats: PropertyStatsResult | null
-        visibleNodes: Uint8Array
+        visibleNodes: Uint8Array | null
       }
       const c = cosmosRef.current
       if (!c) return

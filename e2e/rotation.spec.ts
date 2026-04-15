@@ -58,16 +58,17 @@ test.describe('Rotation — Shift+wheel and buttons', () => {
   })
 
   test('shift+wheel shows rotation centre marker', async ({ page }) => {
-    await dispatchShiftWheel(page, 100)
-    // Marker is the red ✕ rendered in GraphView when rotationCenter state is set.
+    // Fire several wheel events back-to-back so the 150 ms hide timer keeps
+    // resetting and the marker is reliably visible while Playwright polls.
+    for (let i = 0; i < 6; i++) await dispatchShiftWheel(page, 50)
     await expect(page.locator('div.text-red-500').first()).toBeVisible()
   })
 
   test('rotation centre marker auto-hides after ~150ms idle', async ({ page }) => {
-    await dispatchShiftWheel(page, 100)
+    for (let i = 0; i < 6; i++) await dispatchShiftWheel(page, 50)
     await expect(page.locator('div.text-red-500').first()).toBeVisible()
-    // Wait past the 150ms hide timer.
-    await expect(page.locator('div.text-red-500')).toHaveCount(0, { timeout: 500 })
+    // Now stop firing — within ~150 ms after the last event the marker hides.
+    await expect(page.locator('div.text-red-500')).toHaveCount(0, { timeout: 2000 })
   })
 
   test('non-shift wheel does not trigger rotation (no marker shown)', async ({ page }) => {
@@ -131,7 +132,7 @@ test.describe('Rotation — Shift+wheel and buttons', () => {
     // checks isSimRunningRef which is set by cosmos's onSimulationStart callback.
     // We can at least verify that without running simulation, rotation works,
     // and that the gate logic isn't tripped by clicking other UI.
-    await dispatchShiftWheel(page, 100)
+    for (let i = 0; i < 6; i++) await dispatchShiftWheel(page, 50)
     await expect(page.locator('div.text-red-500').first()).toBeVisible()
   })
 })

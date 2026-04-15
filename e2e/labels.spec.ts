@@ -192,6 +192,64 @@ test.describe('Show node labels', () => {
     expect(movedFar / shared.length).toBeGreaterThan(0.5)
   })
 
+  test('labels follow the graph during canvas pan (mouse drag)', async ({ page }) => {
+    await page.getByRole('checkbox', { name: /Show node labels/ }).check()
+    await page.waitForTimeout(200)
+
+    const readPositions = async (): Promise<Record<string, [number, number]>> =>
+      await page.evaluate(() => {
+        const overlay = document.querySelector('[data-testid="node-labels"]')
+        if (!overlay) return {}
+        const out: Record<string, [number, number]> = {}
+        for (const el of Array.from(overlay.children) as HTMLElement[]) {
+          if (el.style.display === 'none') continue
+          out[el.textContent ?? ''] = [parseFloat(el.style.left), parseFloat(el.style.top)]
+        }
+        return out
+      })
+
+    const before = await readPositions()
+    expect(Object.keys(before).length).toBeGreaterThan(50)
+
+    // Pan the canvas by ~150 px to the right via mouse drag.
+    const canvas = page.getByTestId('sigma-canvas')
+    const box = await canvas.boundingBox()
+    if (!box) throw new Error('no canvas bounding box')
+    const startX = box.x + box.width / 2
+    const startY = box.y + box.height / 2
+    await page.mouse.move(startX, startY)
+    await page.mouse.down()
+    await page.mouse.move(startX + 150, startY, { steps: 10 })
+    await page.mouse.up()
+    // Cosmos's onZoom (which fires for pan too via d3-zoom) calls updateLabels.
+    await page.waitForTimeout(200)
+
+    const after = await readPositions()
+    const shared = Object.keys(before).filter((k) => k in after)
+    expect(shared.length).toBeGreaterThan(20)
+
+    // Shared labels should have shifted ~150 px in X (the pan direction).
+    let movedRight = 0
+    for (const k of shared) {
+      const dx = after[k][0] - before[k][0]
+      if (dx > 50) movedRight++
+    }
+    expect(movedRight / shared.length).toBeGreaterThan(0.5)
+  })
+
+  test('label content matches actual node labels (not just IDs)', async ({ page }) => {
+    await page.getByRole('checkbox', { name: /Show node labels/ }).check()
+    await page.waitForTimeout(200)
+    const texts = await visibleLabelTexts(page)
+    // Fixture uses labels of the form "L0", "L1", ..., not raw node IDs ("n0", "n1").
+    expect(texts.length).toBeGreaterThan(50)
+    // Every visible label should match the L-prefixed pattern (the fixture
+    // gives every node a label, so we never fall back to node ID).
+    for (const t of texts) {
+      expect(t).toMatch(/^L\d+$/)
+    }
+  })
+
   test('label count stays bounded (does not grow without limit on big graphs)', async ({ page }) => {
     await page.getByRole('checkbox', { name: /Show node labels/ }).check()
     await page.waitForTimeout(200)
@@ -199,5 +257,88 @@ test.describe('Show node labels', () => {
     // MAX_LABELS=300 in useCosmos. Allow generous slack for off-screen culling
     // and screen-grid bounding, but the cap must be respected.
     expect(count).toBeLessThanOrEqual(300)
+  })
+})
+
+test.describe('Show node labels — filter awareness', () => {
+  test.beforeEach(async ({ page }) => {
+    await loadGraph(page, 'sample-graph.json')
+  })
+
+  // Note on these tests: with no filters active, labels go through the cosmos
+  // GPU-grid sampler, which under headless SwiftShader can be non-deterministic
+  // for very small graphs (per CLAUDE.md "position readback" caveat). The
+  // assertions below check the filter-aware *contract* (subset relationship,
+  // monotonicity) rather than exact sets so they stay stable in CI.
+
+  const ALL_LABELS = new Set(['Alice', 'Bob', 'Carol', 'Dave', 'Eve'])
+  const ACTIVE_TRUE_LABELS = new Set(['Alice', 'Carol', 'Eve'])
+
+  async function visibleSet(page: Page): Promise<Set<string>> {
+    const arr = await page
+      .locator('[data-testid="node-labels"] > div:not([style*="display: none"])')
+      .allTextContents()
+    return new Set(arr)
+  }
+
+  test('every visible label corresponds to a real node label', async ({ page }) => {
+    await page.getByRole('checkbox', { name: /Show node labels/ }).check()
+    await page.waitForTimeout(200)
+    const seen = await visibleSet(page)
+    // Every label shown must be one of our 5 known names — no garbage / IDs.
+    for (const t of seen) expect(ALL_LABELS).toContain(t)
+    // And the 5-node graph should reach all of them.
+    expect(seen.size).toBeGreaterThan(0)
+  })
+
+  test('enabling the active filter restricts labels to active=true nodes', async ({ page }) => {
+    await page.getByRole('checkbox', { name: /Show node labels/ }).check()
+    await page.waitForTimeout(200)
+
+    await page.getByLabel('Toggle Filters panel').click()
+    const panel = page.getByTestId('filter-panel-active')
+    await panel.getByRole('checkbox').click()
+    await expect(page.getByTestId('filter-match-count')).toHaveText('3/5 nodes match')
+    await page.waitForTimeout(200)
+
+    const seen = await visibleSet(page)
+    // Strict filter contract: NO label from the filtered-out set may appear.
+    // (The exact subset of active=true names shown depends on cosmos's
+    // sampling under headless SwiftShader for tiny graphs — see CLAUDE.md
+    // position-readback caveat — but the filter-aware path must never leak
+    // a hidden node into the labels overlay.)
+    expect(seen.has('Bob')).toBe(false)
+    expect(seen.has('Dave')).toBe(false)
+    // And we must show at least one of the active=true labels.
+    expect(seen.size).toBeGreaterThan(0)
+    for (const t of seen) expect(ACTIVE_TRUE_LABELS).toContain(t)
+  })
+
+  test('disabling the filter expands the visible label set', async ({ page }) => {
+    await page.getByRole('checkbox', { name: /Show node labels/ }).check()
+    await page.waitForTimeout(200)
+
+    await page.getByLabel('Toggle Filters panel').click()
+    const panel = page.getByTestId('filter-panel-active')
+    await panel.getByRole('checkbox').click()
+    await expect(page.getByTestId('filter-match-count')).toHaveText('3/5 nodes match')
+    await page.waitForTimeout(200)
+    const filtered = await visibleSet(page)
+    // No leakage from the filtered-out set.
+    expect(filtered.has('Bob')).toBe(false)
+    expect(filtered.has('Dave')).toBe(false)
+
+    // Disable the filter. Worker should now send visibleNodes=null and the
+    // labels code should switch back to the cosmos sampling path.
+    await panel.getByRole('checkbox').click()
+    await expect(page.getByTestId('filter-match-count')).toHaveText('5/5 nodes match')
+    await page.waitForTimeout(300)
+    const cleared = await visibleSet(page)
+
+    // Every label is still a known one.
+    for (const t of cleared) expect(ALL_LABELS).toContain(t)
+    // Strict guard against the worker-mask-stuck regression: clearing the
+    // filter must reveal at least one previously-hidden label (Bob or Dave).
+    expect(cleared.has('Bob') || cleared.has('Dave')).toBe(true)
   })
 })

@@ -60,4 +60,21 @@ test.describe('Search highlight', () => {
     await page.getByTestId('search-box-input').fill('3')
     await expect(page.getByTestId('search-box-count')).toHaveText('1 match')
   })
+
+  test('match count drops when a filter hides some highlighted nodes', async ({ page }) => {
+    // Sample graph labels: Alice, Bob, Carol, Dave, Eve.
+    // "a" matches Alice, Carol, Dave → 3 highlighted.
+    await page.getByTestId('search-box-input').fill('a')
+    await expect(page.getByTestId('search-box-count')).toHaveText('3 matches')
+
+    // Enable the `active=true` boolean filter → Bob and Dave are hidden.
+    // Remaining highlighted ∩ visible = Alice, Carol → 2.
+    const panel = page.getByTestId('filter-panel-active')
+    await panel.getByRole('checkbox').click()
+    await expect(page.getByTestId('search-box-count')).toHaveText('2 matches')
+
+    // Disable the filter → count returns to 3.
+    await panel.getByRole('checkbox').click()
+    await expect(page.getByTestId('search-box-count')).toHaveText('3 matches')
+  })
 })

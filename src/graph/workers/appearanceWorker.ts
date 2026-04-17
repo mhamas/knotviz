@@ -168,13 +168,17 @@ function computeAppearance(input: UpdateMessage): void {
   const lowerQuery = searchQuery.toLowerCase().trim()
   if (lowerQuery.length > 0) {
     highlighted = new Uint8Array(nodeCount)
-    highlightedCount = matchQuery(lowerQuery, storedSearchHaystack, nodeCount, highlighted)
-    // Filter-hidden nodes must never be treated as highlighted.
+    matchQuery(lowerQuery, storedSearchHaystack, nodeCount, highlighted)
+    // Intersect with the filter mask — filter-hidden nodes must never count as
+    // highlighted, and a tightened filter must shrink the displayed match count.
+    let visibleMatches = 0
     for (let i = 0; i < nodeCount; i++) {
       if (!visible[i]) highlighted[i] = 0
+      else if (highlighted[i]) visibleMatches++
     }
+    highlightedCount = visibleMatches
     // Zero-match query: don't dim anything (caller shows "0 matches" text).
-    if (highlightedCount > 0) {
+    if (visibleMatches > 0) {
       applyDimming(pointColors, visible, highlighted, nodeCount, HIGHLIGHT_DIM_ALPHA)
     } else {
       highlighted = null

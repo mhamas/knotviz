@@ -23,8 +23,9 @@ describe('matchQuery', () => {
     expect(count).toBe(1)
   })
 
-  it('overwrites prior values in the out array (resets between calls)', () => {
-    const out = new Uint8Array([1, 1, 1])
+  it('leaves non-match slots untouched (caller must supply a zero buffer)', () => {
+    // Mimic the worker's contract: fresh Uint8Array is zero-initialized.
+    const out = new Uint8Array(3)
     const count = matchQuery('foo', ['xxx', 'foo', 'xxx'], 3, out)
     expect(Array.from(out)).toEqual([0, 1, 0])
     expect(count).toBe(1)

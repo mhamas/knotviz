@@ -1,7 +1,8 @@
 /**
  * Substring-match a pre-lowered query against a pre-lowered haystack per node.
- * Writes 1 into `out[i]` if the haystack contains the query, else 0. Returns
- * the total number of matches.
+ * Writes 1 into `out[i]` for each match and leaves non-matches untouched;
+ * `out` must be zero-initialized by the caller (freshly allocated is fine).
+ * Returns the total number of matches.
  *
  * Callers must pre-lowercase `query` and all entries of `haystacks` once on
  * graph load; this keeps per-keystroke cost to a single `.includes()` per node.
@@ -11,7 +12,7 @@
  * @param query - Lowercased search query.
  * @param haystacks - Per-node lowercased haystack (e.g. `"label id"`).
  * @param nodeCount - Length of the output bitmask to write.
- * @param out - Uint8Array of length ≥ nodeCount; overwritten in place.
+ * @param out - Zero-initialized Uint8Array of length ≥ nodeCount; matches written in place.
  * @returns Number of matching entries (0..nodeCount).
  * @example
  *   const out = new Uint8Array(2)
@@ -26,9 +27,10 @@ export function matchQuery(
   let count = 0
   for (let i = 0; i < nodeCount; i++) {
     const h = haystacks[i]
-    const isMatch = h !== undefined && h.includes(query)
-    out[i] = isMatch ? 1 : 0
-    if (isMatch) count++
+    if (h !== undefined && h.includes(query)) {
+      out[i] = 1
+      count++
+    }
   }
   return count
 }

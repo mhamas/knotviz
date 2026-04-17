@@ -15,13 +15,22 @@ async function loadGraph(page: Page, name: string): Promise<void> {
 }
 
 test.describe('Search highlight', () => {
+  test('search box is visible but disabled on the drop-zone screen (no graph)', async ({ page }) => {
+    await page.goto('/graph')
+    const input = page.getByTestId('search-box-input')
+    await expect(input).toBeVisible()
+    await expect(input).toBeDisabled()
+  })
+})
+
+test.describe('Search highlight (with sample graph)', () => {
   test.beforeEach(async ({ page }) => {
     await loadGraph(page, 'sample-graph.json')
-    await page.getByLabel('Toggle Filters panel').click()
   })
 
-  test('search box is visible at the top of the filters panel', async ({ page }) => {
+  test('search box is visible at the top of the left sidebar', async ({ page }) => {
     await expect(page.getByTestId('search-box-input')).toBeVisible()
+    await expect(page.getByTestId('search-box-input')).toBeEnabled()
   })
 
   test('typing a label substring shows a match count', async ({ page }) => {
@@ -98,6 +107,9 @@ test.describe('Search highlight', () => {
     // "a" matches Alice, Carol, Dave → 3 highlighted.
     await page.getByTestId('search-box-input').fill('a')
     await expect(page.getByTestId('search-box-count')).toHaveText('3 matches')
+
+    // Open the Filters panel to reach the `active` filter.
+    await page.getByLabel('Toggle Filters panel').click()
 
     // Enable the `active=true` boolean filter → Bob and Dave are hidden.
     // Remaining highlighted ∩ visible = Alice, Carol → 2.

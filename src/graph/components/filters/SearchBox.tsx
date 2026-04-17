@@ -9,9 +9,11 @@ interface Props {
   /**
    * Number of nodes matching the committed query, or `null` when no search
    * is active. 0 renders as "No matches"; positive values render with
-   * singular/plural word.
+   * singular/plural word. Suppressed entirely when `disabled` is true.
    */
   matchCount: number | null
+  /** When true, the input is read-only and no clear button / match count is shown. */
+  disabled?: boolean
 }
 
 /**
@@ -23,7 +25,7 @@ interface Props {
  * @param props - Search input state and handlers.
  * @returns Search box element.
  */
-export function SearchBox({ initialValue = '', onChange, matchCount }: Props): React.JSX.Element {
+export function SearchBox({ initialValue = '', onChange, matchCount, disabled = false }: Props): React.JSX.Element {
   const [value, setValue] = useState(initialValue)
 
   const handleChange = (next: string): void => {
@@ -31,7 +33,7 @@ export function SearchBox({ initialValue = '', onChange, matchCount }: Props): R
     onChange(next)
   }
 
-  const isQueryActive = matchCount !== null
+  const isQueryActive = !disabled && matchCount !== null
   const countLabel = matchCount === 0
     ? 'No matches'
     : matchCount === 1
@@ -47,10 +49,11 @@ export function SearchBox({ initialValue = '', onChange, matchCount }: Props): R
           data-testid="search-box-input"
           value={value}
           onChange={(e): void => handleChange(e.target.value)}
+          disabled={disabled}
           placeholder="Search label or ID…"
-          className="w-full rounded border border-slate-200 bg-white py-1 pl-6 pr-6 text-xs text-slate-700 outline-none placeholder:text-slate-300 focus:border-slate-400"
+          className="w-full rounded border border-slate-200 bg-white py-1 pl-6 pr-6 text-xs text-slate-700 outline-none placeholder:text-slate-300 focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60"
         />
-        {value.length > 0 && (
+        {!disabled && value.length > 0 && (
           <button
             type="button"
             data-testid="search-box-clear"

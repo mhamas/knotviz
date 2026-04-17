@@ -137,7 +137,7 @@ Full schema: `src/graph/lib/graphSchema.json`
 - Filters work during simulation without interrupting it
 
 ### Search & Highlight
-- **Substring search box** at the top of the Filters panel — matches against node `label` and `id` (case-insensitive)
+- **Substring search box** at the very top of the left sidebar — visible even before a graph is loaded (disabled in that state so the feature is discoverable). Matches against node `label` and `id` (case-insensitive)
 - Matching nodes stay at full opacity; non-matching visible nodes dim to alpha 0.1 so structural context is preserved
 - Edges with at least one matching endpoint stay visible; edges between two non-matching nodes are hidden (alpha 0)
 - Zero-match queries show a "No matches" indicator and do not dim (so a stale/typoed query isn't mistaken for a broken view)
@@ -217,7 +217,7 @@ Full schema: `src/graph/lib/graphSchema.json`
 
 ## Testing
 
-542 unit/component tests + 133 E2E tests (4 GPU-dependent tests skipped in headless SwiftShader). All must pass before merging (`npm run test:all`).
+545 unit/component tests + 134 E2E tests (4 GPU-dependent tests skipped in headless SwiftShader). All must pass before merging (`npm run test:all`).
 
 ### Unit Tests (`src/graph/test/`)
 
@@ -237,7 +237,7 @@ npm run test:component
 
 ### E2E Tests (`e2e/`)
 
-133 tests across 18 spec files (4 GPU-dependent tests skipped in headless SwiftShader):
+134 tests across 18 spec files (4 GPU-dependent tests skipped in headless SwiftShader):
 
 | Spec file | Tests | Covers |
 |---|---|---|
@@ -245,7 +245,7 @@ npm run test:component
 | `filters.spec.ts` | 13 | Filter panels, match count, AND logic, select/clear all, number filter features |
 | `labels.spec.ts` | 12 | Node-label HTML overlay: visibility, zoom/pan updates, rotation follow |
 | `drop-zone.spec.ts` | 11 | Initial state, file loading, invalid/empty errors, schema dialog |
-| `search-highlight.spec.ts` | 10 | Substring search, case-insensitive match, label/ID match, dim highlight; regressions for filter / edge-% / gradient interactions |
+| `search-highlight.spec.ts` | 11 | Disabled-before-load, substring search, case-insensitive match, label/ID match, dim highlight; regressions for filter / edge-% / gradient interactions |
 | `filter-interplay.spec.ts` | 10 | Graph Info reacts to filters, statistics histogram updates, degree histogram |
 | `rotation.spec.ts` | 9 | Shift+scroll rotation, rotate buttons, rotation-during-simulation gating |
 | `histogram.spec.ts` | 8 | Statistics histogram, date histogram, categorical stats |

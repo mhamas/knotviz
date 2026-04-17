@@ -69,3 +69,29 @@ test('hides match count when matchCount is null (no active search)', async () =>
   const elements = screen.getByTestId('search-box-count').elements()
   expect(elements.length).toBe(0)
 })
+
+test('when disabled, input has the disabled attribute', async () => {
+  const screen = await render(
+    <SearchBox initialValue="" matchCount={null} onChange={vi.fn()} disabled />,
+  )
+  const input = screen.getByTestId('search-box-input').element() as HTMLInputElement
+  expect(input.disabled).toBe(true)
+})
+
+test('when disabled, the clear button is hidden even if the value is non-empty', async () => {
+  const screen = await render(
+    <SearchBox initialValue="hello" matchCount={null} onChange={vi.fn()} disabled />,
+  )
+  const elements = screen.getByTestId('search-box-clear').elements()
+  expect(elements.length).toBe(0)
+})
+
+test('when disabled, match count is not shown', async () => {
+  // Even if a parent mistakenly passes a count, disabled means "no graph" →
+  // we refuse to show a misleading number.
+  const screen = await render(
+    <SearchBox initialValue="" matchCount={5} onChange={vi.fn()} disabled />,
+  )
+  const elements = screen.getByTestId('search-box-count').elements()
+  expect(elements.length).toBe(0)
+})

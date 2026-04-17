@@ -19,6 +19,7 @@ import {
   StatRow,
 } from '@/components/sidebar'
 import { Histogram } from './Histogram'
+import { SearchBox } from './filters/SearchBox'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useGraphStore } from '@/stores/useGraphStore'
 import {
@@ -85,6 +86,8 @@ export function LeftSidebar({
   const matchingNodeCount = useGraphStore((s) => s.matchingNodeCount)
   const visibleEdgeCount = useGraphStore((s) => s.visibleEdgeCount)
   const outgoingDegreeHistogram = useGraphStore((s) => s.outgoingDegreeHistogram)
+  const searchQuery = useGraphStore((s) => s.searchQuery)
+  const highlightedNodeCount = useGraphStore((s) => s.highlightedNodeCount)
 
   // Store actions
   const setRepulsion = useGraphStore((s) => s.setRepulsion)
@@ -98,6 +101,7 @@ export function LeftSidebar({
   const setIsEdgeDirectionality = useGraphStore((s) => s.setIsEdgeDirectionality)
   const setIsNodeLabelsVisible = useGraphStore((s) => s.setIsNodeLabelsVisible)
   const setIsHighlightNeighbors = useGraphStore((s) => s.setIsHighlightNeighbors)
+  const setSearchQuery = useGraphStore((s) => s.setSearchQuery)
 
   const isDisabled = !isGraphLoaded
 
@@ -108,6 +112,7 @@ export function LeftSidebar({
   // Display sliders use short debounce — they only change GPU uniforms, no worker involved
   const debouncedNodeSizeChange = useDebounce(setNodeSize, 30)
   const debouncedEdgeSizeChange = useDebounce(setEdgeSize, 30)
+  const debouncedSetSearchQuery = useDebounce(setSearchQuery, 150)
 
   if (!isOpen) {
     return (
@@ -126,6 +131,17 @@ export function LeftSidebar({
 
   return (
     <div className="flex h-full w-60 shrink-0 flex-col gap-2 overflow-y-auto border-r border-slate-200 bg-white px-4 pt-4 pb-4">
+      {/* Search — always visible; disabled until a graph is loaded. Remounted
+          on graph load/reset via `key` so its local input state stays in sync
+          with the store's searchQuery after resetStore(). */}
+      <SearchBox
+        key={isGraphLoaded ? 'loaded' : 'empty'}
+        initialValue={searchQuery}
+        onChange={debouncedSetSearchQuery}
+        matchCount={highlightedNodeCount}
+        disabled={isDisabled}
+      />
+
       <div className={isDisabled ? 'pointer-events-none opacity-40' : ''}>
       {/* Simulation */}
       <div>

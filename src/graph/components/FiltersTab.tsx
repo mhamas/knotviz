@@ -1,9 +1,6 @@
 import type { NodePropertiesMetadata, PropertyMeta } from '../types'
 import type { FilterStateHandle } from '../hooks/useFilterState'
 import { PropertyFilterPanel } from './filters/PropertyFilterPanel'
-import { SearchBox } from './filters/SearchBox'
-import { useDebounce } from '../hooks/useDebounce'
-import { useGraphStore } from '../stores/useGraphStore'
 
 interface Props {
   propertyMetas: PropertyMeta[]
@@ -38,27 +35,12 @@ export function FiltersTab({ propertyMetas, nodePropertiesMetadata, filterHandle
   const matchCount = matchingCount
   const sortedMetas = [...propertyMetas].sort((a, b) => a.key.localeCompare(b.key))
 
-  const searchQuery = useGraphStore((s) => s.searchQuery)
-  const highlightedNodeCount = useGraphStore((s) => s.highlightedNodeCount)
-  const setSearchQuery = useGraphStore((s) => s.setSearchQuery)
-  const debouncedSetSearchQuery = useDebounce(setSearchQuery, 150)
+  if (propertyMetas.length === 0) {
+    return <p className="text-xs italic text-slate-400">No properties.</p>
+  }
 
   return (
     <div className="flex flex-col">
-      {/* Search — always rendered so user can highlight even without properties */}
-      <div className="mb-3">
-        <SearchBox
-          key={resetKey}
-          initialValue={searchQuery}
-          onChange={debouncedSetSearchQuery}
-          matchCount={highlightedNodeCount}
-        />
-      </div>
-
-      {propertyMetas.length === 0 ? (
-        <p className="text-xs italic text-slate-400">No properties.</p>
-      ) : (
-        <>
       {/* Header */}
       <div>
         <p className="text-xs font-medium text-slate-700" aria-live="polite" data-testid="filter-match-count">
@@ -128,8 +110,6 @@ export function FiltersTab({ propertyMetas, nodePropertiesMetadata, filterHandle
           )
         })}
       </div>
-        </>
-      )}
     </div>
   )
 }

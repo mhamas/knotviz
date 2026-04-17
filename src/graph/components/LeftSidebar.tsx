@@ -335,10 +335,10 @@ export function LeftSidebar({
         <div className="flex gap-1">
           <button
             type="button"
-            className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors ${isAnalysisOpen ? 'border-amber-200' : 'border-slate-200 hover:bg-slate-100'} disabled:pointer-events-none disabled:opacity-40`}
+            className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors ${isAnalysisOpen ? 'border-amber-200' : 'border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100'} disabled:pointer-events-none disabled:opacity-40`}
             style={isAnalysisOpen
               ? { backgroundColor: COLOR_TAB_COLORS_BG, color: COLOR_TAB_COLORS }
-              : { color: '#64748b' }}
+              : undefined}
             onClick={onToggleAnalysis}
             disabled={isDisabled}
             data-testid="left-toggle-analysis"
@@ -348,10 +348,10 @@ export function LeftSidebar({
           </button>
           <button
             type="button"
-            className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors ${isFiltersOpen ? 'border-blue-200' : 'border-slate-200 hover:bg-slate-100'} disabled:pointer-events-none disabled:opacity-40`}
+            className={`flex flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors ${isFiltersOpen ? 'border-blue-200' : 'border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100'} disabled:pointer-events-none disabled:opacity-40`}
             style={isFiltersOpen
               ? { backgroundColor: COLOR_TAB_FILTERS_BG, color: COLOR_TAB_FILTERS }
-              : { color: '#64748b' }}
+              : undefined}
             onClick={onToggleFilters}
             disabled={isDisabled}
             data-testid="left-toggle-filters"

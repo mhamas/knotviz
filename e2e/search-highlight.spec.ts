@@ -61,6 +61,38 @@ test.describe('Search highlight', () => {
     await expect(page.getByTestId('search-box-count')).toHaveText('1 match')
   })
 
+  test('match count survives an edge-% slider change (updateLinks path)', async ({ page }) => {
+    await page.getByTestId('search-box-input').fill('a')
+    await expect(page.getByTestId('search-box-count')).toHaveText('3 matches')
+
+    // Drive the edge percentage slider — this triggers the worker's updateLinks
+    // path, which re-runs appearance with cached params. The node-level
+    // highlight should be untouched; count stays at 3.
+    const slider = page.getByRole('slider').filter({ hasText: '' }).first()
+    await slider.focus()
+    await page.keyboard.press('Home') // jump to min — strongest single change
+    await expect(page.getByTestId('search-box-count')).toHaveText('3 matches')
+
+    await page.keyboard.press('End') // back to max
+    await expect(page.getByTestId('search-box-count')).toHaveText('3 matches')
+  })
+
+  test('highlight survives switching the color gradient on and off', async ({ page }) => {
+    await page.getByTestId('search-box-input').fill('a')
+    await expect(page.getByTestId('search-box-count')).toHaveText('3 matches')
+
+    // Open Analysis panel, switch to color mode, pick age → gradient active.
+    await page.getByLabel('Toggle Analysis panel').click()
+    await page.getByTestId('visual-mode-color').click()
+    await page.getByTestId('color-property-select').click()
+    await page.getByRole('option', { name: 'age' }).click()
+    await expect(page.getByTestId('color-legend-gradient')).toBeVisible()
+
+    // Search count is unchanged and still correct after the gradient pipeline
+    // has rewritten RGB + alpha=1 for visible nodes — dimming must re-apply.
+    await expect(page.getByTestId('search-box-count')).toHaveText('3 matches')
+  })
+
   test('match count drops when a filter hides some highlighted nodes', async ({ page }) => {
     // Sample graph labels: Alice, Bob, Carol, Dave, Eve.
     // "a" matches Alice, Carol, Dave → 3 highlighted.

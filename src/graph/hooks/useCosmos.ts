@@ -606,12 +606,13 @@ export function useCosmos(
     const worker = new AppearanceWorker()
     workerRef.current = worker
     worker.onmessage = (e: MessageEvent): void => {
-      const { pointColors, pointSizes, linkColors, matchingCount: mc, highlightedCount: hc, stats: s, visibleNodes: vn } = e.data as {
+      const { pointColors, pointSizes, linkColors, matchingCount: mc, highlightedCount: hc, highlightedSamples: hs, stats: s, visibleNodes: vn } = e.data as {
         pointColors: Float32Array
         pointSizes: Float32Array
         linkColors: Float32Array
         matchingCount: number
         highlightedCount: number | null
+        highlightedSamples: Array<{ id: string; label: string }>
         stats: PropertyStatsResult | null
         visibleNodes: Uint8Array | null
       }
@@ -628,6 +629,7 @@ export function useCosmos(
       setVisibleNodes(vn)
       setPropertyStats(s)
       useGraphStore.getState().setHighlightedNodeCount(hc)
+      useGraphStore.getState().setSearchMatches(hs ?? [])
       // Refresh labels so filtered-out nodes are hidden
       updateLabelsRef.current?.()
     }

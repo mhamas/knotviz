@@ -28,6 +28,13 @@ describe('useGraphStore', () => {
     expect(state.outgoingDegreeHistogram).toEqual([])
     expect(state.searchQuery).toBe('')
     expect(state.highlightedNodeCount).toBeNull()
+    expect(state.searchMatches).toEqual([])
+  })
+
+  it('setSearchMatches updates searchMatches', () => {
+    const matches = [{ id: '1', label: 'Alice' }, { id: '2', label: 'Bob' }]
+    useGraphStore.getState().setSearchMatches(matches)
+    expect(useGraphStore.getState().searchMatches).toEqual(matches)
   })
 
   it('setSearchQuery updates searchQuery', () => {
@@ -42,12 +49,14 @@ describe('useGraphStore', () => {
     expect(useGraphStore.getState().highlightedNodeCount).toBeNull()
   })
 
-  it('resetStore clears searchQuery and highlightedNodeCount', () => {
+  it('resetStore clears searchQuery, highlightedNodeCount, and searchMatches', () => {
     useGraphStore.getState().setSearchQuery('abc')
     useGraphStore.getState().setHighlightedNodeCount(5)
+    useGraphStore.getState().setSearchMatches([{ id: '1', label: 'Alice' }])
     useGraphStore.getState().resetStore()
     expect(useGraphStore.getState().searchQuery).toBe('')
     expect(useGraphStore.getState().highlightedNodeCount).toBeNull()
+    expect(useGraphStore.getState().searchMatches).toEqual([])
   })
 
   it('setNodeSize updates nodeSize', () => {

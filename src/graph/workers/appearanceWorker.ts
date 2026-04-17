@@ -10,6 +10,7 @@ import { applyGradient } from '../lib/applyGradient'
 import { computeFilteredStats } from '../lib/computeStats'
 import { matchQuery } from '../lib/matchQuery'
 import { applyDimming, computeLinkColors } from '../lib/applyHighlight'
+import { collectSamples } from '../lib/collectSamples'
 
 /** Base point size before pointSizeScale is applied by the GPU shader. */
 const BASE_POINT_SIZE = 4
@@ -30,6 +31,13 @@ let storedColumns: Record<string, (number | string | boolean | string[] | undefi
 let storedLinkIndices: Float32Array = new Float32Array(0)
 /** Per-node lowercased "label id" haystack, built once on init. */
 let storedSearchHaystack: string[] = []
+/** Per-node labels (preserved from init, used to sample dropdown candidates). */
+let storedNodeLabels: (string | undefined)[] = []
+/** Per-node ids (preserved from init, used to sample dropdown candidates). */
+let storedNodeIds: string[] = []
+
+/** Max dropdown samples returned to the UI on each search update. */
+const SEARCH_SAMPLE_LIMIT = 25
 
 interface InitMessage {
   type: 'init'
@@ -71,6 +79,8 @@ self.onmessage = (e: MessageEvent<InitMessage | UpdateLinksMessage | UpdateMessa
     storedColumns = input.propertyColumns
     storedLinkIndices = input.linkIndices
     const { nodeLabels, nodeIds } = input
+    storedNodeLabels = nodeLabels
+    storedNodeIds = nodeIds
     const n = nodeIds.length
     storedSearchHaystack = new Array(n)
     for (let i = 0; i < n; i++) {
@@ -165,6 +175,7 @@ function computeAppearance(input: UpdateMessage): void {
   // Applied AFTER gradient (which always writes alpha=1) so dimming wins.
   let highlighted: Uint8Array | null = null
   let highlightedCount: number | null = null
+  let highlightedSamples: Array<{ id: string; label: string }> = []
   const lowerQuery = searchQuery.toLowerCase().trim()
   if (lowerQuery.length > 0) {
     highlighted = new Uint8Array(nodeCount)
@@ -180,6 +191,7 @@ function computeAppearance(input: UpdateMessage): void {
     // Zero-match query: don't dim anything (caller shows "0 matches" text).
     if (visibleMatches > 0) {
       applyDimming(pointColors, visible, highlighted, nodeCount, HIGHLIGHT_DIM_ALPHA)
+      highlightedSamples = collectSamples(highlighted, storedNodeLabels, storedNodeIds, nodeCount, SEARCH_SAMPLE_LIMIT)
     } else {
       highlighted = null
     }
@@ -219,7 +231,7 @@ function computeAppearance(input: UpdateMessage): void {
   // a non-null mask routes labels through the stride-sampling fallback that
   // doesn't cull off-screen samples gracefully on zoom).
   const visibleNodes = hasActiveFilters ? visible : null
-  const msg = { pointColors, pointSizes, linkColors, matchingCount, highlightedCount, stats, visibleNodes }
+  const msg = { pointColors, pointSizes, linkColors, matchingCount, highlightedCount, highlightedSamples, stats, visibleNodes }
   const transfer: ArrayBufferLike[] = [pointColors.buffer, pointSizes.buffer, linkColors.buffer]
   if (visibleNodes) transfer.push(visibleNodes.buffer)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

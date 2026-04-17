@@ -30,6 +30,8 @@ interface GraphMeta {
   searchQuery: string
   /** Node count matching the active search; `null` when no search is active. */
   highlightedNodeCount: number | null
+  /** First N highlighted nodes for the search dropdown (see SEARCH_SAMPLE_LIMIT in the worker). */
+  searchMatches: Array<{ id: string; label: string }>
 }
 
 interface Actions {
@@ -49,6 +51,7 @@ interface Actions {
   setVisibleState: (matchingNodeCount: number, visibleEdgeCount: number, outgoingDegreeHistogram: HistogramBucket[]) => void
   setSearchQuery: (q: string) => void
   setHighlightedNodeCount: (n: number | null) => void
+  setSearchMatches: (m: Array<{ id: string; label: string }>) => void
   resetStore: () => void
 }
 
@@ -79,6 +82,7 @@ export const STORE_DEFAULTS: DisplayState & SimulationState & GraphMeta = {
   outgoingDegreeHistogram: [],
   searchQuery: '',
   highlightedNodeCount: null,
+  searchMatches: [],
 }
 
 /**
@@ -112,5 +116,6 @@ export const useGraphStore = create<GraphStore>()((set) => ({
   },
   setSearchQuery: (q): void => set({ searchQuery: q }),
   setHighlightedNodeCount: (n): void => set({ highlightedNodeCount: n }),
+  setSearchMatches: (m): void => set({ searchMatches: m }),
   resetStore: (): void => set(STORE_DEFAULTS),
 }))

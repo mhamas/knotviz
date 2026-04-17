@@ -88,6 +88,7 @@ export function LeftSidebar({
   const outgoingDegreeHistogram = useGraphStore((s) => s.outgoingDegreeHistogram)
   const searchQuery = useGraphStore((s) => s.searchQuery)
   const highlightedNodeCount = useGraphStore((s) => s.highlightedNodeCount)
+  const searchMatches = useGraphStore((s) => s.searchMatches)
 
   // Store actions
   const setRepulsion = useGraphStore((s) => s.setRepulsion)
@@ -143,6 +144,7 @@ export function LeftSidebar({
             initialValue={searchQuery}
             onChange={debouncedSetSearchQuery}
             matchCount={highlightedNodeCount}
+            matches={searchMatches}
             disabled={isDisabled}
           />
         </div>

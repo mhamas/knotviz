@@ -102,6 +102,41 @@ test.describe('Search highlight (with sample graph)', () => {
     await expect(page.getByTestId('search-box-count')).toHaveText('3 matches')
   })
 
+  test('typing opens a dropdown and clicking a candidate narrows to that node', async ({ page }) => {
+    const input = page.getByTestId('search-box-input')
+    await input.click()
+    await input.fill('a') // Alice, Carol, Dave → 3 matches
+    await expect(page.getByTestId('search-box-count')).toHaveText('3 matches')
+    await expect(page.getByTestId('search-box-dropdown')).toBeVisible()
+    const options = page.getByTestId('search-box-option')
+    await expect(options).toHaveCount(3)
+
+    // Click the second option → input filled with its label → match count
+    // narrows to the single exact-label hit.
+    await options.nth(1).click()
+    const picked = await input.inputValue()
+    expect(['Carol', 'Dave']).toContain(picked)
+    await expect(page.getByTestId('search-box-count')).toHaveText('1 match')
+  })
+
+  test('dropdown closes on Escape', async ({ page }) => {
+    const input = page.getByTestId('search-box-input')
+    await input.click()
+    await input.fill('a')
+    await expect(page.getByTestId('search-box-dropdown')).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page.getByTestId('search-box-dropdown')).toHaveCount(0)
+  })
+
+  test('dropdown closes when the user clicks outside the sidebar', async ({ page }) => {
+    const input = page.getByTestId('search-box-input')
+    await input.click()
+    await input.fill('a')
+    await expect(page.getByTestId('search-box-dropdown')).toBeVisible()
+    await page.getByTestId('sigma-canvas').click({ position: { x: 400, y: 300 } })
+    await expect(page.getByTestId('search-box-dropdown')).toHaveCount(0)
+  })
+
   test('match count drops when a filter hides some highlighted nodes', async ({ page }) => {
     // Sample graph labels: Alice, Bob, Carol, Dave, Eve.
     // "a" matches Alice, Carol, Dave → 3 highlighted.

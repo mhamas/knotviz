@@ -142,6 +142,8 @@ Full schema: `src/graph/lib/graphSchema.json`
 - Edges with at least one matching endpoint stay visible; edges between two non-matching nodes are hidden (alpha 0)
 - Zero-match queries show a "No matches" indicator and do not dim (so a stale/typoed query isn't mistaken for a broken view)
 - Filter visibility wins: filter-hidden nodes never reappear via search. If a filter later hides some matches, the "X matches" count shrinks accordingly
+- **Autocomplete dropdown** while typing shows up to 25 matching labels (click or Enter to narrow the highlight to that one node, Arrow keys to navigate, Escape or outside click to close). A footer indicates when more matches exist than fit in the sample (e.g. "Showing 25 of 12,340 matches")
+- Long labels truncate with an ellipsis; the full text is available on hover via the `title` tooltip
 - 150 ms input debounce — keystrokes feel instant because the input is locally controlled; only the committed query reaches the worker
 - Source-agnostic primitive: the worker consumes a `highlighted: Uint8Array` bitmask regardless of origin, so future input sources (box-select, programmatic selection) reuse the same render path
 
@@ -217,7 +219,7 @@ Full schema: `src/graph/lib/graphSchema.json`
 
 ## Testing
 
-545 unit/component tests + 134 E2E tests (4 GPU-dependent tests skipped in headless SwiftShader). All must pass before merging (`npm run test:all`).
+561 unit/component tests + 137 E2E tests (4 GPU-dependent tests skipped in headless SwiftShader). All must pass before merging (`npm run test:all`).
 
 ### Unit Tests (`src/graph/test/`)
 
@@ -237,7 +239,7 @@ npm run test:component
 
 ### E2E Tests (`e2e/`)
 
-134 tests across 18 spec files (4 GPU-dependent tests skipped in headless SwiftShader):
+137 tests across 18 spec files (4 GPU-dependent tests skipped in headless SwiftShader):
 
 | Spec file | Tests | Covers |
 |---|---|---|
@@ -245,7 +247,7 @@ npm run test:component
 | `filters.spec.ts` | 13 | Filter panels, match count, AND logic, select/clear all, number filter features |
 | `labels.spec.ts` | 12 | Node-label HTML overlay: visibility, zoom/pan updates, rotation follow |
 | `drop-zone.spec.ts` | 11 | Initial state, file loading, invalid/empty errors, schema dialog |
-| `search-highlight.spec.ts` | 11 | Disabled-before-load, substring search, case-insensitive match, label/ID match, dim highlight; regressions for filter / edge-% / gradient interactions |
+| `search-highlight.spec.ts` | 14 | Disabled-before-load, substring search, case-insensitive match, label/ID match, dim highlight, autocomplete dropdown (click to narrow, Escape, outside click); regressions for filter / edge-% / gradient interactions |
 | `filter-interplay.spec.ts` | 10 | Graph Info reacts to filters, statistics histogram updates, degree histogram |
 | `rotation.spec.ts` | 9 | Shift+scroll rotation, rotate buttons, rotation-during-simulation gating |
 | `histogram.spec.ts` | 8 | Statistics histogram, date histogram, categorical stats |
@@ -309,6 +311,7 @@ knotviz/
 │   │   │   ├── applyGradient.ts         # Color/size mapping (sqrt scaling for size)
 │   │   │   ├── applyHighlight.ts        # Alpha dimming + highlight-aware link colors
 │   │   │   ├── matchQuery.ts            # Pre-lowered substring match (hot path)
+│   │   │   ├── collectSamples.ts        # First-N-set-bits sampler for the search dropdown
 │   │   │   ├── appearanceUtils.ts       # Shared filter/color utilities
 │   │   │   ├── colorScales.ts           # Palette definitions + interpolation
 │   │   │   ├── computeStats.ts          # Descriptive statistics (percentiles, sum)

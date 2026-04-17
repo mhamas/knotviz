@@ -26,6 +26,10 @@ interface GraphMeta {
   matchingNodeCount: number
   visibleEdgeCount: number
   outgoingDegreeHistogram: HistogramBucket[]
+  /** Substring search query for the "highlight subset" mode. Empty = inactive. */
+  searchQuery: string
+  /** Node count matching the active search; `null` when no search is active. */
+  highlightedNodeCount: number | null
 }
 
 interface Actions {
@@ -43,6 +47,8 @@ interface Actions {
   setIsKeepAtLeastOneEdge: (v: boolean) => void
   setGraphLoaded: (nodeCount: number, edgeCount: number) => void
   setVisibleState: (matchingNodeCount: number, visibleEdgeCount: number, outgoingDegreeHistogram: HistogramBucket[]) => void
+  setSearchQuery: (q: string) => void
+  setHighlightedNodeCount: (n: number | null) => void
   resetStore: () => void
 }
 
@@ -71,6 +77,8 @@ export const STORE_DEFAULTS: DisplayState & SimulationState & GraphMeta = {
   matchingNodeCount: 0,
   visibleEdgeCount: 0,
   outgoingDegreeHistogram: [],
+  searchQuery: '',
+  highlightedNodeCount: null,
 }
 
 /**
@@ -102,5 +110,7 @@ export const useGraphStore = create<GraphStore>()((set) => ({
   setVisibleState: (matchingNodeCount, visibleEdgeCount, outgoingDegreeHistogram): void => {
     set({ matchingNodeCount, visibleEdgeCount, outgoingDegreeHistogram })
   },
+  setSearchQuery: (q): void => set({ searchQuery: q }),
+  setHighlightedNodeCount: (n): void => set({ highlightedNodeCount: n }),
   resetStore: (): void => set(STORE_DEFAULTS),
 }))

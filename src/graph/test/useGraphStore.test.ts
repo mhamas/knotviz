@@ -26,6 +26,28 @@ describe('useGraphStore', () => {
     expect(state.matchingNodeCount).toBe(0)
     expect(state.visibleEdgeCount).toBe(0)
     expect(state.outgoingDegreeHistogram).toEqual([])
+    expect(state.searchQuery).toBe('')
+    expect(state.highlightedNodeCount).toBeNull()
+  })
+
+  it('setSearchQuery updates searchQuery', () => {
+    useGraphStore.getState().setSearchQuery('foo')
+    expect(useGraphStore.getState().searchQuery).toBe('foo')
+  })
+
+  it('setHighlightedNodeCount updates highlightedNodeCount', () => {
+    useGraphStore.getState().setHighlightedNodeCount(7)
+    expect(useGraphStore.getState().highlightedNodeCount).toBe(7)
+    useGraphStore.getState().setHighlightedNodeCount(null)
+    expect(useGraphStore.getState().highlightedNodeCount).toBeNull()
+  })
+
+  it('resetStore clears searchQuery and highlightedNodeCount', () => {
+    useGraphStore.getState().setSearchQuery('abc')
+    useGraphStore.getState().setHighlightedNodeCount(5)
+    useGraphStore.getState().resetStore()
+    expect(useGraphStore.getState().searchQuery).toBe('')
+    expect(useGraphStore.getState().highlightedNodeCount).toBeNull()
   })
 
   it('setNodeSize updates nodeSize', () => {

@@ -8,9 +8,13 @@ import type { PropertyType, PropertyStatsResult, VisualMode } from '../types'
 import { passesFilter, hexToRgbNorm } from '../lib/appearanceUtils'
 import { applyGradient } from '../lib/applyGradient'
 import { computeFilteredStats } from '../lib/computeStats'
+import { matchQuery } from '../lib/matchQuery'
+import { applyDimming, computeLinkColors } from '../lib/applyHighlight'
 
 /** Base point size before pointSizeScale is applied by the GPU shader. */
 const BASE_POINT_SIZE = 4
+/** Alpha multiplier for non-highlighted nodes when a search query is active. */
+const HIGHLIGHT_DIM_ALPHA = 0.1
 
 interface GradientConfig {
   propertyKey: string | null
@@ -24,11 +28,15 @@ interface GradientConfig {
 // Persistent state: columns sent once on graph load, reused across messages
 let storedColumns: Record<string, (number | string | boolean | string[] | undefined)[]> = {}
 let storedLinkIndices: Float32Array = new Float32Array(0)
+/** Per-node lowercased "label id" haystack, built once on init. */
+let storedSearchHaystack: string[] = []
 
 interface InitMessage {
   type: 'init'
   propertyColumns: Record<string, (number | string | boolean | string[] | undefined)[]>
   linkIndices: Float32Array
+  nodeLabels: (string | undefined)[]
+  nodeIds: string[]
 }
 
 interface UpdateLinksMessage {
@@ -49,6 +57,8 @@ interface UpdateMessage {
   statsConfig: StatsConfig
   defaultRgba: [number, number, number, number]
   edgeRgba: [number, number, number, number]
+  /** Substring search; empty string = no highlight mode. */
+  searchQuery: string
 }
 
 // Cache last update params so we can recompute when links change
@@ -60,6 +70,13 @@ self.onmessage = (e: MessageEvent<InitMessage | UpdateLinksMessage | UpdateMessa
   if (input.type === 'init') {
     storedColumns = input.propertyColumns
     storedLinkIndices = input.linkIndices
+    const { nodeLabels, nodeIds } = input
+    const n = nodeIds.length
+    storedSearchHaystack = new Array(n)
+    for (let i = 0; i < n; i++) {
+      const label = nodeLabels[i] ?? ''
+      storedSearchHaystack[i] = (label + ' ' + nodeIds[i]).toLowerCase()
+    }
     lastUpdateParams = null
     return
   }
@@ -78,7 +95,7 @@ self.onmessage = (e: MessageEvent<InitMessage | UpdateLinksMessage | UpdateMessa
 }
 
 function computeAppearance(input: UpdateMessage): void {
-  const { nodeCount, filters, gradientConfig, statsConfig, defaultRgba, edgeRgba } = input
+  const { nodeCount, filters, gradientConfig, statsConfig, defaultRgba, edgeRgba, searchQuery } = input
   const linkIndices = storedLinkIndices
 
   // Step 1: Compute matching bitmask
@@ -144,32 +161,46 @@ function computeAppearance(input: UpdateMessage): void {
     }
   }
 
-  // Step 4: Link colors
+  // Step 4: Highlight (search) pass — dims non-highlighted visible nodes.
+  // Applied AFTER gradient (which always writes alpha=1) so dimming wins.
+  let highlighted: Uint8Array | null = null
+  let highlightedCount: number | null = null
+  const lowerQuery = searchQuery.toLowerCase().trim()
+  if (lowerQuery.length > 0) {
+    highlighted = new Uint8Array(nodeCount)
+    highlightedCount = matchQuery(lowerQuery, storedSearchHaystack, nodeCount, highlighted)
+    // Filter-hidden nodes must never be treated as highlighted.
+    for (let i = 0; i < nodeCount; i++) {
+      if (!visible[i]) highlighted[i] = 0
+    }
+    // Zero-match query: don't dim anything (caller shows "0 matches" text).
+    if (highlightedCount > 0) {
+      applyDimming(pointColors, visible, highlighted, nodeCount, HIGHLIGHT_DIM_ALPHA)
+    } else {
+      highlighted = null
+    }
+  }
+
+  // Step 5: Link colors
+  //   - Highlight active: both endpoints filter-visible AND ≥1 highlighted.
+  //   - No highlight, filters active: both endpoints filter-visible.
+  //   - No highlight, no filters: empty buffer → Cosmos uses its default color.
   let linkColors: Float32Array
-  if (hasActiveFilters) {
+  if (hasActiveFilters || highlighted) {
     const linkCount = linkIndices.length / 2
     linkColors = new Float32Array(linkCount * 4)
-    const [er0, er1, er2, er3] = edgeRgba
-    for (let i = 0; i < linkCount; i++) {
-      if (visible[linkIndices[i * 2]] && visible[linkIndices[i * 2 + 1]]) {
-        const off = i * 4
-        linkColors[off] = er0
-        linkColors[off + 1] = er1
-        linkColors[off + 2] = er2
-        linkColors[off + 3] = er3
-      }
-    }
+    computeLinkColors(linkColors, linkIndices, visible, highlighted, linkCount, edgeRgba)
   } else {
     linkColors = new Float32Array(0)
   }
 
-  // Step 5: Count matching nodes
+  // Step 6: Count matching nodes
   let matchingCount = 0
   for (let i = 0; i < nodeCount; i++) {
     if (visible[i]) matchingCount++
   }
 
-  // Step 6: Compute stats for the selected color property over visible nodes
+  // Step 7: Compute stats for the selected color property over visible nodes
   let stats: PropertyStatsResult | null = null
   if (statsConfig.propertyKey && statsConfig.propertyType) {
     const col = storedColumns[statsConfig.propertyKey]
@@ -184,7 +215,7 @@ function computeAppearance(input: UpdateMessage): void {
   // a non-null mask routes labels through the stride-sampling fallback that
   // doesn't cull off-screen samples gracefully on zoom).
   const visibleNodes = hasActiveFilters ? visible : null
-  const msg = { pointColors, pointSizes, linkColors, matchingCount, stats, visibleNodes }
+  const msg = { pointColors, pointSizes, linkColors, matchingCount, highlightedCount, stats, visibleNodes }
   const transfer: ArrayBufferLike[] = [pointColors.buffer, pointSizes.buffer, linkColors.buffer]
   if (visibleNodes) transfer.push(visibleNodes.buffer)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

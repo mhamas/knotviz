@@ -117,6 +117,7 @@ export function useCosmos(
   const decay = useGraphStore((s) => s.decay)
   const edgePercentage = useGraphStore((s) => s.edgePercentage)
   const isKeepAtLeastOneEdge = useGraphStore((s) => s.isKeepAtLeastOneEdge)
+  const searchQuery = useGraphStore((s) => s.searchQuery)
 
   // Refs for callback closures
   const dataRef = useRef(data)
@@ -605,11 +606,12 @@ export function useCosmos(
     const worker = new AppearanceWorker()
     workerRef.current = worker
     worker.onmessage = (e: MessageEvent): void => {
-      const { pointColors, pointSizes, linkColors, matchingCount: mc, stats: s, visibleNodes: vn } = e.data as {
+      const { pointColors, pointSizes, linkColors, matchingCount: mc, highlightedCount: hc, stats: s, visibleNodes: vn } = e.data as {
         pointColors: Float32Array
         pointSizes: Float32Array
         linkColors: Float32Array
         matchingCount: number
+        highlightedCount: number | null
         stats: PropertyStatsResult | null
         visibleNodes: Uint8Array | null
       }
@@ -625,6 +627,7 @@ export function useCosmos(
       visibleNodesRef.current = vn
       setVisibleNodes(vn)
       setPropertyStats(s)
+      useGraphStore.getState().setHighlightedNodeCount(hc)
       // Refresh labels so filtered-out nodes are hidden
       updateLabelsRef.current?.()
     }
@@ -640,6 +643,8 @@ export function useCosmos(
       type: 'init',
       propertyColumns,
       linkIndices: filteredLinksRef.current,
+      nodeLabels: data.nodeLabels,
+      nodeIds: data.nodeIds,
     })
     // Also trigger initial appearance
     setMatchingCount(data.nodeCount)
@@ -697,8 +702,9 @@ export function useCosmos(
       },
       defaultRgba: hexToRgba(COLOR_DEFAULT),
       edgeRgba: hexToRgba(COLOR_EDGE_DEFAULT),
+      searchQuery,
     })
-  }, [data, filters, gradientState, propertyTypeMap])
+  }, [data, filters, gradientState, propertyTypeMap, searchQuery])
 
   // ── Sync highlight neighbors ──
   useEffect(() => {

@@ -51,7 +51,7 @@ export function SearchBox({ initialValue = '', onChange, matchCount, disabled = 
           onChange={(e): void => handleChange(e.target.value)}
           disabled={disabled}
           placeholder="Search label or ID…"
-          className="w-full rounded border border-slate-200 bg-white py-1 pl-6 pr-6 text-xs text-slate-700 outline-none placeholder:text-slate-300 focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60"
+          className="w-full rounded border border-slate-300 bg-white py-1 pl-6 pr-6 text-xs text-slate-700 shadow-sm outline-none placeholder:text-slate-300 focus:border-slate-400 disabled:cursor-not-allowed disabled:opacity-60"
         />
         {!disabled && value.length > 0 && (
           <button

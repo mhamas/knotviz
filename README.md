@@ -29,7 +29,7 @@ Knotviz is engineered for large-scale graph visualization:
 
 - **GPU rendering + simulation**: All rendering and force simulation run on the GPU via `@cosmos.gl/graph`. CPU does almost nothing during interaction.
 - **Web Worker loading**: File parsing runs in a dedicated worker — the UI stays responsive with a progress indicator. Files < 200MB use fast `JSON.parse`; files >= 200MB use a custom streaming parser.
-- **Web Worker appearance pipeline**: Filter matching, gradient coloring, and link visibility are computed in a separate worker. The main thread only posts filter/gradient config (~1KB) and receives pre-built `Float32Array`s back (zero-copy transfer).
+- **Web Worker appearance pipeline**: Filter matching, gradient coloring, link visibility, and substring-search highlight are all computed in a separate worker. The main thread only posts filter/gradient/search config (~1KB) and receives pre-built `Float32Array`s back (zero-copy transfer).
 - **Compact data model**: Nodes stored as parallel arrays (`nodeIds[]`, `nodeLabels[]`) + columnar property arrays instead of full objects. ~80% less memory than `NodeInput[]`.
 - **GPU shader uniforms**: Node size and edge size sliders change `pointSizeScale`/`linkWidthScale` shader uniforms — instant response, no data rebuild.
 - **Cached hex-to-RGBA conversion**: Only ~20 unique colors exist in practice, but the conversion may be called millions of times. Results are cached.
@@ -40,6 +40,7 @@ Knotviz is engineered for large-scale graph visualization:
 - **Simulation space**: Bounded by GPU texture size (8192x8192 max). Very large graphs with strong repulsion will fill the space.
 - **Rotation**: Transforms actual node positions via rotation matrix around center of mass — no CSS transform, canvas always fills the viewport.
 - **Filters**: Filtered-out nodes are fully hidden (alpha=0, size=0), not just dimmed. Edges to hidden nodes are also hidden.
+- **Search highlight**: Non-matching nodes are *dimmed* (alpha 0.1), not hidden — context stays visible. Filter visibility wins: filter-hidden nodes never reappear even if they match the search.
 - **Export**: For very large graphs (> 1M nodes), export creates a large JSON file. Consider disabling pretty-printing for smaller file size.
 
 ## Input Format
@@ -135,6 +136,15 @@ Full schema: `src/graph/lib/graphSchema.json`
 - Property descriptions from `nodePropertiesMetadata` shown as help popovers
 - Filters work during simulation without interrupting it
 
+### Search & Highlight
+- **Substring search box** at the top of the Filters panel — matches against node `label` and `id` (case-insensitive)
+- Matching nodes stay at full opacity; non-matching visible nodes dim to alpha 0.1 so structural context is preserved
+- Edges with at least one matching endpoint stay visible; edges between two non-matching nodes are hidden (alpha 0)
+- Zero-match queries show a "No matches" indicator and do not dim (so a stale/typoed query isn't mistaken for a broken view)
+- Filter visibility wins: filter-hidden nodes never reappear via search. If a filter later hides some matches, the "X matches" count shrinks accordingly
+- 150 ms input debounce — keystrokes feel instant because the input is locally controlled; only the committed query reaches the worker
+- Source-agnostic primitive: the worker consumes a `highlighted: Uint8Array` bitmask regardless of origin, so future input sources (box-select, programmatic selection) reuse the same render path
+
 ### Position-Aware Loading
 - If all nodes have `x`/`y` positions, they are preserved as-is
 - If no nodes have positions, random positions are generated
@@ -207,11 +217,11 @@ Full schema: `src/graph/lib/graphSchema.json`
 
 ## Testing
 
-428 unit/component tests + 102 E2E tests. All must pass before merging (`npm run test:all`).
+542 unit/component tests + 133 E2E tests (4 GPU-dependent tests skipped in headless SwiftShader). All must pass before merging (`npm run test:all`).
 
 ### Unit Tests (`src/graph/test/`)
 
-Cover pure functions: graph building, validation, null defaults, property type detection, streaming JSON parser, color gradient computation, appearance utilities (filter matching, hex conversion, color interpolation), statistics computation, edge filtering.
+Cover pure functions: graph building, validation, null defaults, property type detection, streaming JSON parser, color gradient computation, appearance utilities (filter matching, hex conversion, color interpolation), statistics computation, edge filtering, substring query matching, highlight alpha dimming and link-color computation.
 
 ```bash
 npm run test:unit
@@ -227,17 +237,20 @@ npm run test:component
 
 ### E2E Tests (`e2e/`)
 
-102 tests across 15 spec files (4 GPU-dependent tests skipped in headless SwiftShader):
+133 tests across 18 spec files (4 GPU-dependent tests skipped in headless SwiftShader):
 
 | Spec file | Tests | Covers |
 |---|---|---|
 | `color.spec.ts` | 14 | Property selection, palette, legend types, gradient, size mode |
-| `drop-zone.spec.ts` | 11 | Initial state, file loading, invalid/empty errors, schema dialog |
 | `filters.spec.ts` | 13 | Filter panels, match count, AND logic, select/clear all, number filter features |
+| `labels.spec.ts` | 12 | Node-label HTML overlay: visibility, zoom/pan updates, rotation follow |
+| `drop-zone.spec.ts` | 11 | Initial state, file loading, invalid/empty errors, schema dialog |
+| `search-highlight.spec.ts` | 10 | Substring search, case-insensitive match, label/ID match, dim highlight; regressions for filter / edge-% / gradient interactions |
 | `filter-interplay.spec.ts` | 10 | Graph Info reacts to filters, statistics histogram updates, degree histogram |
+| `rotation.spec.ts` | 9 | Shift+scroll rotation, rotate buttons, rotation-during-simulation gating |
 | `histogram.spec.ts` | 8 | Statistics histogram, date histogram, categorical stats |
-| `viewport.spec.ts` | 7 | Responsive layout, sidebar collapse, left sidebar panel toggles |
 | `reset-and-export.spec.ts` | 8 | Reset flow, export, position round-trip |
+| `viewport.spec.ts` | 7 | Responsive layout, sidebar collapse, left sidebar panel toggles |
 | `homepage.spec.ts` | 6 | SEO, hero section, responsive, navigation |
 | `edge-filtering.spec.ts` | 6 | Edge percentage, keep-at-least-one, download export |
 | `graph-view.spec.ts` | 4 | Node/edge counts, filename, canvas controls, shortcuts |
@@ -273,7 +286,7 @@ knotviz/
 │   │   ├── components/
 │   │   │   ├── ui/             # shadcn/ui generated components
 │   │   │   ├── sidebar/        # Reusable sidebar design system
-│   │   │   ├── filters/        # Filter UI components (Number, Boolean, String, Date)
+│   │   │   ├── filters/        # Filter UI components (Number, Boolean, String, Date, SearchBox)
 │   │   │   ├── __tests__/      # Vitest Browser Mode component tests
 │   │   │   ├── GraphView.tsx   # Main graph canvas + cosmos orchestration
 │   │   │   ├── LeftSidebar.tsx # Simulation + display controls + panel toggles
@@ -288,12 +301,14 @@ knotviz/
 │   │   │   └── useFileDrop.ts, useSpacebarToggle.ts, useDebounce.ts
 │   │   ├── workers/
 │   │   │   ├── loadingWorker.ts     # File parsing (JSON.parse or streaming)
-│   │   │   └── appearanceWorker.ts  # Filter + gradient + link visibility
+│   │   │   └── appearanceWorker.ts  # Filter + gradient + link visibility + search highlight
 │   │   ├── lib/
 │   │   │   ├── buildGraph.ts            # GraphData → CosmosGraphData
 │   │   │   ├── validateGraph.ts         # JSON schema validation
 │   │   │   ├── streamingJsonGraphParser.ts # Custom streaming JSON parser
 │   │   │   ├── applyGradient.ts         # Color/size mapping (sqrt scaling for size)
+│   │   │   ├── applyHighlight.ts        # Alpha dimming + highlight-aware link colors
+│   │   │   ├── matchQuery.ts            # Pre-lowered substring match (hot path)
 │   │   │   ├── appearanceUtils.ts       # Shared filter/color utilities
 │   │   │   ├── colorScales.ts           # Palette definitions + interpolation
 │   │   │   ├── computeStats.ts          # Descriptive statistics (percentiles, sum)

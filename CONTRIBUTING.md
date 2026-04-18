@@ -105,6 +105,20 @@ For UI changes, also open the dev server in a real browser and exercise the feat
 
 Every task or feature must include tests. Non-negotiable.
 
+### Red/Green TDD (required for agents and humans alike)
+
+Always use Test-Driven Development:
+
+1. **RED** — write the failing test first. Run it and see it fail for the right reason. Skipping this step is the single biggest cause of tests that pass but don't actually verify the behavior they claim to.
+2. **GREEN** — write the minimum implementation that makes the test pass.
+3. **REFACTOR** — clean up, keeping tests green.
+
+When fixing a bug: **write a regression test that reproduces the bug first**, watch it fail, then write the fix and watch it go green. Do not write the fix first.
+
+Choose the test level that best covers the change — unit for pure logic, component for module interactions in the DOM, E2E for full user journeys. Many changes warrant more than one.
+
+### Test types
+
 | Test type | Location | Covers |
 |---|---|---|
 | Unit (Vitest) | `src/graph/test/*.test.ts` | Pure functions in `lib/`, hooks, stores |
@@ -118,7 +132,7 @@ Test fixtures live in `e2e/fixtures/`.
 1. New `lib/` functions must have unit tests.
 2. New or changed components must have component tests (Vitest Browser Mode, real Chromium — not React Testing Library / jsdom).
 3. New multi-step user flows must have E2E tests.
-4. When fixing a bug, add a regression test that would have caught it.
+4. When fixing a bug, add a regression test that would have caught it (see Red/Green TDD above).
 5. All tests must pass before committing. No exceptions.
 
 E2E notes: Chromium uses SwiftShader (`--use-gl=angle --use-angle=swiftshader`) for headless WebGL support. A handful of GPU-dependent tests (simulation, tooltip click, position readback) are skipped in CI.
@@ -223,7 +237,6 @@ Key behaviors:
 Knotviz is intentionally narrow. The following are **out of scope**:
 
 - **No server-side**: no routing, no backend/API calls, no auth, no database
-- **No complex analysis**: no multi-property comparison, no edge weight visualization
 - **No state history**: no undo/redo
 - **No React Testing Library**: component tests use Vitest Browser Mode (real browser), not RTL/jsdom
 

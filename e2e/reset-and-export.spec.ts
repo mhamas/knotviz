@@ -46,7 +46,7 @@ test.describe('Reset Graph', () => {
     await page.getByRole('button', { name: 'Reset graph' }).click()
     await page.getByRole('button', { name: 'Reset' }).click()
     await expect(page.getByTestId('drop-zone')).toBeVisible()
-    await expect(page.getByText('Drop a .json graph file here')).toBeVisible()
+    await expect(page.getByText('Drop a graph file here')).toBeVisible()
   })
 })
 

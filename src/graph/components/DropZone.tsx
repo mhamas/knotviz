@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import type { CosmosGraphData, NodePropertiesMetadata, PropertyMeta, PositionMode } from '../types'
 import type { PropertyColumns } from '../hooks/useFilterState'
 import LoadingWorker from '@/workers/loadingWorker?worker'
+import { detectFileFormat } from '../lib/detectFileFormat'
 import { SchemaDialog } from './SchemaDialog'
 import {
   AlertDialog,
@@ -59,9 +60,22 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
     return () => { workerRef.current?.terminate() }
   }, [])
 
-  const processFile = useCallback(
-    (file: File): void => {
+  const processFiles = useCallback(
+    (inputFiles: File[]): void => {
       setError(null)
+      let detection
+      try {
+        detection = detectFileFormat(inputFiles)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unable to read file')
+        return
+      }
+      const { format, orderedFiles } = detection
+      const displayName =
+        format === 'csv-pair'
+          ? `${orderedFiles[0].name} + ${orderedFiles[1].name}`
+          : orderedFiles[0].name
+
       setIsLoading(true)
       setLoadingStatus('Starting…')
 
@@ -122,12 +136,12 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
               propertyMetas,
               nodePropertiesMetadata,
               positionMode: cosmosData.positionMode,
-              filename: file.name,
+              filename: displayName,
               replacementCount,
             })
             setIsLoading(false)
           } else {
-            onLoad(cosmosData, propertyColumns, propertyMetas, nodePropertiesMetadata, replacementCount, file.name)
+            onLoad(cosmosData, propertyColumns, propertyMetas, nodePropertiesMetadata, replacementCount, displayName)
           }
         }
       }
@@ -137,10 +151,12 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
         setIsLoading(false)
       }
 
-      worker.postMessage({ type: 'load', file })
+      worker.postMessage({ type: 'load', files: orderedFiles, format })
     },
     [onLoad],
   )
+
+  const processFile = useCallback((file: File): void => processFiles([file]), [processFiles])
 
   // Auto-process a file passed from drag-drop on loaded graph
   const [initialPendingFile] = useState(pendingFile)
@@ -165,10 +181,10 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
     (e: React.DragEvent): void => {
       e.preventDefault()
       setIsDragOver(false)
-      const file = e.dataTransfer.files[0]
-      if (file) processFile(file)
+      const files = Array.from(e.dataTransfer.files)
+      if (files.length > 0) processFiles(files)
     },
-    [processFile],
+    [processFiles],
   )
 
   const handleClick = (): void => {
@@ -177,11 +193,11 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>): void => {
-      const file = e.target.files?.[0]
-      if (file) processFile(file)
+      const files = Array.from(e.target.files ?? [])
+      if (files.length > 0) processFiles(files)
       e.target.value = ''
     },
-    [processFile],
+    [processFiles],
   )
 
   const handleConfirmLoad = useCallback((): void => {
@@ -215,9 +231,11 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
         ) : (
           <>
             <p className="text-sm font-medium text-slate-600">
-              Drop a .json graph file here
+              Drop a graph file here
             </p>
-            <p className="mt-1 text-xs text-slate-400">or click to browse</p>
+            <p className="mt-1 text-xs text-slate-400">
+              JSON, CSV/TSV, GraphML, or GEXF — or click to browse
+            </p>
             <button
               className="mt-3 cursor-pointer text-xs text-slate-400 underline hover:text-slate-600"
               onClick={(e): void => {
@@ -240,7 +258,8 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
       <input
         ref={fileInputRef}
         type="file"
-        accept=".json"
+        accept=".json,.csv,.tsv,.graphml,.xml,.gexf"
+        multiple
         className="hidden"
         onChange={handleFileChange}
       />

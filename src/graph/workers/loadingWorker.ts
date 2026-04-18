@@ -1,18 +1,27 @@
 /**
- * Web Worker: loads a JSON graph file off the main thread, builds compact
+ * Web Worker: loads a graph file off the main thread, builds compact
  * output structures, and transfers them back with zero-copy typed arrays.
  *
- * Uses two loading strategies:
+ * JSON uses two loading strategies:
  * - Small files (<200MB): JSON.parse (fast, simple)
  * - Large files (>=200MB): streaming parser (low memory — never holds full JSON in memory)
  *
+ * CSV edge-list, CSV node+edge pair, GraphML, and GEXF are parsed from text via format-specific
+ * parsers and then fed into the same GraphBuilder path used by JSON.
+ *
  * Protocol:
- * - Input:  { type: 'load', file: File }
+ * - Input:  { type: 'load', files: File[], format: FileFormat }
  * - Output: { type: 'progress', stage, percent }
  *           { type: 'complete', ...result }
  *           { type: 'error', message }
  */
 
+import type { FileFormat } from '../lib/detectFileFormat'
+import type { GraphData } from '../types'
+import { parseEdgeListCSV } from '../lib/parseEdgeListCSV'
+import { parseGEXF } from '../lib/parseGEXF'
+import { parseGraphML } from '../lib/parseGraphML'
+import { parseNodeEdgeCSV } from '../lib/parseNodeEdgeCSV'
 import { parseStreamingJsonGraph } from '../lib/streamingJsonGraphParser'
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -46,15 +55,25 @@ const STREAMING_THRESHOLD = 200 * 1024 * 1024 // 200MB
 // ─── Main ─────────────────────────────────────────────────────────────────
 
 self.onmessage = async (e: MessageEvent): Promise<void> => {
-  const { file } = e.data as { type: 'load'; file: File }
+  const data = e.data as
+    | { type: 'load'; files: File[]; format: FileFormat }
+    | { type: 'load'; file: File }
+
+  const files: File[] = 'files' in data ? data.files : [data.file]
+  const format: FileFormat = 'format' in data ? data.format : 'json'
 
   try {
     let result: ProcessResult
 
-    if (file.size < STREAMING_THRESHOLD) {
-      result = await loadWithJsonParse(file)
+    if (format === 'json') {
+      const file = files[0]
+      if (file.size < STREAMING_THRESHOLD) {
+        result = await loadWithJsonParse(file)
+      } else {
+        result = await loadWithStreaming(file)
+      }
     } else {
-      result = await loadWithStreaming(file)
+      result = await loadNonJson(files, format)
     }
 
     const msg = { type: 'complete', ...result }
@@ -97,6 +116,45 @@ async function loadWithJsonParse(file: File): Promise<ProcessResult> {
   post({ type: 'progress', stage: 'Building graph…', percent: 40 })
   await yieldWorker()
   return await processRawGraph(raw)
+}
+
+// ─── Strategy 1b: CSV / GraphML / GEXF ────────────────────────────────────
+
+async function loadNonJson(files: File[], format: FileFormat): Promise<ProcessResult> {
+  post({ type: 'progress', stage: 'Reading file…', percent: 0 })
+
+  let graph: GraphData
+  try {
+    if (format === 'csv-edge-list') {
+      const text = await files[0].text()
+      post({ type: 'progress', stage: 'Parsing CSV…', percent: 20 })
+      await yieldWorker()
+      graph = parseEdgeListCSV(text)
+    } else if (format === 'csv-pair') {
+      const [nodesText, edgesText] = await Promise.all([files[0].text(), files[1].text()])
+      post({ type: 'progress', stage: 'Parsing CSV…', percent: 20 })
+      await yieldWorker()
+      graph = parseNodeEdgeCSV(nodesText, edgesText)
+    } else if (format === 'graphml') {
+      const text = await files[0].text()
+      post({ type: 'progress', stage: 'Parsing GraphML…', percent: 20 })
+      await yieldWorker()
+      graph = parseGraphML(text)
+    } else if (format === 'gexf') {
+      const text = await files[0].text()
+      post({ type: 'progress', stage: 'Parsing GEXF…', percent: 20 })
+      await yieldWorker()
+      graph = parseGEXF(text)
+    } else {
+      throw new Error(`Unsupported format: ${String(format)}`)
+    }
+  } catch (err) {
+    throw new Error(err instanceof Error ? err.message : 'Failed to parse file')
+  }
+
+  post({ type: 'progress', stage: 'Building graph…', percent: 40 })
+  await yieldWorker()
+  return await processRawGraph(graph)
 }
 
 // ─── Strategy 2: Streaming parser (large files) ──────────────────────────

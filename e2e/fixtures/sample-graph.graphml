@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+  <key id="lbl" for="node" attr.name="label" attr.type="string"/>
+  <key id="age" for="node" attr.name="age" attr.type="int"/>
+  <key id="act" for="node" attr.name="active" attr.type="boolean"/>
+  <key id="w" for="edge" attr.name="weight" attr.type="double"/>
+  <graph id="G" edgedefault="directed">
+    <node id="n1">
+      <data key="lbl">Alice</data>
+      <data key="age">34</data>
+      <data key="act">true</data>
+    </node>
+    <node id="n2">
+      <data key="lbl">Bob</data>
+      <data key="age">28</data>
+      <data key="act">false</data>
+    </node>
+    <node id="n3">
+      <data key="lbl">Carol</data>
+      <data key="age">45</data>
+      <data key="act">true</data>
+    </node>
+    <edge source="n1" target="n2"><data key="w">0.8</data></edge>
+    <edge source="n2" target="n3"><data key="w">1.2</data></edge>
+    <edge source="n1" target="n3"><data key="w">0.5</data></edge>
+  </graph>
+</graphml>

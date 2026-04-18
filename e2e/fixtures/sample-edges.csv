@@ -1,0 +1,4 @@
+source,target,weight,label
+n1,n2,0.8,knows
+n2,n3,1.2,follows
+n1,n3,0.5,knows

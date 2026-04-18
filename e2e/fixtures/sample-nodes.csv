@@ -1,0 +1,4 @@
+id,label,age:number,active:boolean,joined:date
+n1,Alice,34,true,2021-03-15
+n2,Bob,28,false,2023-11-02
+n3,Carol,45,true,2019-07-20

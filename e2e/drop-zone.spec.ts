@@ -12,7 +12,7 @@ test.describe('Drop Zone — File Loading', () => {
 
   test('shows drop zone on initial load', async ({ page }) => {
     await expect(page.getByTestId('drop-zone')).toBeVisible()
-    await expect(page.getByText('Drop a .json graph file here')).toBeVisible()
+    await expect(page.getByText('Drop a graph file here')).toBeVisible()
   })
 
   test('shows disabled sidebar controls before graph is loaded', async ({ page }) => {

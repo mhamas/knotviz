@@ -8,7 +8,7 @@ test.describe('Homepage', () => {
   test('has correct title and meta description', async ({ page }) => {
     await expect(page).toHaveTitle(/Knotviz/)
     const description = page.locator('meta[name="description"]')
-    await expect(description).toHaveAttribute('content', /GPU-accelerated/)
+    await expect(description).toHaveAttribute('content', /million nodes/)
   })
 
   test('renders hero section with logo and CTA', async ({ page }) => {
@@ -19,10 +19,10 @@ test.describe('Homepage', () => {
   })
 
   test('renders all major sections', async ({ page }) => {
-    await expect(page.getByText(/GPU-accelerated/i).first()).toBeVisible()
+    await expect(page.getByText(/What you get/i).first()).toBeVisible()
     await expect(page.getByText(/What people visualize/i).first()).toBeVisible()
     await expect(page.getByText(/How it works/i).first()).toBeVisible()
-    await expect(page.getByText(/Simple JSON input/i).first()).toBeVisible()
+    await expect(page.getByText(/Drop in whatever you have/i).first()).toBeVisible()
   })
 
   test('CTA navigates to graph app', async ({ page }) => {
@@ -43,7 +43,7 @@ test.describe('Homepage', () => {
     const response = await page.request.get('/')
     const html = await response.text()
     expect(html).toContain('hiding in your graph')
-    expect(html).toContain('GPU-accelerated')
+    expect(html).toContain('million nodes')
     expect(html).toContain('og:title')
   })
 })

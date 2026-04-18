@@ -5,22 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- SEO -->
-    <title>Knotviz — Explore Large-Scale Graphs in Your Browser</title>
-    <meta name="description" content="GPU-accelerated graph visualization. Drag-and-drop JSON, filter by properties, color by values. Free, client-side, no signup." />
+    <title>Knotviz — Private Graph Exploration in Your Browser</title>
+    <meta name="description" content="Explore graphs up to a million nodes directly in your browser. Filter, search, colour, and size-gradient your data. GPU-accelerated, fully private — your data never leaves your machine. Free, no signup." />
     <link rel="canonical" href="https://www.knotviz.com" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Knotviz — Explore Large-Scale Graphs in Your Browser" />
-    <meta property="og:description" content="GPU-accelerated graph visualization tool. Filter, color, and analyze large graphs entirely in your browser." />
+    <meta property="og:title" content="Knotviz — Private Graph Exploration in Your Browser" />
+    <meta property="og:description" content="Explore graphs up to a million nodes directly in your browser. Filter, search, colour, and size-gradient — your data never leaves your machine." />
     <meta property="og:image" content="https://www.knotviz.com/screenshots/hero.png" />
     <meta property="og:url" content="https://www.knotviz.com" />
     <meta property="og:site_name" content="Knotviz" />
 
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Knotviz — Explore Large-Scale Graphs in Your Browser" />
-    <meta name="twitter:description" content="GPU-accelerated graph visualization. Drag-and-drop JSON, filter by properties, color by values. Free, client-side, no signup." />
+    <meta name="twitter:title" content="Knotviz — Private Graph Exploration in Your Browser" />
+    <meta name="twitter:description" content="Graphs up to a million nodes, fully interactive in your browser. Filter, search, colour, size-gradient — your data never leaves your machine." />
     <meta name="twitter:image" content="https://www.knotviz.com/screenshots/hero.png" />
 
     <!-- Favicon -->
@@ -37,7 +37,7 @@
           See what's hiding in your graph
         </h1>
         <p class="mx-auto mt-6 max-w-2xl text-lg text-gray-600 sm:text-xl">
-          GPU-accelerated graph visualization that runs entirely in your browser. Drag and drop a JSON file — your data never leaves your machine.
+          Drop a graph — up to a million nodes — and explore it directly in your browser. Filter, search, colour, and size by any property to find what matters. Your data never leaves your machine.
         </p>
         <a href="/graph" class="mt-8 inline-block rounded-lg bg-blue-600 px-8 py-3 text-lg font-medium text-white transition-colors hover:bg-blue-700">
           Open Knotviz
@@ -67,58 +67,55 @@
     <!-- Feature Cards -->
     <section class="bg-gray-50 px-6 py-20">
       <div class="mx-auto max-w-6xl">
-        <h2 class="text-center text-3xl font-bold">Key capabilities</h2>
+        <h2 class="text-center text-3xl font-bold">What you get</h2>
+        <p class="mx-auto mt-4 max-w-2xl text-center text-gray-600">A full graph explorer — not a toy. Loads big, stays interactive, and your data never touches a server.</p>
         <div class="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
 
-          <!-- GPU-accelerated -->
+          <!-- Privacy / browser-only -->
+          <div class="rounded-xl bg-white p-6 shadow-sm">
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
+              <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+              </svg>
+            </div>
+            <h3 class="mt-4 text-lg font-semibold">100% local, 100% yours</h3>
+            <p class="mt-2 text-sm text-gray-600">No uploads, no accounts, no cloud. Everything runs in the browser via WebGL and Web Workers — works offline, on a plane, or inside a firewall. Safe for regulated or sensitive data by design.</p>
+          </div>
+
+          <!-- Scale -->
           <div class="rounded-xl bg-white p-6 shadow-sm">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
               <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
               </svg>
             </div>
-            <h3 class="mt-4 text-lg font-semibold">GPU-accelerated</h3>
-            <p class="mt-2 text-sm text-gray-600">Smooth 60fps rendering powered by WebGL. Pan, zoom, and simulate force-directed layouts on graphs that would freeze other tools.</p>
+            <h3 class="mt-4 text-lg font-semibold">Up to a million nodes</h3>
+            <p class="mt-2 text-sm text-gray-600">GPU rendering plus a GPU force simulation. Pan, zoom, rotate, and lay out graphs on a regular laptop at sizes that freeze CPU-based tools. Streaming parser engages at 200&nbsp;MB&nbsp;+ so even a&nbsp;GB of JSON loads without a spinner of doom.</p>
           </div>
 
-          <!-- Property filtering -->
+          <!-- Find what matters -->
           <div class="rounded-xl bg-white p-6 shadow-sm">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
               <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.3-4.3"/>
               </svg>
             </div>
-            <h3 class="mt-4 text-lg font-semibold">Property filtering</h3>
-            <p class="mt-2 text-sm text-gray-600">Filter nodes by any property — numbers, strings, dates, booleans, and tags. Combine multiple filters with AND logic.</p>
+            <h3 class="mt-4 text-lg font-semibold">Find what matters</h3>
+            <p class="mt-2 text-sm text-gray-600">Filter by number, string, date, boolean, or tag list — combined with AND logic and a live match count. Autocomplete search by id or label. Colour and size nodes by any property, with log-scale toggles for power-law data and 19 built-in palettes.</p>
           </div>
 
-          <!-- Color gradients -->
+          <!-- Drag, drop, done -->
           <div class="rounded-xl bg-white p-6 shadow-sm">
             <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
               <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
-                <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
-                <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
-                <circle cx="6.5" cy="12" r=".5" fill="currentColor"/>
-                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" x2="12" y1="3" y2="15"/>
               </svg>
             </div>
-            <h3 class="mt-4 text-lg font-semibold">Color gradients</h3>
-            <p class="mt-2 text-sm text-gray-600">Color nodes by property values with customizable palettes. Visualize patterns at a glance with continuous or discrete scales.</p>
-          </div>
-
-          <!-- Edge analysis -->
-          <div class="rounded-xl bg-white p-6 shadow-sm">
-            <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-600">
-              <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="6" x2="6" y1="3" y2="15"/>
-                <circle cx="18" cy="6" r="3"/>
-                <circle cx="6" cy="18" r="3"/>
-                <path d="M18 9a9 9 0 0 1-9 9"/>
-              </svg>
-            </div>
-            <h3 class="mt-4 text-lg font-semibold">Edge analysis</h3>
-            <p class="mt-2 text-sm text-gray-600">Control edge visibility with percentage, max outgoing, and max incoming filters. Focus on the connections that matter.</p>
+            <h3 class="mt-4 text-lg font-semibold">Drag, drop, done</h3>
+            <p class="mt-2 text-sm text-gray-600">Accepts JSON, CSV edge lists, CSV nodes&nbsp;+&nbsp;edges pairs, GraphML, and GEXF. Export the laid-out graph back to JSON with positions preserved — one file in, one file out, round-trip clean.</p>
           </div>
 
         </div>
@@ -229,21 +226,21 @@
               <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">1</div>
               <div>
                 <h3 class="text-lg font-semibold">Drop</h3>
-                <p class="mt-1 text-gray-600">Drag a JSON file onto the canvas. Your data stays in your browser — nothing is uploaded.</p>
+                <p class="mt-1 text-gray-600">Drag any JSON, CSV, GraphML, or GEXF file onto the canvas. Your data stays in your browser — nothing is uploaded, nothing is indexed.</p>
               </div>
             </div>
             <div class="flex gap-4">
               <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">2</div>
               <div>
                 <h3 class="text-lg font-semibold">Explore</h3>
-                <p class="mt-1 text-gray-600">Pan, zoom, and run force-directed simulation to untangle the graph. Hover nodes to see details.</p>
+                <p class="mt-1 text-gray-600">Pan, zoom, rotate, and run the GPU force-directed simulation to untangle the graph. Press space to toggle physics; hover nodes to see labels; click to see every property.</p>
               </div>
             </div>
             <div class="flex gap-4">
               <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">3</div>
               <div>
-                <h3 class="text-lg font-semibold">Analyze</h3>
-                <p class="mt-1 text-gray-600">Filter by properties, color by values, control edge visibility. Export the enriched graph when done.</p>
+                <h3 class="text-lg font-semibold">Analyse</h3>
+                <p class="mt-1 text-gray-600">Filter by property, search by label, colour by category, size by magnitude. Inspect distributions in the stats panel. Export the laid-out graph back to JSON when you're done.</p>
               </div>
             </div>
           </div>
@@ -266,11 +263,24 @@
     <!-- Input Format -->
     <section class="px-6 py-20">
       <div class="mx-auto max-w-4xl">
-        <h2 class="text-center text-3xl font-bold">Simple JSON input</h2>
+        <h2 class="text-center text-3xl font-bold">Drop in whatever you have</h2>
         <p class="mx-auto mt-4 max-w-2xl text-center text-gray-600">
-          Knotviz accepts a JSON file with <code class="rounded bg-gray-100 px-1.5 py-0.5 text-sm">nodes</code> and <code class="rounded bg-gray-100 px-1.5 py-0.5 text-sm">edges</code> arrays. Add optional properties for filtering and coloring.
+          Five input formats with typed properties, edge weights, and optional positions. Type inference fills in the rest.
         </p>
-        <div class="mt-8 overflow-hidden rounded-xl border border-gray-200 bg-gray-900 text-sm">
+
+        <!-- Format chips -->
+        <div class="mt-8 flex flex-wrap items-center justify-center gap-3 text-sm">
+          <span class="rounded-full border border-gray-200 bg-white px-4 py-1.5 font-medium text-gray-700">JSON</span>
+          <span class="rounded-full border border-gray-200 bg-white px-4 py-1.5 font-medium text-gray-700">CSV edge list</span>
+          <span class="rounded-full border border-gray-200 bg-white px-4 py-1.5 font-medium text-gray-700">CSV nodes + edges</span>
+          <span class="rounded-full border border-gray-200 bg-white px-4 py-1.5 font-medium text-gray-700">GraphML</span>
+          <span class="rounded-full border border-gray-200 bg-white px-4 py-1.5 font-medium text-gray-700">GEXF</span>
+        </div>
+
+        <p class="mx-auto mt-6 max-w-2xl text-center text-sm text-gray-500">
+          Minimum JSON looks like this — everything beyond <code class="rounded bg-gray-100 px-1 py-0.5 text-xs">id</code>, <code class="rounded bg-gray-100 px-1 py-0.5 text-xs">source</code>, and <code class="rounded bg-gray-100 px-1 py-0.5 text-xs">target</code> is optional:
+        </p>
+        <div class="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-gray-900 text-sm">
           <div class="flex items-center gap-2 border-b border-gray-700 px-4 py-2 text-xs text-gray-400">
             <span>transactions.json</span>
           </div>
@@ -288,7 +298,7 @@
 }</code></pre>
         </div>
         <p class="mt-4 text-center text-sm text-gray-500">
-          Full schema documentation is available in the app's schema dialog.
+          Full schema in the app's schema dialog. CSV header suffixes like <code class="rounded bg-gray-100 px-1 py-0.5 text-xs">age:number</code> or <code class="rounded bg-gray-100 px-1 py-0.5 text-xs">joined:date</code> declare types explicitly; everything else is inferred.
         </p>
       </div>
     </section>
@@ -297,7 +307,7 @@
     <section class="bg-gray-50 px-6 py-20">
       <div class="mx-auto max-w-4xl">
         <h2 class="text-center text-3xl font-bold">Why Knotviz?</h2>
-        <p class="mx-auto mt-4 max-w-2xl text-center text-gray-600">Most graph tools require installing software, setting up servers, or handing over your data. Knotviz works in 5 seconds.</p>
+        <p class="mx-auto mt-4 max-w-2xl text-center text-gray-600">Most graph tools need a server, an account, or a 30-minute install — and then ask you to hand over your data. Knotviz opens in a tab.</p>
         <div class="mt-10 overflow-x-auto">
           <table class="w-full text-left text-sm">
             <thead>
@@ -311,39 +321,46 @@
             </thead>
             <tbody class="text-gray-600">
               <tr class="border-b border-gray-200">
-                <td class="py-3 pr-4 font-medium text-gray-900">Setup time</td>
-                <td class="py-3 pr-4 font-medium text-blue-600">5 seconds</td>
-                <td class="py-3 pr-4">30+ min install</td>
+                <td class="py-3 pr-4 font-medium text-gray-900">Setup</td>
+                <td class="py-3 pr-4 font-medium text-blue-600">Open a tab</td>
+                <td class="py-3 pr-4">30-min Java install</td>
                 <td class="py-3 pr-4">Account required</td>
                 <td class="py-3">Python + cloud setup</td>
               </tr>
               <tr class="border-b border-gray-200">
-                <td class="py-3 pr-4 font-medium text-gray-900">Cost</td>
-                <td class="py-3 pr-4 font-medium text-blue-600">Free</td>
-                <td class="py-3 pr-4">Free</td>
-                <td class="py-3 pr-4">Free for personal use</td>
-                <td class="py-3">Paid</td>
+                <td class="py-3 pr-4 font-medium text-gray-900">Data location</td>
+                <td class="py-3 pr-4 font-medium text-blue-600">Never leaves your browser</td>
+                <td class="py-3 pr-4">Local</td>
+                <td class="py-3 pr-4">Cloud (DuckDB)</td>
+                <td class="py-3">Server-side</td>
               </tr>
               <tr class="border-b border-gray-200">
                 <td class="py-3 pr-4 font-medium text-gray-900">GPU rendering</td>
-                <td class="py-3 pr-4 font-medium text-blue-600">Yes (WebGL)</td>
+                <td class="py-3 pr-4 font-medium text-blue-600">WebGL in browser</td>
                 <td class="py-3 pr-4">No (CPU only)</td>
-                <td class="py-3 pr-4">Yes (WebGL)</td>
-                <td class="py-3">Yes (server-side)</td>
+                <td class="py-3 pr-4">WebGL in browser</td>
+                <td class="py-3">Server-side</td>
               </tr>
               <tr class="border-b border-gray-200">
-                <td class="py-3 pr-4 font-medium text-gray-900">Data privacy</td>
-                <td class="py-3 pr-4 font-medium text-blue-600">Never leaves your machine</td>
-                <td class="py-3 pr-4">Local</td>
-                <td class="py-3 pr-4">Cloud features</td>
-                <td class="py-3">Server-side processing</td>
+                <td class="py-3 pr-4 font-medium text-gray-900">Practical size</td>
+                <td class="py-3 pr-4 font-medium text-blue-600">Up to ~1M nodes on a laptop</td>
+                <td class="py-3 pr-4">~100k before it struggles</td>
+                <td class="py-3 pr-4">Large (via cloud)</td>
+                <td class="py-3">Large (via cloud)</td>
               </tr>
-              <tr>
-                <td class="py-3 pr-4 font-medium text-gray-900">Property filtering</td>
-                <td class="py-3 pr-4 font-medium text-blue-600">Numbers, strings, dates, booleans</td>
+              <tr class="border-b border-gray-200">
+                <td class="py-3 pr-4 font-medium text-gray-900">Filter &amp; search</td>
+                <td class="py-3 pr-4 font-medium text-blue-600">Numbers, strings, dates, bools, tags + label search</td>
                 <td class="py-3 pr-4">Basic</td>
                 <td class="py-3 pr-4">DuckDB queries</td>
-                <td class="py-3">SQL-based</td>
+                <td class="py-3">SQL</td>
+              </tr>
+              <tr>
+                <td class="py-3 pr-4 font-medium text-gray-900">Cost</td>
+                <td class="py-3 pr-4 font-medium text-blue-600">Free &amp; open source</td>
+                <td class="py-3 pr-4">Free</td>
+                <td class="py-3 pr-4">Free (personal)</td>
+                <td class="py-3">Paid</td>
               </tr>
             </tbody>
           </table>
@@ -354,8 +371,8 @@
     <!-- CTA -->
     <section class="bg-blue-600 px-6 py-16 text-center text-white">
       <div class="mx-auto max-w-4xl">
-        <h2 class="text-3xl font-bold">Ready to explore your graph?</h2>
-        <p class="mt-4 text-lg text-blue-100">Free, runs in your browser, no signup required.</p>
+        <h2 class="text-3xl font-bold">Your graph, your browser, your data.</h2>
+        <p class="mt-4 text-lg text-blue-100">Open Knotviz, drop a file, start exploring. Nothing is uploaded — not now, not ever.</p>
         <a href="/graph" class="mt-8 inline-block rounded-lg bg-white px-8 py-3 text-lg font-medium text-blue-600 transition-colors hover:bg-blue-50">
           Open Knotviz
         </a>

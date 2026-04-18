@@ -38,42 +38,55 @@ The Node-measured ceiling is roughly 2× higher per format (JSON 10M, CSV edge-l
 | 1M | ~10s | 30+ FPS |
 | 5M | ~30s | 15+ FPS, labels auto-sampled during simulation |
 
-### If you need to go bigger
+### The visual-density ceiling (a cosmos limit, not a GPU limit)
 
-- Use JSON or CSV edge-list (the lighter formats) up to 5M
-- Split your graph into subgraphs and load them separately
-- Pre-filter / pre-sample before exporting for Knotviz
+> **Important, and counterintuitive: upgrading your graphics card won't let you visualise a bigger graph in Knotviz today.** Cosmos.gl runs the force simulation on a fixed **8192×8192** internal grid and does not scale it up even when your GPU would allow it. A 2025 MacBook Pro with a `MAX_TEXTURE_SIZE` of 16384 gets the exact same simulation area as a 2019 Chromebook with 8192 — roughly 67 million pixels to divide among however many nodes you have.
 
-Lifting the ceiling would mean rewriting `GraphBuilder` to release its JS-side arrays eagerly after converting to typed arrays in `finalize`, and replacing the `Set`/`Map` node-dedup with a structure that scales past V8's 2²⁴ internal limit (roaring bitmap, flat-buffer sparse set, or a `{id → index}` plain object).
+Your GPU's `MAX_TEXTURE_SIZE` matters only as a *lower bound*: weaker GPUs get less than 8192 and cosmos warns in the console (`The spaceSize has been reduced to N due to WebGL limits`). If you don't see that warning, you're on the full 8192×8192.
 
-### The simulation-space ceiling (GPU-bound, varies by hardware)
-
-The force-directed simulation runs on a bounded 2D grid, and the grid side length is bounded by your GPU's WebGL `MAX_TEXTURE_SIZE`. That number is **hardware-specific**:
-
-| GPU tier | Typical MAX_TEXTURE_SIZE | Knotviz simulation side |
-|---|---|---|
-| Modern desktop / recent laptops | 16384+ | capped at 8192 (cosmos's internal upper bound) |
-| Older discrete / integrated | 8192 | 8192 |
-| Weak iGPUs, Chromebooks, some mobile | 4096 | 4096 |
-| Very old / headless SwiftShader | 2048–4096 | whatever the GPU reports |
-
-Cosmos auto-reduces `spaceSize` to what your GPU actually supports and logs a console warning if it had to drop below the requested size (`The spaceSize has been reduced to N due to WebGL limits`). If you're running on an older machine and hitting visual saturation earlier than you'd expect, check the console — you might be on a 4096 box.
-
-Inside whatever square your GPU gives you, nodes can't spread indefinitely. Past a certain density the simulation keeps running correctly — the physics is still GPU-bound, not CPU-bound — but the *image* saturates:
+Inside that fixed grid, what you see at fit-view depends on density:
 
 | Graph size | What the canvas looks like at fit-view |
 |---|---|
 | ≤100k | Sparse, easy to trace individual connections |
 | 100k–500k | Dense but clusters clearly separable |
 | 500k–1M | Most of the square is covered; individual nodes start blurring into a "field of dots" |
-| 1M+ | The simulation square is typically filled edge-to-edge. Community structure (clusters) is often still visible, but node-level detail requires zoom |
+| 1M+ | The simulation square is filled edge-to-edge. Community structure (clusters) is often still visible, but node-level detail requires zoom |
 
-The exact crossover depends on your graph:
+The exact crossover depends on your graph's topology:
+
 - **Strong community structure** — clusters clump, leaving empty space. Stays legible longer (often up to 2–3M nodes).
-- **Uniform / random connectivity** — nodes spread evenly. Visual ceiling can hit as low as 500k.
+- **Uniform / random connectivity** — nodes spread evenly across the whole grid; visual ceiling can hit as low as 500k.
 - **Tree-like / sparse graphs** — can stay legible past 5M because they occupy less area per edge.
 
-Past the visual ceiling, the graph is still fully interactive and filters/search/color mode work normally — you just can't read the big picture at full zoom. Zoom in, or use filter + search to narrow down to the subgraph you care about.
+### What this actually means: the practical working size
+
+Three independent ceilings gate "how big a graph you can actually work with":
+
+1. **Memory ceiling** (can it load): per the comfortable table above — JSON/CSV edge-list 5M, CSV pair 2M, GraphML 500k, GEXF 1M
+2. **Visual ceiling** (can you see it at fit-view): ~500k uniform / ~1M clustered / ~2M highly clustered — this one is **shared across all users regardless of hardware**
+3. **Interaction ceiling** (is it responsive): 60 FPS through ~1M, 30+ FPS through ~2M, 15+ FPS at 5M
+
+> **The sweet spot for the average user is ~500k–1M nodes** — where all three ceilings sit comfortably below their limits. Below 500k, everything is trivially fast and readable. At 500k–1M you're in the productive zone: loads in seconds, pans and zooms at 60 FPS, structure and individual clusters are still visually distinguishable.
+
+Past 1M, **the intended workflow changes**: you can no longer read the whole graph at a glance, and you're not supposed to try. Instead:
+
+- **Filter** by property to hide nodes you don't care about right now (hidden nodes are fully culled, not just dimmed)
+- **Search** to jump to nodes by id / label substring
+- **Color** by a property to separate clusters visually even when they overlap spatially
+- **Zoom in** to inspect local neighbourhoods where the rendered density is back to normal
+
+The upper-end sizes from the loading ceiling (5M JSON, 2M CSV pair) are where this "filter/search/color to navigate a blob" workflow lives. It works, but it's not the same as eyeballing the whole graph — plan for 500k–1M if you want the latter.
+
+### If you need to go bigger
+
+- Use JSON or CSV edge-list (the lighter formats) up to their 5M comfortable limit
+- Split your graph into subgraphs and load them separately
+- Pre-filter / pre-sample before exporting for Knotviz
+
+Lifting the **loading** ceiling would mean rewriting `GraphBuilder` to release its JS-side arrays eagerly after converting to typed arrays in `finalize`, and replacing the `Set`/`Map` node-dedup with a structure that scales past V8's 2²⁴ internal limit (roaring bitmap, flat-buffer sparse set, or a `{id → index}` plain object).
+
+Lifting the **visual** ceiling would mean configuring cosmos with a larger `spaceSize` (e.g. 16384 on modern GPUs, four times the current area) at the cost of higher GPU texture memory and slower convergence. One-line change in `useCosmos.ts`, but not a universal upgrade — users on weaker GPUs would silently get the reduced size and a different experience from users on modern ones.
 
 ### Architecture
 

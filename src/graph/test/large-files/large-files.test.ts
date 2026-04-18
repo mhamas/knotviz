@@ -12,11 +12,15 @@
  * valid side.
  *
  * Not part of the default unit project — runs only via `npm run test:large-graphs`.
- * A full sweep (5 sizes × 5 formats = 25 tests) takes ~10 min on an M-series Mac and
- * needs a generous Node heap (`--max-old-space-size=16384`).
+ * Each format has its own size ladder ending at the empirical ceiling (see
+ * `DEFAULT_SIZES_PER_FORMAT` below). A full sweep is 30 tests and takes ~8–12
+ * minutes on an M-series Mac with `--max-old-space-size=16384` (set by the
+ * wrapper).
  *
- * Defaults to all five sizes. Filter via the wrapper's --sizes flag, e.g.
- *   `npm run test:large-graphs -- --sizes=10000,100000`
+ * Pass `--sizes=N[,N,...]` to the wrapper to override the per-format ladders
+ * with one common list — useful for targeted reruns:
+ *   `npm run test:large-graphs -- --sizes=15000000`    (just the ceiling row)
+ *   `npm run test:large-graphs -- --sizes=10000,100000` (quick smoke)
  */
 
 import { describe, it, expect } from 'vitest'
@@ -32,10 +36,24 @@ import {
 import { parseStreamingJsonGraph } from '../../lib/streamingJsonGraphParser'
 import { genJson, genCsvEdgeList, genCsvPair, genGraphML, genGexf } from './generators'
 
-const DEFAULT_SIZES = [10_000, 100_000, 500_000, 1_000_000, 3_000_000]
-const sizes = process.env.SIZES
+// Per-format size ladders that climb to the empirical ceiling measured at a
+// browser-realistic 4 GB heap:
+//   JSON / CSV edge-list / CSV pair: ~15M nodes (V8 Set/Map 2^24 cap)
+//   GraphML: ~1M nodes (fast-xml-parser DOM in RAM)
+//   GEXF: ~1.5M nodes (same)
+// The largest file per format sits right at the ceiling so regressions that
+// would hurt real users surface here first.
+const DEFAULT_SIZES_PER_FORMAT: Record<string, number[]> = {
+  json: [10_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000, 15_000_000],
+  'csv-edge-list': [10_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000, 15_000_000],
+  'csv-pair': [10_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000, 15_000_000],
+  graphml: [10_000, 100_000, 500_000, 1_000_000],
+  gexf: [10_000, 100_000, 500_000, 1_000_000, 1_500_000],
+}
+
+const overrideSizes = process.env.SIZES
   ? process.env.SIZES.split(',').map((s) => Number(s))
-  : DEFAULT_SIZES
+  : null
 
 const TEMP_DIR = path.join(os.tmpdir(), 'knotviz-large-file-tests')
 fs.mkdirSync(TEMP_DIR, { recursive: true })
@@ -113,11 +131,15 @@ async function loadPairStreaming(
   return { nodeCount, edgeCount }
 }
 
-for (const size of sizes) {
-  describe.sequential(`${humanSize(size)} nodes`, () => {
+function sizesFor(format: string): number[] {
+  if (overrideSizes) return overrideSizes
+  return DEFAULT_SIZES_PER_FORMAT[format] ?? []
+}
+
+describe.sequential('json', () => {
+  for (const size of sizesFor('json')) {
     const tag = humanSize(size)
     const expectedEdges = Math.floor(size * 1.5)
-
     it(
       `json — ${tag}`,
       { timeout: 600_000 },
@@ -133,7 +155,13 @@ for (const size of sizes) {
         }
       },
     )
+  }
+})
 
+describe.sequential('csv-edge-list', () => {
+  for (const size of sizesFor('csv-edge-list')) {
+    const tag = humanSize(size)
+    const expectedEdges = Math.floor(size * 1.5)
     it(
       `csv-edge-list — ${tag}`,
       { timeout: 600_000 },
@@ -152,7 +180,13 @@ for (const size of sizes) {
         }
       },
     )
+  }
+})
 
+describe.sequential('csv-pair', () => {
+  for (const size of sizesFor('csv-pair')) {
+    const tag = humanSize(size)
+    const expectedEdges = Math.floor(size * 1.5)
     it(
       `csv-pair — ${tag}`,
       { timeout: 600_000 },
@@ -169,7 +203,13 @@ for (const size of sizes) {
         }
       },
     )
+  }
+})
 
+describe.sequential('graphml', () => {
+  for (const size of sizesFor('graphml')) {
+    const tag = humanSize(size)
+    const expectedEdges = Math.floor(size * 1.5)
     it(
       `graphml — ${tag}`,
       { timeout: 600_000 },
@@ -187,7 +227,13 @@ for (const size of sizes) {
         }
       },
     )
+  }
+})
 
+describe.sequential('gexf', () => {
+  for (const size of sizesFor('gexf')) {
+    const tag = humanSize(size)
+    const expectedEdges = Math.floor(size * 1.5)
     it(
       `gexf — ${tag}`,
       { timeout: 600_000 },
@@ -205,5 +251,5 @@ for (const size of sizes) {
         }
       },
     )
-  })
-}
+  }
+})

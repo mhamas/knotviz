@@ -2,25 +2,33 @@
  * Large-file parser tests.
  *
  * Generates each format at each requested size, runs the production parser against it,
- * verifies result (or expected error), and deletes the file. Files are written to and
- * removed from a temp subdirectory so the test leaves zero footprint behind.
+ * verifies counts are correct, and deletes the file. Files are written to and removed
+ * from a temp subdirectory so the test leaves zero footprint behind.
+ *
+ * Scope is intentionally narrow: **valid files only**. The structural / malformation
+ * cases are covered cheaply in the normal unit suite (parseCSVRows, parseEdgeListCSV,
+ * parseGraphML, parseGEXF, etc.). What these tests actually exercise is "does the
+ * parser handle multi-GB inputs without OOM or data loss" — that story only needs the
+ * valid side.
  *
  * Not part of the default unit project — runs only via `npm run test:large-graphs`.
- * Expensive: a full run (5 sizes × 5 formats × 2 validities = 50 tests) takes ~20–30
- * minutes on an M-series Mac and needs ~8GB of free disk + a generous Node heap
- * (`--max-old-space-size=16384`).
+ * A full sweep (5 sizes × 5 formats = 25 tests) takes ~10 min on an M-series Mac and
+ * needs a generous Node heap (`--max-old-space-size=16384`).
  *
- * Filter sizes with SIZES env var, e.g. `SIZES=10000,100000 npm run test:large-graphs`.
+ * Defaults to all five sizes. Filter via the wrapper's --sizes flag, e.g.
+ *   `npm run test:large-graphs -- --sizes=10000,100000`
  */
 
 import { describe, it, expect } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
-import { parseEdgeListCSV } from '../../lib/parseEdgeListCSV'
-import { parseNodeEdgeCSV } from '../../lib/parseNodeEdgeCSV'
 import { parseGraphML } from '../../lib/parseGraphML'
 import { parseGEXF } from '../../lib/parseGEXF'
+import {
+  parseStreamingEdgeListCSV,
+  parseStreamingNodeEdgeCSV,
+} from '../../lib/streamingCsvGraphParser'
 import { parseStreamingJsonGraph } from '../../lib/streamingJsonGraphParser'
 import { genJson, genCsvEdgeList, genCsvPair, genGraphML, genGexf } from './generators'
 
@@ -72,16 +80,49 @@ async function loadJsonStreaming(
   return { nodeCount, edgeCount }
 }
 
+async function loadEdgeListStreaming(
+  filePath: string,
+): Promise<{ nodeCount: number; edgeCount: number }> {
+  let nodeCount = 0
+  let edgeCount = 0
+  await parseStreamingEdgeListCSV(fileChunks(filePath), {
+    onNode: () => {
+      nodeCount++
+    },
+    onEdge: () => {
+      edgeCount++
+    },
+  })
+  return { nodeCount, edgeCount }
+}
+
+async function loadPairStreaming(
+  nodesPath: string,
+  edgesPath: string,
+): Promise<{ nodeCount: number; edgeCount: number }> {
+  let nodeCount = 0
+  let edgeCount = 0
+  await parseStreamingNodeEdgeCSV(fileChunks(nodesPath), fileChunks(edgesPath), {
+    onNode: () => {
+      nodeCount++
+    },
+    onEdge: () => {
+      edgeCount++
+    },
+  })
+  return { nodeCount, edgeCount }
+}
+
 for (const size of sizes) {
   describe.sequential(`${humanSize(size)} nodes`, () => {
     const tag = humanSize(size)
     const expectedEdges = Math.floor(size * 1.5)
 
     it(
-      `valid json — ${tag}`,
+      `json — ${tag}`,
       { timeout: 600_000 },
       async () => {
-        const file = path.join(TEMP_DIR, `valid-json-${tag}.json`)
+        const file = path.join(TEMP_DIR, `json-${tag}.json`)
         try {
           await genJson(file, size, false)
           const { nodeCount, edgeCount } = await loadJsonStreaming(file)
@@ -94,47 +135,18 @@ for (const size of sizes) {
     )
 
     it(
-      `invalid json — ${tag}`,
+      `csv-edge-list — ${tag}`,
       { timeout: 600_000 },
       async () => {
-        // The streaming parser intentionally silently skips items whose per-item
-        // JSON.parse fails (so a single bad node doesn't sink a big graph).
-        // Our invalid generator breaks every node, leaving zero parseable nodes —
-        // downstream code reports "Graph has no nodes to display", but the parser
-        // itself doesn't throw. Accept either outcome: threw, or produced zero nodes.
-        const file = path.join(TEMP_DIR, `invalid-json-${tag}.json`)
-        try {
-          await genJson(file, size, true)
-          let threw = false
-          let nodeCount = -1
-          try {
-            const r = await loadJsonStreaming(file)
-            nodeCount = r.nodeCount
-          } catch {
-            threw = true
-          }
-          expect(threw || nodeCount === 0).toBe(true)
-        } finally {
-          cleanup(file)
-        }
-      },
-    )
-
-    it(
-      `valid csv-edge-list — ${tag}`,
-      { timeout: 600_000 },
-      async () => {
-        const file = path.join(TEMP_DIR, `valid-csv-edge-list-${tag}.csv`)
+        const file = path.join(TEMP_DIR, `csv-edge-list-${tag}.csv`)
         try {
           await genCsvEdgeList(file, size, false)
-          const text = fs.readFileSync(file, 'utf8')
-          const g = parseEdgeListCSV(text)
-          expect(g.version).toBe('1')
-          expect(g.edges.length).toBe(expectedEdges)
-          // Nodes are auto-derived from the union of source+target ids;
-          // it's almost always close to `size` but not guaranteed to hit exactly.
-          expect(g.nodes.length).toBeGreaterThan(size * 0.9)
-          expect(g.nodes.length).toBeLessThanOrEqual(size)
+          const { nodeCount, edgeCount } = await loadEdgeListStreaming(file)
+          expect(edgeCount).toBe(expectedEdges)
+          // Nodes auto-derived from the union of source+target ids — usually very
+          // close to `size` with random drawing, never higher.
+          expect(nodeCount).toBeGreaterThan(size * 0.9)
+          expect(nodeCount).toBeLessThanOrEqual(size)
         } finally {
           cleanup(file)
         }
@@ -142,36 +154,16 @@ for (const size of sizes) {
     )
 
     it(
-      `invalid csv-edge-list — ${tag}`,
+      `csv-pair — ${tag}`,
       { timeout: 600_000 },
       async () => {
-        const file = path.join(TEMP_DIR, `invalid-csv-edge-list-${tag}.csv`)
-        try {
-          await genCsvEdgeList(file, size, true)
-          const text = fs.readFileSync(file, 'utf8')
-          expect(() => parseEdgeListCSV(text)).toThrow(/source/)
-        } finally {
-          cleanup(file)
-        }
-      },
-    )
-
-    it(
-      `valid csv-pair — ${tag}`,
-      { timeout: 600_000 },
-      async () => {
-        const nodesFile = path.join(TEMP_DIR, `valid-csv-pair-${tag}-nodes.csv`)
-        const edgesFile = path.join(TEMP_DIR, `valid-csv-pair-${tag}-edges.csv`)
+        const nodesFile = path.join(TEMP_DIR, `csv-pair-${tag}-nodes.csv`)
+        const edgesFile = path.join(TEMP_DIR, `csv-pair-${tag}-edges.csv`)
         try {
           await genCsvPair(nodesFile, edgesFile, size, false)
-          const nodesText = fs.readFileSync(nodesFile, 'utf8')
-          const edgesText = fs.readFileSync(edgesFile, 'utf8')
-          const g = parseNodeEdgeCSV(nodesText, edgesText)
-          expect(g.version).toBe('1')
-          expect(g.nodes.length).toBe(size)
-          // Some edges may reference ids that happen to collide post-generation;
-          // with random ids and size=N the overlap is zero so this is an exact match.
-          expect(g.edges.length).toBe(expectedEdges)
+          const { nodeCount, edgeCount } = await loadPairStreaming(nodesFile, edgesFile)
+          expect(nodeCount).toBe(size)
+          expect(edgeCount).toBe(expectedEdges)
         } finally {
           cleanup(nodesFile, edgesFile)
         }
@@ -179,27 +171,10 @@ for (const size of sizes) {
     )
 
     it(
-      `invalid csv-pair — ${tag}`,
+      `graphml — ${tag}`,
       { timeout: 600_000 },
       async () => {
-        const nodesFile = path.join(TEMP_DIR, `invalid-csv-pair-${tag}-nodes.csv`)
-        const edgesFile = path.join(TEMP_DIR, `invalid-csv-pair-${tag}-edges.csv`)
-        try {
-          await genCsvPair(nodesFile, edgesFile, size, true)
-          const nodesText = fs.readFileSync(nodesFile, 'utf8')
-          const edgesText = fs.readFileSync(edgesFile, 'utf8')
-          expect(() => parseNodeEdgeCSV(nodesText, edgesText)).toThrow(/id/)
-        } finally {
-          cleanup(nodesFile, edgesFile)
-        }
-      },
-    )
-
-    it(
-      `valid graphml — ${tag}`,
-      { timeout: 600_000 },
-      async () => {
-        const file = path.join(TEMP_DIR, `valid-graphml-${tag}.graphml`)
+        const file = path.join(TEMP_DIR, `graphml-${tag}.graphml`)
         try {
           await genGraphML(file, size, false)
           const text = fs.readFileSync(file, 'utf8')
@@ -214,25 +189,10 @@ for (const size of sizes) {
     )
 
     it(
-      `invalid graphml — ${tag}`,
+      `gexf — ${tag}`,
       { timeout: 600_000 },
       async () => {
-        const file = path.join(TEMP_DIR, `invalid-graphml-${tag}.graphml`)
-        try {
-          await genGraphML(file, size, true)
-          const text = fs.readFileSync(file, 'utf8')
-          expect(() => parseGraphML(text)).toThrow(/graphml/)
-        } finally {
-          cleanup(file)
-        }
-      },
-    )
-
-    it(
-      `valid gexf — ${tag}`,
-      { timeout: 600_000 },
-      async () => {
-        const file = path.join(TEMP_DIR, `valid-gexf-${tag}.gexf`)
+        const file = path.join(TEMP_DIR, `gexf-${tag}.gexf`)
         try {
           await genGexf(file, size, false)
           const text = fs.readFileSync(file, 'utf8')
@@ -240,21 +200,6 @@ for (const size of sizes) {
           expect(g.version).toBe('1')
           expect(g.nodes.length).toBe(size)
           expect(g.edges.length).toBe(expectedEdges)
-        } finally {
-          cleanup(file)
-        }
-      },
-    )
-
-    it(
-      `invalid gexf — ${tag}`,
-      { timeout: 600_000 },
-      async () => {
-        const file = path.join(TEMP_DIR, `invalid-gexf-${tag}.gexf`)
-        try {
-          await genGexf(file, size, true)
-          const text = fs.readFileSync(file, 'utf8')
-          expect(() => parseGEXF(text)).toThrow(/gexf/)
         } finally {
           cleanup(file)
         }

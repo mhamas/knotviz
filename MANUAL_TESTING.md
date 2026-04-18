@@ -91,9 +91,21 @@ For the CSV pair:
 - **Numeric edge cases**: zip codes with leading zeros must stay as strings, not become numbers. The generator doesn't produce these — add a custom test file if this matters for your real data.
 - **Unicode**: the generator doesn't emit non-ASCII; if you need to verify emoji / CJK handling, either hand-edit one of the generated files or drop one of your own.
 
-## Related unit / E2E coverage
+## Automated large-file coverage
 
-The automated tests cover smaller files (≤100 nodes) exhaustively. See:
+Most of what manual testing used to do is now automated:
+
+```bash
+npm run test:large-graphs                             # all sizes (10k → 3M), all 5 formats
+npm run test:large-graphs -- --sizes=10000,100000     # small subset
+npm run test:large-graphs -- --sizes=3000000          # single size
+```
+
+The suite generates each file on the fly in the OS temp dir, runs the production parser against it, and deletes the file in a `finally` block. Valid files only — schema-level malformations are cheap to test in the normal unit suite (no need to generate a 600 MB file to verify "wrong header rejected"). See `src/graph/test/large-files/`.
+
+## Related small-file coverage
+
+Structural edge cases + invalid files are covered exhaustively here:
 
 - `src/graph/test/parseCSVRows.test.ts`, `parseEdgeListCSV.test.ts`, `parseNodeEdgeCSV.test.ts`
 - `src/graph/test/parseGraphML.test.ts`, `parseGEXF.test.ts`

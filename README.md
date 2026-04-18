@@ -13,35 +13,66 @@ npm run dev
 
 Open `http://localhost:5173`, then drag-and-drop a JSON graph file onto the drop zone (or click to browse).
 
-## Performance
+## Performance and Capacity
 
-Knotviz is engineered for large-scale graph visualization:
+### How big can your graph be?
 
-| Graph Size | Load Time | Interaction | Notes |
+| Graph Size | Load time | Interaction | Notes |
 |---|---|---|---|
-| 10K nodes | < 1s | 60 FPS | Instant everything |
-| 100K nodes | ~2s | 60 FPS | All features work smoothly |
-| 1M nodes | ~10s | 30+ FPS | Filters/colors via Web Worker, labels sampled |
-| 2M nodes | ~20s | 30+ FPS | JSON.parse in worker |
-| 3-4M nodes | ~40s | 15+ FPS | Streaming JSON parser (never holds full file in memory) |
+| 10K nodes | <1s | 60 FPS | Instant everything |
+| 100K nodes | ~2s | 60 FPS | All features fluid |
+| 1M nodes | ~10s | 30+ FPS | Filters/colors via Web Worker, labels auto-sampled |
+| 2M nodes | ~20s | 30+ FPS | Streaming loader engages for ≥200 MB inputs |
+| 3–5M nodes | ~30–60s | 15+ FPS | Only JSON and CSV can actually reach here — GraphML/GEXF OOM earlier (see below) |
 
-### Architecture for Performance
+### Capacity ceiling by file format
+
+Not every format can reach the same scale. The limit is parser memory, not rendering:
+
+| Format | Node ceiling (approx.) | Why |
+|---|---|---|
+| JSON | ~10M | Streaming parser (bracket counting + per-item `JSON.parse`) never holds the full tree in memory |
+| CSV edge list | ~10M | Streaming parser kicks in at ≥200 MB; memory is O(unique node ids), not O(file size) |
+| CSV nodes+edges pair | ~5M | Same streaming path; slightly lower because nodes file is wider |
+| GraphML | ~2M | `fast-xml-parser` builds a complete DOM in memory — a 3M-node GraphML is ~720 MB on disk and peaks around 4–5 GB parsed. Use JSON/CSV for larger graphs. |
+| GEXF | ~2M | Same as GraphML |
+
+### The simulation-space ceiling (GPU-bound, not software-bound)
+
+The force-directed simulation runs on a bounded 2D grid. The grid side length is capped at **8192 px** by WebGL texture-size limits — **this is a hardware limit, not something a bigger GPU will lift.** Every GPU tops out at 8192 for standard render targets.
+
+Inside that bounded square, nodes can't spread indefinitely. Past a certain density the simulation keeps running correctly — the physics is still fine — but the *image* saturates:
+
+| Graph size | What the canvas looks like at fit-view |
+|---|---|
+| ≤100k | Sparse, easy to trace individual connections |
+| 100k–500k | Dense but clusters clearly separable |
+| 500k–1M | Most of the square is covered; individual nodes start blurring into a "field of dots" |
+| 1M+ | The simulation square is typically filled edge-to-edge. Community structure (clusters) is often still visible, but node-level detail requires zoom |
+
+The exact crossover depends on your graph:
+- **Strong community structure** — clusters clump, leaving empty space. Stays legible longer (often up to 2–3M nodes).
+- **Uniform / random connectivity** — nodes spread evenly. Visual ceiling can hit as low as 500k.
+- **Tree-like / sparse graphs** — can stay legible past 5M because they occupy less area per edge.
+
+Past the visual ceiling, the graph is still fully interactive and filters/search/color mode work normally — you just can't read the big picture at full zoom. Zoom in, or use filter + search to narrow down to the subgraph you care about.
+
+### Architecture
 
 - **GPU rendering + simulation**: All rendering and force simulation run on the GPU via `@cosmos.gl/graph`. CPU does almost nothing during interaction.
-- **Web Worker loading**: File parsing runs in a dedicated worker — the UI stays responsive with a progress indicator. Files < 200MB use fast `JSON.parse`; files >= 200MB use a custom streaming parser.
-- **Web Worker appearance pipeline**: Filter matching, gradient coloring, link visibility, and substring-search highlight are all computed in a separate worker. The main thread only posts filter/gradient/search config (~1KB) and receives pre-built `Float32Array`s back (zero-copy transfer).
+- **Web Worker loading**: File parsing runs in a dedicated worker so the UI stays responsive with a progress indicator. JSON and CSV use streaming parsers for files ≥200 MB (never holds the full text in memory); smaller files use `JSON.parse` / full CSV read. GraphML and GEXF are always read in full (no SAX mode yet) — see the capacity table above.
+- **Web Worker appearance pipeline**: Filter matching, gradient coloring, link visibility, and substring-search highlight are all computed in a separate worker. Main thread only posts filter/gradient/search config (~1 KB) and receives pre-built `Float32Array`s back (zero-copy transfer).
 - **Compact data model**: Nodes stored as parallel arrays (`nodeIds[]`, `nodeLabels[]`) + columnar property arrays instead of full objects. ~80% less memory than `NodeInput[]`.
 - **GPU shader uniforms**: Node size and edge size sliders change `pointSizeScale`/`linkWidthScale` shader uniforms — instant response, no data rebuild.
 - **Cached hex-to-RGBA conversion**: Only ~20 unique colors exist in practice, but the conversion may be called millions of times. Results are cached.
 
-### Tips for Large Graphs
+### Tips for large graphs
 
-- **Labels**: Auto-disabled during simulation for graphs > 50K nodes (illegible at that scale and expensive to update).
-- **Simulation space**: Bounded by GPU texture size (8192x8192 max). Very large graphs with strong repulsion will fill the space.
-- **Rotation**: Transforms actual node positions via rotation matrix around center of mass — no CSS transform, canvas always fills the viewport.
+- **Labels**: Auto-disabled during simulation for graphs >50K nodes (illegible at that scale and expensive to update).
+- **Rotation**: Transforms actual node positions via rotation matrix around centre of mass — no CSS transform, canvas always fills the viewport.
 - **Filters**: Filtered-out nodes are fully hidden (alpha=0, size=0), not just dimmed. Edges to hidden nodes are also hidden.
 - **Search highlight**: Non-matching nodes are *dimmed* (alpha 0.1), not hidden — context stays visible. Filter visibility wins: filter-hidden nodes never reappear even if they match the search.
-- **Export**: For very large graphs (> 1M nodes), export creates a large JSON file. Consider disabling pretty-printing for smaller file size.
+- **Export**: For very large graphs (>1M nodes), export creates a large JSON file. Consider disabling pretty-printing for smaller file size.
 
 ## Input Formats
 

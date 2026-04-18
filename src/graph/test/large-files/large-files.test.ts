@@ -14,8 +14,9 @@
  * Not part of the default unit project — runs only via `npm run test:large-graphs`.
  * Each format has its own size ladder ending at the empirical ceiling (see
  * `DEFAULT_SIZES_PER_FORMAT` below). A full sweep is 30 tests and takes ~8–12
- * minutes on an M-series Mac with `--max-old-space-size=16384` (set by the
- * wrapper).
+ * minutes on an M-series Mac. The wrapper sets `--max-old-space-size=4096`
+ * to mirror real browser-tab conditions — ceilings found here match what
+ * users will hit in production.
  *
  * Pass `--sizes=N[,N,...]` to the wrapper to override the per-format ladders
  * with one common list — useful for targeted reruns:

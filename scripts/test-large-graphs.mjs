@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * Thin wrapper around `vitest run --project large-files` that accepts a CLI
- * `--sizes=` flag instead of a `SIZES=` env var. Also sets the heap size up
- * front so 3M-node XML parses don't OOM.
+ * `--sizes=` flag instead of a `SIZES=` env var. Caps heap at 4 GB to mirror
+ * real browser-tab conditions — ceilings found here match what users hit.
  *
  * Usage:
  *   npm run test:large-graphs                                # all sizes
@@ -27,7 +27,9 @@ for (const arg of process.argv.slice(2)) {
 
 const env = {
   ...process.env,
-  NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --max-old-space-size=16384`.trim(),
+  // Browser-tab realistic. The large-file tests verify that parsers stay under
+  // this ceiling so regressions that would OOM a real user surface here first.
+  NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ''} --max-old-space-size=4096`.trim(),
 }
 if (sizes) env.SIZES = sizes
 

@@ -4,7 +4,16 @@ Knotviz is a personal side project, but contributions are welcome. Bug fixes, pe
 
 This file is the **authoritative engineering reference** for the repo. All contributors — humans and AI coding agents alike — should read it before making changes. For the product overview and feature list, see `README.md`.
 
-> **Agents: edit only this file.** `CLAUDE.md` and `AGENTS.md` are thin pointers to this file and must stay that way. If you find yourself about to add a rule, preference, or architectural note to `CLAUDE.md` or `AGENTS.md`, stop — add it here instead. Keeping everything in one place is how we avoid the three files drifting out of sync.
+> **Agents: edit only this file.** Several thin pointer files exist for tool-specific discovery; they must stay thin. If you find yourself about to add a rule, preference, or architectural note to any of the pointer files below, stop — add it here instead. Keeping everything in one place is how we avoid drift.
+>
+> | Tool | File |
+> |---|---|
+> | Claude Code | `CLAUDE.md` |
+> | Codex, Aider, Zed AI, Cline, Jules, Windsurf | `AGENTS.md` (per [agents.md](https://agents.md/)) |
+> | Cursor | `.cursor/rules/knotviz.mdc` |
+> | GitHub Copilot | `.github/copilot-instructions.md` |
+>
+> When adding a pointer for a new tool, match the pattern: 3–5 lines, a link to `CONTRIBUTING.md`, and an explicit "do not add rules here" instruction.
 
 ---
 

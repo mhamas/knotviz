@@ -10,9 +10,9 @@ Tasks to complete before making the repo public.
 
 ## Should fix
 
-- [ ] **`logos/` directory** — currently untracked. Either commit (if needed for README/homepage) or add to .gitignore
-- [ ] **Add `__pycache__/` to .gitignore** — Python cache in `scripts/` directory
-- [ ] **Add CONTRIBUTING.md** — short file: how to run tests, PR expectations, "side project" disclaimer if relevant
+- [x] **`logos/` directory** — currently untracked. Either commit (if needed for README/homepage) or add to .gitignore
+- [x] **Add `__pycache__/` to .gitignore** — Python cache in `scripts/` directory
+- [x] **Add CONTRIBUTING.md** — short file: how to run tests, PR expectations, "side project" disclaimer if relevant
 
 ## Nice to have (post-launch)
 

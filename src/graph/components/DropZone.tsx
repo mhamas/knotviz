@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import type { CosmosGraphData, NodePropertiesMetadata, PropertyMeta, PositionMode } from '../types'
 import type { PropertyColumns } from '../hooks/useFilterState'
+import type { FileFormat } from '../lib/detectFileFormat'
 import LoadingWorker from '@/workers/loadingWorker?worker'
 import { detectFileFormat } from '../lib/detectFileFormat'
 import { SchemaDialog } from './SchemaDialog'
@@ -51,6 +52,9 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
     replacementCount: number
   } | null>(null)
 
+  const [pairNodesFile, setPairNodesFile] = useState<File | null>(null)
+  const [pairEdgesFile, setPairEdgesFile] = useState<File | null>(null)
+
   const internalFileInputRef = useRef<HTMLInputElement>(null)
   const fileInputRef = externalFileInputRef ?? internalFileInputRef
   const workerRef = useRef<Worker | null>(null)
@@ -60,28 +64,18 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
     return () => { workerRef.current?.terminate() }
   }, [])
 
-  const processFiles = useCallback(
-    (inputFiles: File[]): void => {
+  /**
+   * Runs the loader worker against an explicit set of files and format.
+   * Shared by the main drop path (after `detectFileFormat`) and the
+   * CSV-pair slots (which already know `[nodes, edges]` and `csv-pair`).
+   */
+  const runLoader = useCallback(
+    (files: File[], format: FileFormat, displayName: string): void => {
       setError(null)
-      let detection
-      try {
-        detection = detectFileFormat(inputFiles)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Unable to read file')
-        return
-      }
-      const { format, orderedFiles } = detection
-      const displayName =
-        format === 'csv-pair'
-          ? `${orderedFiles[0].name} + ${orderedFiles[1].name}`
-          : orderedFiles[0].name
-
       setIsLoading(true)
       setLoadingStatus('Starting…')
 
-      // Terminate any previous worker
       workerRef.current?.terminate()
-
       const worker = new LoadingWorker()
       workerRef.current = worker
 
@@ -151,12 +145,61 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
         setIsLoading(false)
       }
 
-      worker.postMessage({ type: 'load', files: orderedFiles, format })
+      worker.postMessage({ type: 'load', files, format })
     },
     [onLoad],
   )
 
+  const processFiles = useCallback(
+    (inputFiles: File[]): void => {
+      setError(null)
+      let detection
+      try {
+        detection = detectFileFormat(inputFiles)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unable to read file')
+        return
+      }
+      const { format, orderedFiles } = detection
+      const displayName =
+        format === 'csv-pair'
+          ? `${orderedFiles[0].name} + ${orderedFiles[1].name}`
+          : orderedFiles[0].name
+      runLoader(orderedFiles, format, displayName)
+    },
+    [runLoader],
+  )
+
   const processFile = useCallback((file: File): void => processFiles([file]), [processFiles])
+
+  /** Load the CSV pair as soon as both slots are filled. */
+  const maybeLoadPair = useCallback(
+    (nodes: File | null, edges: File | null): void => {
+      if (!nodes || !edges) return
+      setError(null)
+      const displayName = `${nodes.name} + ${edges.name}`
+      runLoader([nodes, edges], 'csv-pair', displayName)
+      setPairNodesFile(null)
+      setPairEdgesFile(null)
+    },
+    [runLoader],
+  )
+
+  const onDropNodes = useCallback(
+    (file: File): void => {
+      setPairNodesFile(file)
+      maybeLoadPair(file, pairEdgesFile)
+    },
+    [maybeLoadPair, pairEdgesFile],
+  )
+
+  const onDropEdges = useCallback(
+    (file: File): void => {
+      setPairEdgesFile(file)
+      maybeLoadPair(pairNodesFile, file)
+    },
+    [maybeLoadPair, pairNodesFile],
+  )
 
   // Auto-process a file passed from drag-drop on loaded graph
   const [initialPendingFile] = useState(pendingFile)
@@ -212,10 +255,10 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
   }, [])
 
   return (
-    <div className="flex h-full w-full items-center justify-center bg-slate-50">
+    <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-slate-50 py-8">
       <div
         data-testid="drop-zone"
-        className={`flex h-80 w-[32rem] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${
+        className={`flex h-64 w-[32rem] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed transition-colors ${
           isDragOver ? 'border-blue-400 bg-blue-50' : 'border-slate-300 bg-white'
         }`}
         onDragOver={handleDragOver}
@@ -236,9 +279,6 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
             <p className="mt-1 text-xs text-slate-400">
               JSON, CSV/TSV, GraphML, or GEXF — or click to browse
             </p>
-            <p className="mt-1 text-xs text-slate-400">
-              CSV pair: select both <span className="font-mono">*nodes*.csv</span> + <span className="font-mono">*edges*.csv</span> at once
-            </p>
             <button
               className="mt-3 cursor-pointer text-xs text-slate-400 underline hover:text-slate-600"
               onClick={(e): void => {
@@ -257,6 +297,34 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
           </p>
         )}
       </div>
+
+      {!isLoading && (
+        <>
+          <div className="flex w-[32rem] items-center gap-3 text-xs uppercase tracking-wider text-slate-400">
+            <div className="h-px flex-1 bg-slate-200" />
+            <span>or a CSV pair</span>
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
+          <div className="flex w-[32rem] gap-3">
+            <CsvSlot
+              testId="csv-slot-nodes"
+              label="Nodes"
+              hint="drop CSV / TSV"
+              file={pairNodesFile}
+              onFile={onDropNodes}
+              onClear={(): void => setPairNodesFile(null)}
+            />
+            <CsvSlot
+              testId="csv-slot-edges"
+              label="Edges"
+              hint="drop CSV / TSV"
+              file={pairEdgesFile}
+              onFile={onDropEdges}
+              onClear={(): void => setPairEdgesFile(null)}
+            />
+          </div>
+        </>
+      )}
 
       <input
         ref={fileInputRef}
@@ -285,6 +353,96 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  )
+}
+
+interface CsvSlotProps {
+  testId: string
+  label: string
+  hint: string
+  file: File | null
+  onFile: (file: File) => void
+  onClear: () => void
+}
+
+/**
+ * One half of the CSV pair drop target — labelled "Nodes" or "Edges" so the
+ * user doesn't need to remember a filename convention. When a file is
+ * present, the slot shows the filename and a clear (×) button.
+ */
+function CsvSlot({ testId, label, hint, file, onFile, onClear }: CsvSlotProps): React.JSX.Element {
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [isDragOver, setIsDragOver] = useState(false)
+
+  const accept = (candidate: File): boolean => /\.(csv|tsv)$/i.test(candidate.name)
+
+  const handleDrop = (e: React.DragEvent): void => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragOver(false)
+    const first = e.dataTransfer.files[0]
+    if (first && accept(first)) onFile(first)
+  }
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const first = e.target.files?.[0]
+    if (first && accept(first)) onFile(first)
+    e.target.value = ''
+  }
+
+  return (
+    <div
+      data-testid={testId}
+      onDragOver={(e): void => {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsDragOver(true)
+      }}
+      onDragLeave={(e): void => {
+        e.preventDefault()
+        e.stopPropagation()
+        setIsDragOver(false)
+      }}
+      onDrop={handleDrop}
+      onClick={(): void => inputRef.current?.click()}
+      className={`flex h-24 flex-1 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed transition-colors ${
+        file
+          ? 'border-green-400 bg-green-50'
+          : isDragOver
+          ? 'border-blue-400 bg-blue-50'
+          : 'border-slate-300 bg-white hover:border-slate-400'
+      }`}
+    >
+      {file ? (
+        <>
+          <p className="text-xs font-medium uppercase tracking-wider text-green-700">{label}</p>
+          <p className="mt-0.5 max-w-[14rem] truncate px-2 text-xs text-slate-700" title={file.name}>
+            ✓ {file.name}
+          </p>
+          <button
+            className="mt-1 text-xs text-slate-400 underline hover:text-slate-600"
+            onClick={(e): void => {
+              e.stopPropagation()
+              onClear()
+            }}
+          >
+            clear
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="text-xs font-medium uppercase tracking-wider text-slate-500">{label}</p>
+          <p className="mt-0.5 text-xs text-slate-400">{hint}</p>
+        </>
+      )}
+      <input
+        ref={inputRef}
+        type="file"
+        accept=".csv,.tsv"
+        className="hidden"
+        onChange={handleChange}
+      />
     </div>
   )
 }

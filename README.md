@@ -27,17 +27,17 @@ So the useful ceiling is **~1M nodes for most graphs**, creeping up to **~2M for
 
 ### Loading can go higher, but that's not the same as usable
 
-Knotviz's parsers can technically load files larger than the useful ceiling — the automated test suite verifies these loading numbers up to a 4 GB browser heap. **Past the useful ceiling the tool is loading data you won't really look at.** Honest distinction:
+**The useful ceiling is ~1M across every format** — that's a visual-density + interaction limit, not a format-specific one. The per-format loading limits matter only as the point where the tab crashes ("Aw, Snap!" renderer OOM):
 
-| Format | Loads up to | Useful up to |
-|---|---|---|
-| JSON | ~5M nodes (~1 GB file) | ~1M (up to ~2M if highly clustered) |
-| CSV edge list | ~5M nodes (~215 MB file) | ~1M |
-| CSV nodes+edges pair | ~2M nodes (~175 MB file) | ~1M |
-| GraphML | ~500k nodes (~118 MB file) | ~500k (loading limit lands below the visual ceiling) |
-| GEXF | ~1M nodes (~235 MB file) | ~1M (same) |
+| Format | Loads up to |
+|---|---|
+| JSON | ~5M nodes (~1 GB file) |
+| CSV edge list | ~5M nodes (~215 MB file) |
+| CSV nodes+edges pair | ~2M nodes (~175 MB file) |
+| GraphML | ~500k nodes (~118 MB file) |
+| GEXF | ~1M nodes (~235 MB file) |
 
-Past the "loads up to" column the tab crashes ("Aw, Snap!" renderer OOM). Past the "useful up to" column the load completes but the graph is a blob that you navigate only via filter + search + colour + zoom, not by eyeballing the whole thing.
+GraphML's loading limit (~500k) actually lands *below* the universal 1M useful ceiling, so for that format the loading limit is what you'll hit first. For every other format you'll hit the useful ceiling long before the loading one — past 1M the load succeeds but the graph is a blob that you navigate only via filter + search + colour + zoom, not by eyeballing the whole thing.
 
 ### Interaction tier
 

@@ -43,9 +43,26 @@ Knotviz is engineered for large-scale graph visualization:
 - **Search highlight**: Non-matching nodes are *dimmed* (alpha 0.1), not hidden — context stays visible. Filter visibility wins: filter-hidden nodes never reappear even if they match the search.
 - **Export**: For very large graphs (> 1M nodes), export creates a large JSON file. Consider disabling pretty-printing for smaller file size.
 
-## Input Format
+## Input Formats
 
-The app accepts `.json` files with this structure:
+Knotviz reads five file formats. All of them flow into the same internal graph model and downstream pipeline — use whichever is most convenient for your data source.
+
+| Format | Extension | Drop | Notes |
+|---|---|---|---|
+| JSON | `.json` | single file | Native format, full fidelity, versioned schema |
+| CSV edge list | `.csv` / `.tsv` | single file | Zero-config edge list, nodes auto-derived |
+| CSV nodes+edges pair | `.csv` / `.tsv` × 2 | both files at once | Full per-node properties with typed headers |
+| GraphML | `.graphml` / `.xml` | single file | W3C-ish standard; round-trips Gephi / NetworkX / yEd |
+| GEXF | `.gexf` | single file | Gephi's native format, supports `viz:position` for x/y |
+
+### Shared conventions
+
+- **Property types**: `number`, `string`, `boolean`, `date` (ISO 8601 string), and `string[]` (multi-valued).
+- **String arrays are pipe-delimited** (`red|green|blue`). Literal `|` inside a value is escaped as `\|`; literal `\` as `\\`. This convention applies to CSV, GraphML, and GEXF since none of those formats has a native array type.
+- **Missing values are backfilled with type defaults on load** (`0`, `""`, `false`, `[]`, `"1970-01-01"`). A blocking modal reports the total replacement count and lets you cancel.
+- **Type inference**: types are detected from values per column/property. CSV columns can optionally declare a type via the header convention below; everything else infers from samples.
+
+### JSON
 
 ```json
 {
@@ -58,21 +75,93 @@ The app accepts `.json` files with this structure:
     { "source": "1", "target": "2", "label": "knows", "weight": 0.8 }
   ],
   "nodePropertiesMetadata": {
-    "age": { "description": "Age in years" },
-    "active": { "description": "Whether the user is currently active" }
+    "age": { "description": "Age in years" }
   }
 }
 ```
 
-**Nodes**: `id` (required), `label` (optional), `x`/`y` (optional — initial positions), `properties` (optional — key/value pairs: number, string, boolean, string[], or ISO 8601 date strings).
+- **Nodes**: `id` (required), `label` / `x` / `y` / `properties` (all optional).
+- **Edges**: `source` / `target` (required), `label` / `weight` (optional).
+- **`nodePropertiesMetadata`** (optional): maps property keys to `{ description }`. Descriptions appear as help popovers in the filter panels and node tooltip.
 
-**Edges**: `source` and `target` (required), `label` (optional), `weight` (optional).
+Full schema: `src/graph/lib/graphSchema.json`.
 
-**nodePropertiesMetadata** (optional): Maps property keys to `{ description }` objects. Descriptions appear as help popovers in filter panels and the node tooltip.
+### CSV edge list (single file)
 
-Property types are auto-detected from values: all booleans -> boolean, all numbers -> number, all ISO dates -> date, arrays of strings -> string[], otherwise -> string. Missing property values are backfilled with type defaults (0, "", false, [], "1970-01-01").
+Drop a single `.csv` or `.tsv` with one edge per row:
 
-Full schema: `src/graph/lib/graphSchema.json`
+```csv
+source,target,weight,label
+alice,bob,0.8,knows
+bob,carol,1.2,follows
+```
+
+`source` and `target` are required; `weight` and `label` are optional. Column names are case-insensitive. Nodes are auto-derived from the union of source+target ids (no per-node properties — use the pair format for those). Extra columns are ignored. See `scripts/csv-to-graph.mjs` for a script that converts any CSV to JSON outside the app.
+
+### CSV nodes + edges pair
+
+Drop both files at once. Knotviz pairs them by filename (`*nodes*.csv` + `*edges*.csv`) regardless of the drop order.
+
+`nodes.csv`:
+
+```csv
+id,label,x,y,age:number,joined:date,active:boolean,tags:string[]
+n1,Alice,10,20,34,2021-03-15,true,engineer|founder
+n2,Bob,-5,8,28,2023-11-02,false,designer
+```
+
+`edges.csv` — same shape as the edge-list format above.
+
+**Typed column headers.** Any non-structural column can declare its type via a `name:type` suffix (recognised: `number`, `string`, `boolean`, `date`, `string[]`). Headers without a suffix are inferred from sample values. `string[]` is never inferred — declare it explicitly so a legitimate string containing a pipe isn't misclassified as an array.
+
+Structural columns (case-insensitive, no type suffix needed): `id` (required), `label`, `x`, `y`.
+
+### GraphML
+
+Standard GraphML with `<key>` declarations and `<data>` values:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+  <key id="lbl" for="node" attr.name="label" attr.type="string"/>
+  <key id="age" for="node" attr.name="age"   attr.type="int"/>
+  <key id="w"   for="edge" attr.name="weight" attr.type="double"/>
+  <graph edgedefault="directed">
+    <node id="n1"><data key="lbl">Alice</data><data key="age">34</data></node>
+    <node id="n2"><data key="lbl">Bob</data></node>
+    <edge source="n1" target="n2"><data key="w">0.8</data></edge>
+  </graph>
+</graphml>
+```
+
+Supported `attr.type`: `int`, `long`, `float`, `double`, `boolean`, `string`. Node keys named `label`, `x`, `y` map to structural fields; edge keys named `label` and `weight` map to `EdgeInput`. Other edge data is ignored. `<default>` fallbacks are honoured. yEd-specific extensions (`<y:Geometry>`, `<y:Fill>`), hyperedges, and nested graphs are out of scope.
+
+### GEXF
+
+GEXF 1.3 static graphs:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<gexf xmlns="http://gexf.net/1.3" version="1.3">
+  <graph mode="static" defaultedgetype="directed">
+    <attributes class="node">
+      <attribute id="0" title="age" type="integer"/>
+    </attributes>
+    <nodes>
+      <node id="n1" label="Alice">
+        <attvalues><attvalue for="0" value="34"/></attvalues>
+        <viz:position x="10" y="20" xmlns:viz="http://gexf.net/1.3/viz"/>
+      </node>
+      <node id="n2" label="Bob"/>
+    </nodes>
+    <edges>
+      <edge source="n1" target="n2" weight="0.8"/>
+    </edges>
+  </graph>
+</gexf>
+```
+
+Supported attribute `type`: `integer`, `long`, `float`, `double`, `boolean`, `string`, `anyURI`, `liststring` (decoded via the pipe-delimited convention). Element attributes on `<edge>` (`weight`, `label`) take priority over matching attvalues. `<viz:position>` maps to node x/y; z is ignored. Dynamic mode / `<spells>`, `viz:color`, `viz:size`, and `viz:shape` are out of scope.
 
 ## Features
 

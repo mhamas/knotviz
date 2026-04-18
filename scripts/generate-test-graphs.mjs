@@ -286,8 +286,10 @@ async function genJson(size, invalid) {
 
 // ─── CSV edge-list generator ──────────────────────────────────────────────
 
-async function genCsvEdgeList(size, invalid) {
-  const name = invalid ? `invalid-${humanSize(size)}.csv` : `${humanSize(size)}.csv`
+async function genCsvEdgeList(size, invalid, variant = 'csv') {
+  const delim = variant === 'tsv' ? '\t' : ','
+  const ext = variant === 'tsv' ? 'tsv' : 'csv'
+  const name = invalid ? `invalid-${humanSize(size)}.${ext}` : `${humanSize(size)}.${ext}`
   const file = path.join(formatDir('csv-edge-list'), name)
   const w = writeStream(file)
   const rng = makeRng(size + (invalid ? 2 : 0))
@@ -295,9 +297,9 @@ async function genCsvEdgeList(size, invalid) {
 
   if (invalid) {
     // Wrong column names — parser rejects at header validation.
-    await w.write('src,dst,weight,label\n')
+    await w.write(['src', 'dst', 'weight', 'label'].join(delim) + '\n')
   } else {
-    await w.write('source,target,weight,label\n')
+    await w.write(['source', 'target', 'weight', 'label'].join(delim) + '\n')
   }
 
   const edgeCount = Math.floor(size * 1.5)
@@ -306,29 +308,31 @@ async function genCsvEdgeList(size, invalid) {
     const dst = pickTarget(src)
     const weight = Math.round(rng() * 100) / 100
     const label = rng() > 0.5 ? 'knows' : 'follows'
-    await w.write(`n${src},n${dst},${weight},${label}\n`)
+    await w.write(`n${src}${delim}n${dst}${delim}${weight}${delim}${label}\n`)
   }
   await w.close()
 }
 
 // ─── CSV pair generator (two files) ───────────────────────────────────────
 
-async function genCsvPair(size, invalid) {
+async function genCsvPair(size, invalid, variant = 'csv') {
+  const delim = variant === 'tsv' ? '\t' : ','
+  const ext = variant === 'tsv' ? 'tsv' : 'csv'
   const prefix = invalid ? `invalid-${humanSize(size)}` : humanSize(size)
   const dir = formatDir('csv-pair')
-  const nodesFile = path.join(dir, `${prefix}-nodes.csv`)
-  const edgesFile = path.join(dir, `${prefix}-edges.csv`)
+  const nodesFile = path.join(dir, `${prefix}-nodes.${ext}`)
+  const edgesFile = path.join(dir, `${prefix}-edges.${ext}`)
   const nw = writeStream(nodesFile)
   const ew = writeStream(edgesFile)
   const rng = makeRng(size + (invalid ? 3 : 0))
   const { nodeToCommunity, pickTarget, communityLabel } = setupClustering(size, rng)
 
-  const header = 'community:string,age:number,active:boolean,joined:date,tags:string[]'
+  const propCols = ['community:string', 'age:number', 'active:boolean', 'joined:date', 'tags:string[]']
   if (invalid) {
     // Missing `id` column in the nodes CSV — the parser throws at validation.
-    await nw.write(`name,label,${header}\n`)
+    await nw.write(['name', 'label', ...propCols].join(delim) + '\n')
   } else {
-    await nw.write(`id,label,${header}\n`)
+    await nw.write(['id', 'label', ...propCols].join(delim) + '\n')
   }
 
   for (let i = 0; i < size; i++) {
@@ -336,19 +340,27 @@ async function genCsvPair(size, invalid) {
     const tagsStr = p.tags.join('|')
     const community = communityLabel(nodeToCommunity[i])
     await nw.write(
-      `n${i},${LABELS[i % LABELS.length]},${community},${p.age},${p.active},${p.joined},${tagsStr}\n`,
+      [
+        `n${i}`,
+        LABELS[i % LABELS.length],
+        community,
+        p.age,
+        p.active,
+        p.joined,
+        tagsStr,
+      ].join(delim) + '\n',
     )
   }
   await nw.close()
 
-  await ew.write('source,target,weight,label\n')
+  await ew.write(['source', 'target', 'weight', 'label'].join(delim) + '\n')
   const edgeCount = Math.floor(size * 1.5)
   for (let e = 0; e < edgeCount; e++) {
     const src = Math.floor(rng() * size)
     const dst = pickTarget(src)
     const weight = Math.round(rng() * 100) / 100
     const label = rng() > 0.5 ? 'knows' : 'follows'
-    await ew.write(`n${src},n${dst},${weight},${label}\n`)
+    await ew.write(`n${src}${delim}n${dst}${delim}${weight}${delim}${label}\n`)
   }
   await ew.close()
 }
@@ -452,10 +464,14 @@ async function runOne(format, size, invalid) {
       await genJson(size, invalid)
       break
     case 'csv-edge-list':
-      await genCsvEdgeList(size, invalid)
+      // Emit both .csv (comma-separated) and .tsv (tab-separated) so users
+      // can exercise either delimiter from the same corpus.
+      await genCsvEdgeList(size, invalid, 'csv')
+      await genCsvEdgeList(size, invalid, 'tsv')
       break
     case 'csv-pair':
-      await genCsvPair(size, invalid)
+      await genCsvPair(size, invalid, 'csv')
+      await genCsvPair(size, invalid, 'tsv')
       break
     case 'graphml':
       await genGraphML(size, invalid)

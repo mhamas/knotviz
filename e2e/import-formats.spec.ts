@@ -21,8 +21,44 @@ test.describe('Multi-format import', () => {
     await expect(page.getByTestId('stat-edges').getByText('3')).toBeVisible()
   })
 
-  test('imports a CSV nodes + edges pair', async ({ page }) => {
+  test('imports a single-file TSV edge list', async ({ page }) => {
+    await loadFiles(page, ['sample-edge-list.tsv'])
+    await expect(page.getByTestId('stat-nodes').getByText('3')).toBeVisible()
+    await expect(page.getByTestId('stat-edges').getByText('3')).toBeVisible()
+  })
+
+  test('imports a CSV nodes + edges pair via multi-select', async ({ page }) => {
     await loadFiles(page, ['sample-nodes.csv', 'sample-edges.csv'])
+    await expect(page.getByTestId('stat-nodes').getByText('3')).toBeVisible()
+    await expect(page.getByTestId('stat-edges').getByText('3')).toBeVisible()
+  })
+
+  test('imports a CSV pair via the named Nodes + Edges slots', async ({ page }) => {
+    await page.goto('/graph')
+    // Drop into the Nodes slot
+    const nodesChooser = page.waitForEvent('filechooser')
+    await page.getByTestId('csv-slot-nodes').click()
+    await (await nodesChooser).setFiles(fixture('sample-nodes.csv'))
+    // Graph hasn't loaded yet — only one slot filled
+    await expect(page.getByTestId('sigma-canvas')).toHaveCount(0)
+    // Drop into the Edges slot — now both filled, load should trigger
+    const edgesChooser = page.waitForEvent('filechooser')
+    await page.getByTestId('csv-slot-edges').click()
+    await (await edgesChooser).setFiles(fixture('sample-edges.csv'))
+    await expect(page.getByTestId('sigma-canvas')).toBeVisible()
+    await expect(page.getByTestId('stat-nodes').getByText('3')).toBeVisible()
+    await expect(page.getByTestId('stat-edges').getByText('3')).toBeVisible()
+  })
+
+  test('imports a TSV pair via the named slots', async ({ page }) => {
+    await page.goto('/graph')
+    const nodesChooser = page.waitForEvent('filechooser')
+    await page.getByTestId('csv-slot-nodes').click()
+    await (await nodesChooser).setFiles(fixture('sample-nodes.tsv'))
+    const edgesChooser = page.waitForEvent('filechooser')
+    await page.getByTestId('csv-slot-edges').click()
+    await (await edgesChooser).setFiles(fixture('sample-edges.tsv'))
+    await expect(page.getByTestId('sigma-canvas')).toBeVisible()
     await expect(page.getByTestId('stat-nodes').getByText('3')).toBeVisible()
     await expect(page.getByTestId('stat-edges').getByText('3')).toBeVisible()
   })

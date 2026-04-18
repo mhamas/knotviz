@@ -115,7 +115,7 @@
               </svg>
             </div>
             <h3 class="mt-4 text-lg font-semibold">Drag, drop, done</h3>
-            <p class="mt-2 text-sm text-gray-600">Accepts JSON, CSV edge lists, CSV nodes&nbsp;+&nbsp;edges pairs, GraphML, and GEXF. Export the laid-out graph back to JSON with positions preserved — one file in, one file out, round-trip clean.</p>
+            <p class="mt-2 text-sm text-gray-600">Accepts JSON, CSV / TSV edge lists, CSV / TSV nodes&nbsp;+&nbsp;edges pairs (via labelled drop slots), GraphML, and GEXF. Export the laid-out graph back to JSON with positions preserved — one file in, one file out, round-trip clean.</p>
           </div>
 
         </div>
@@ -271,11 +271,14 @@
         <!-- Format chips -->
         <div class="mt-8 flex flex-wrap items-center justify-center gap-3 text-sm">
           <span class="rounded-full border border-gray-200 bg-white px-4 py-1.5 font-medium text-gray-700">JSON</span>
-          <span class="rounded-full border border-gray-200 bg-white px-4 py-1.5 font-medium text-gray-700">CSV edge list</span>
-          <span class="rounded-full border border-gray-200 bg-white px-4 py-1.5 font-medium text-gray-700">CSV nodes + edges</span>
+          <span class="rounded-full border border-gray-200 bg-white px-4 py-1.5 font-medium text-gray-700">CSV / TSV edge list</span>
+          <span class="rounded-full border border-gray-200 bg-white px-4 py-1.5 font-medium text-gray-700">CSV / TSV nodes + edges</span>
           <span class="rounded-full border border-gray-200 bg-white px-4 py-1.5 font-medium text-gray-700">GraphML</span>
           <span class="rounded-full border border-gray-200 bg-white px-4 py-1.5 font-medium text-gray-700">GEXF</span>
         </div>
+        <p class="mx-auto mt-4 max-w-2xl text-center text-xs text-gray-500">
+          Two-file CSV / TSV pair? Drop into the labelled <em>Nodes</em> and <em>Edges</em> slots on the drop zone — one file each, any order.
+        </p>
 
         <p class="mx-auto mt-6 max-w-2xl text-center text-sm text-gray-500">
           Minimum JSON looks like this — everything beyond <code class="rounded bg-gray-100 px-1 py-0.5 text-xs">id</code>, <code class="rounded bg-gray-100 px-1 py-0.5 text-xs">source</code>, and <code class="rounded bg-gray-100 px-1 py-0.5 text-xs">target</code> is optional:

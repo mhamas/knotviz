@@ -83,7 +83,7 @@ bob,carol,1.2,follows
 
 ### CSV pair
 
-Drop both files at once; Knotviz pairs them by filename (`*nodes*.csv` + `*edges*.csv`).
+Drop each file into its labelled slot on the drop zone (`Nodes`, `Edges`); the graph loads as soon as both slots are filled. Works with `.csv` and `.tsv`. Alternatively, multi-select both files and drop them together — the app pairs them by filename (`*nodes*` + `*edges*` tokens).
 
 ```csv
 id,label,x,y,age:number,joined:date,active:boolean,tags:string[]

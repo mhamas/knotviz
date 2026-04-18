@@ -8,38 +8,27 @@ Automated tests cover happy paths, schema-level malformations, and edge cases fo
 node scripts/generate-test-graphs.mjs
 ```
 
-Output lands in `graphs_for_manual_testing_various_formats/` (gitignored). Full corpus is ~7 GB. To trim, pass `--sizes=` and/or `--format=`:
+Output lands in `graphs_for_manual_testing_various_formats/` (gitignored). By default only **valid** files are produced; automated tests cover the invalid side (`npm run test:large-graphs`). To regenerate with invalid variants too, pass `--include-invalid`.
 
 ```bash
-node scripts/generate-test-graphs.mjs --sizes=10000,100000            # small only
-node scripts/generate-test-graphs.mjs --format=csv-edge-list           # one format
-node scripts/generate-test-graphs.mjs --format=json --sizes=3000000    # a single file
+node scripts/generate-test-graphs.mjs --sizes=10000,100000          # small sizes only
+node scripts/generate-test-graphs.mjs --format=csv-edge-list         # one format
+node scripts/generate-test-graphs.mjs --format=json --sizes=3000000  # a single file
+node scripts/generate-test-graphs.mjs --include-invalid              # add malformed variants
 ```
 
-Contents (60 files, 5 sizes × 5 formats × valid+invalid) organised into per-format subfolders so you can exercise one format at a time:
+Contents (30 files by default — 5 sizes × 5 formats; doubles to 60 with `--include-invalid`) organised into per-format subfolders so you can exercise one format at a time:
 
 ```
 graphs_for_manual_testing_various_formats/
-├── json/
-│   ├── valid-{size}.json
-│   └── invalid-{size}.json
-├── csv-edge-list/
-│   ├── valid-{size}.csv
-│   └── invalid-{size}.csv
-├── csv-pair/
-│   ├── valid-{size}-nodes.csv
-│   ├── valid-{size}-edges.csv
-│   ├── invalid-{size}-nodes.csv
-│   └── invalid-{size}-edges.csv
-├── graphml/
-│   ├── valid-{size}.graphml
-│   └── invalid-{size}.graphml
-└── gexf/
-    ├── valid-{size}.gexf
-    └── invalid-{size}.gexf
+├── json/              valid-{size}.json
+├── csv-edge-list/     valid-{size}.csv
+├── csv-pair/          valid-{size}-nodes.csv + valid-{size}-edges.csv
+├── graphml/           valid-{size}.graphml
+└── gexf/              valid-{size}.gexf
 ```
 
-What each invalid variant breaks:
+With `--include-invalid`, each subfolder also gets `invalid-{size}.*` files. What each invalid variant breaks:
 
 | Folder | Invalid fault |
 |---|---|

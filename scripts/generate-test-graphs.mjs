@@ -1,28 +1,22 @@
 #!/usr/bin/env node
 /**
- * Generate manual-testing graph files in every supported format, at multiple sizes,
- * in both valid and deliberately invalid variants.
+ * Generate manual-testing graph files in every supported format, at multiple sizes.
+ * By default produces only valid files; pass `--include-invalid` to also generate
+ * deliberately malformed variants (the automated large-files test suite covers those
+ * end-to-end, so most manual testing only needs the valid side).
  *
  * Output directory: graphs_for_manual_testing_various_formats/
- *   json/
- *     valid-<size>.json
- *     invalid-<size>.json
- *   csv-edge-list/
- *     valid-<size>.csv
- *     invalid-<size>.csv
- *   csv-pair/
- *     valid-<size>-nodes.csv
- *     valid-<size>-edges.csv
- *     invalid-<size>-nodes.csv
- *     invalid-<size>-edges.csv
- *   graphml/
- *     valid-<size>.graphml
- *     invalid-<size>.graphml
- *   gexf/
- *     valid-<size>.gexf
- *     invalid-<size>.gexf
+ *   json/valid-<size>.json
+ *   csv-edge-list/valid-<size>.csv
+ *   csv-pair/valid-<size>-nodes.csv + valid-<size>-edges.csv
+ *   graphml/valid-<size>.graphml
+ *   gexf/valid-<size>.gexf
  *
- * Usage: node scripts/generate-test-graphs.mjs [--sizes=10000,100000,...] [--format=all|json|...]
+ * Usage:
+ *   node scripts/generate-test-graphs.mjs
+ *   node scripts/generate-test-graphs.mjs --sizes=10000,100000
+ *   node scripts/generate-test-graphs.mjs --format=json
+ *   node scripts/generate-test-graphs.mjs --include-invalid
  */
 
 import fs from 'node:fs'
@@ -44,6 +38,7 @@ const sizes = (args.get('sizes') ?? '10000,100000,500000,1000000,3000000')
   .split(',')
   .map((s) => Number(s))
 const onlyFormat = args.get('format') ?? 'all'
+const includeInvalid = args.get('include-invalid') === 'true'
 const formats = ['json', 'csv-edge-list', 'csv-pair', 'graphml', 'gexf']
 
 fs.mkdirSync(outDir, { recursive: true })
@@ -327,11 +322,12 @@ async function runOne(format, size, invalid) {
 }
 
 const targetFormats = onlyFormat === 'all' ? formats : [onlyFormat]
+const variants = includeInvalid ? [false, true] : [false]
 
 for (const size of sizes) {
   console.log(`\n→ ${humanSize(size)} nodes`)
   for (const format of targetFormats) {
-    for (const invalid of [false, true]) {
+    for (const invalid of variants) {
       await runOne(format, size, invalid)
     }
   }

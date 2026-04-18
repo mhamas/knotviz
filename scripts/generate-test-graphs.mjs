@@ -41,22 +41,25 @@ const args = new Map(
   }),
 )
 
-// Per-format default sizes based on what actually loads end-to-end in a
-// 4 GB browser tab — parser + GraphBuilder + finalize combined, matching the
-// full worker pipeline. The automated `npm run test:large-graphs` suite
-// verifies these sizes pass; anything larger has been observed to OOM.
+// Per-format "comfortable" sizes — what has been verified to load reliably in
+// a real Chrome tab, with margin for the browser's own overhead on top of
+// what the worker uses (main-thread receive, zustand store, cosmos GPU buffer
+// allocation, Chrome renderer overhead). The automated test suite's Node-side
+// ceilings are roughly 2× higher per format, but those don't account for the
+// browser's extra ~1 GB+ of overhead. These comfortable ceilings are what the
+// README promises, and files generated here should load without crashing.
 //
-//   JSON:          up to 10M nodes  (~2 GB file,    ~3 GB peak heap)
-//   CSV edge-list: up to 10M nodes  (~430 MB file,  ~1.5 GB peak heap)
-//   CSV pair:      up to 5M nodes   (~450 MB total, ~1.8 GB peak heap)
-//   GraphML:       up to 1M nodes   (~237 MB file,  ~2 GB peak heap)
-//   GEXF:          up to 1.5M nodes (~355 MB file,  ~2 GB peak heap)
+//   JSON:          up to 5M nodes  (~1 GB file)
+//   CSV edge-list: up to 5M nodes  (~215 MB file)
+//   CSV pair:      up to 2M nodes  (~175 MB total)
+//   GraphML:       up to 500k nodes (~118 MB file)
+//   GEXF:          up to 1M nodes  (~235 MB file)
 const DEFAULT_SIZES_PER_FORMAT = {
-  json: [10_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000],
-  'csv-edge-list': [10_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000],
-  'csv-pair': [10_000, 100_000, 500_000, 1_000_000, 5_000_000],
-  graphml: [10_000, 100_000, 500_000, 1_000_000],
-  gexf: [10_000, 100_000, 500_000, 1_000_000, 1_500_000],
+  json: [10_000, 100_000, 500_000, 1_000_000, 5_000_000],
+  'csv-edge-list': [10_000, 100_000, 500_000, 1_000_000, 5_000_000],
+  'csv-pair': [10_000, 100_000, 500_000, 1_000_000, 2_000_000],
+  graphml: [10_000, 100_000, 500_000],
+  gexf: [10_000, 100_000, 500_000, 1_000_000],
 }
 
 const explicitSizes = args.get('sizes')

@@ -10,15 +10,15 @@ node scripts/generate-test-graphs.mjs
 
 Output lands in `graphs_for_manual_testing_various_formats/` (gitignored). By default only **valid** files are produced; automated tests cover the invalid side (`npm run test:large-graphs`). To regenerate with invalid variants too, pass `--include-invalid`.
 
-The size ladder climbs to each format's empirical ceiling — measured end-to-end through the full production pipeline (parser → `GraphBuilder` → `finalize`) at a 4 GB heap, and verified by the automated `npm run test:large-graphs` suite. The biggest file per format is right at what a real browser tab can still handle:
+The size ladder climbs to each format's **comfortable** ceiling — a size below the Node-measured ceiling, with margin for the browser's own overhead (main-thread receive, zustand store, cosmos GPU buffers, Chrome renderer process). Files at the top of each ladder should load reliably in a real Chrome tab.
 
 | Format | Default ladder | Why it tops out where it does |
 |---|---|---|
-| JSON | 10k, 100k, 500k, 1M, 5M, **10M** (≈ceiling) | 4 property columns + `Map<id, index>` + edge typed arrays peak ~3 GB heap |
-| CSV edge-list | 10k, 100k, 500k, 1M, 5M, **10M** (≈ceiling) | No property columns, so fits comfortably; same `Map` cap story |
-| CSV pair | 10k, 100k, 500k, 1M, **5M** (≈ceiling) | Lower than JSON despite same parser: property columns × typed headers add ~250 MB per property at 10M |
-| GraphML | 10k, 100k, 500k, **1M** (≈ceiling) | `fast-xml-parser` builds full DOM in memory |
-| GEXF | 10k, 100k, 500k, 1M, **1.5M** (≈ceiling) | Same as GraphML |
+| JSON | 10k, 100k, 500k, 1M, **5M** | Node ceiling is ~10M but browser overhead on top pushes OOM earlier |
+| CSV edge-list | 10k, 100k, 500k, 1M, **5M** | Node ceiling is ~10M |
+| CSV pair | 10k, 100k, 500k, 1M, **2M** | Property columns compound the memory cost — lower than JSON despite same parser |
+| GraphML | 10k, 100k, **500k** | Node ceiling is ~1M — full-DOM parser leaves little headroom for the browser |
+| GEXF | 10k, 100k, 500k, **1M** | Node ceiling is ~1.5M |
 
 ```bash
 node scripts/generate-test-graphs.mjs                                # full ladder, all formats

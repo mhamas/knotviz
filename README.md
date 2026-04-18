@@ -17,19 +17,19 @@ Open `http://localhost:5173`, then drag-and-drop a JSON graph file onto the drop
 
 ### How big can your graph be?
 
-Measured ceilings per format at a **4 GB heap** (typical Chrome tab), 1.5 edges per node, running the **full worker pipeline** (parser → `GraphBuilder.addNode/addEdge` → `finalize` → typed-array payload):
+These are the **comfortable** ceilings — sizes verified to load reliably in a real Chrome tab. Below each number the app loads without drama; right at it you'll see a noticeable pause around "Finalizing… 90%" but it completes; past it you're in crash territory ("Aw, Snap!" renderer OOM).
 
-| Format | Ceiling | File at ceiling | Parse time | Peak heap | Limited by |
-|---|---|---|---|---|---|
-| JSON | **~10M nodes** | ~2 GB | ~25s | ~3 GB | Builder holds 4 property columns + `Map<id, index>` + edge typed arrays. Peak is in `finalize()` where typed arrays are allocated before the builder's JS arrays are released. |
-| CSV edge list | **~10M nodes** | ~430 MB | ~10s | ~1.5 GB | Lighter than JSON — no node properties. Double dedup (streaming parser's `Set` + builder's `Map`) is still the main memory cost. |
-| CSV nodes+edges pair | **~5M nodes** | ~450 MB | ~10s | ~1.8 GB | Lower than JSON despite same parser: builder has to materialise property columns for every typed header (~250 MB each at 10M), which pushes the 4 GB cap. |
-| GraphML | **~1M nodes** | ~240 MB | ~30s | ~2 GB | `fast-xml-parser` builds the full DOM in memory. Past ~1M the DOM alone fills most of the heap. |
-| GEXF | **~1.5M nodes** | ~360 MB | ~40s | ~2 GB | Same as GraphML. |
+| Format | Comfortable ceiling | File at ceiling | Load time | Why here |
+|---|---|---|---|---|
+| JSON | **~5M nodes** | ~1 GB | ~20s | 4 property columns + `Map<id, index>` + edge typed arrays fill most of a 4 GB browser heap; margin left for cosmos + main thread |
+| CSV edge list | **~5M nodes** | ~215 MB | ~10s | No property columns (lighter than JSON), but double dedup (streaming parser's `Set` + builder's `Map`) eats into the same budget |
+| CSV nodes+edges pair | **~2M nodes** | ~175 MB | ~10s | Property columns compound: ~250 MB per typed property, which sums fast |
+| GraphML | **~500k nodes** | ~118 MB | ~15s | `fast-xml-parser` builds a full DOM before returning anything — the DOM alone eats most of the heap |
+| GEXF | **~1M nodes** | ~235 MB | ~25s | Same full-DOM story as GraphML |
 
-These numbers come from the automated `npm run test:large-graphs` suite — each format is exercised through the identical code path the worker uses in production, at a 4 GB Node heap that mirrors a real browser tab. Sizes above these have been observed to OOM (Chrome's "Aw, Snap!" crash in the real app; `FATAL ERROR: JavaScript heap out of memory` in Node). The `graphs_for_manual_testing_various_formats/` corpus is generated up to these same limits so you can reproduce the behaviour yourself (see `MANUAL_TESTING.md`).
+The Node-measured ceiling is roughly 2× higher per format (JSON 10M, CSV edge-list 10M, CSV pair 5M, GraphML 1M, GEXF 1.5M), but that ignores the browser's own overhead on top of the worker's heap: main-thread receive of transferables, zustand store, cosmos GPU buffers, React, the Chrome renderer process itself. The comfortable numbers above account for that; the automated `npm run test:large-graphs` suite verifies code passes cleanly at the higher Node ceilings so there's safety margin between "test green" and "user crash".
 
-**Interaction tier** once loaded:
+### Interaction tier once loaded
 
 | Graph size | Load | Interaction |
 |---|---|---|
@@ -37,9 +37,14 @@ These numbers come from the automated `npm run test:large-graphs` suite — each
 | 100K | ~2s | 60 FPS |
 | 1M | ~10s | 30+ FPS |
 | 5M | ~30s | 15+ FPS, labels auto-sampled during simulation |
-| 10M | ~60s | still interactive once loaded; search, filter, and color help find what you need |
 
-**If you actually have >10M nodes** today (5M for CSV pair): use JSON or CSV edge-list up to 10M, split the graph into subgraphs, or pre-filter before dropping in. Lifting these ceilings would mean rewriting `GraphBuilder` to release its JS-side arrays eagerly after converting to typed arrays in `finalize`, and replacing the `Set`/`Map` node-dedup with a structure that also scales past V8's 2²⁴ internal limit (roaring bitmap, flat-buffer sparse set, or a `{id → index}` plain object).
+### If you need to go bigger
+
+- Use JSON or CSV edge-list (the lighter formats) up to 5M
+- Split your graph into subgraphs and load them separately
+- Pre-filter / pre-sample before exporting for Knotviz
+
+Lifting the ceiling would mean rewriting `GraphBuilder` to release its JS-side arrays eagerly after converting to typed arrays in `finalize`, and replacing the `Set`/`Map` node-dedup with a structure that scales past V8's 2²⁴ internal limit (roaring bitmap, flat-buffer sparse set, or a `{id → index}` plain object).
 
 ### The simulation-space ceiling (GPU-bound, varies by hardware)
 

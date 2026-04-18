@@ -12,6 +12,8 @@
  * @returns An array of rows; each row is an array of cell strings.
  */
 export function parseCSVRows(text: string, delimiter: string): string[][] {
+  // Strip a UTF-8 BOM if present — Excel exports commonly include one.
+  if (text.charCodeAt(0) === 0xfeff) text = text.slice(1)
   const rows: string[][] = []
   let row: string[] = []
   let cell = ''

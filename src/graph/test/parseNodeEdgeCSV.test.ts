@@ -158,4 +158,35 @@ describe('parseNodeEdgeCSV', () => {
     expect(g.nodes[1].properties?.age).toBeUndefined()
     expect(console.warn).toHaveBeenCalled()
   })
+
+  it('passes a pipe character through a :string column without splitting', () => {
+    const nodes = 'id,slug:string\nn1,foo|bar\nn2,baz'
+    const edges = 'source,target\nn1,n2'
+    const g = parseNodeEdgeCSV(nodes, edges)
+    expect(g.nodes[0].properties).toEqual({ slug: 'foo|bar' })
+    expect(g.nodes[1].properties).toEqual({ slug: 'baz' })
+  })
+
+  it('infers a stable type when every non-empty sample is identical', () => {
+    const nodes = 'id,status\nn1,active\nn2,active\nn3,active'
+    const edges = 'source,target\nn1,n2'
+    const g = parseNodeEdgeCSV(nodes, edges)
+    expect(g.nodes[0].properties).toEqual({ status: 'active' })
+  })
+
+  it('strips a UTF-8 BOM from the start of each file', () => {
+    const nodes = '\uFEFFid,label\nn1,Alice\nn2,Bob'
+    const edges = '\uFEFFsource,target\nn1,n2'
+    const g = parseNodeEdgeCSV(nodes, edges)
+    expect(g.nodes.map((n) => n.id)).toEqual(['n1', 'n2'])
+    expect(g.nodes[0].label).toBe('Alice')
+  })
+
+  it('infers as string a column mixing numbers and dates', () => {
+    const nodes = 'id,data\nn1,42\nn2,2021-03-15'
+    const edges = 'source,target\nn1,n2'
+    const g = parseNodeEdgeCSV(nodes, edges)
+    expect(g.nodes[0].properties).toEqual({ data: '42' })
+    expect(g.nodes[1].properties).toEqual({ data: '2021-03-15' })
+  })
 })

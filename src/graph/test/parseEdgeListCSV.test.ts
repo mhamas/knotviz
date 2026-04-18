@@ -121,4 +121,24 @@ describe('parseEdgeListCSV', () => {
     const g = parseEdgeListCSV(csv)
     expect(g.nodes.map((n) => n.id)).toEqual(['z', 'y', 'a', 'b'])
   })
+
+  it('strips a UTF-8 BOM before parsing', () => {
+    const csv = '\uFEFFsource,target\na,b'
+    const g = parseEdgeListCSV(csv)
+    expect(g.edges[0]).toEqual({ source: 'a', target: 'b' })
+  })
+
+  it('accepts negative and scientific-notation weights', () => {
+    const csv = 'source,target,weight\na,b,-1.5\nb,c,1e-3\nc,d,2.5e4'
+    const g = parseEdgeListCSV(csv)
+    expect(g.edges[0].weight).toBe(-1.5)
+    expect(g.edges[1].weight).toBe(0.001)
+    expect(g.edges[2].weight).toBe(25000)
+  })
+
+  it('accepts weights with leading whitespace', () => {
+    const csv = 'source,target,weight\na,b, 0.5 '
+    const g = parseEdgeListCSV(csv)
+    expect(g.edges[0].weight).toBe(0.5)
+  })
 })

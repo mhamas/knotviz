@@ -97,6 +97,60 @@ describe('parseCSVRows', () => {
   })
 })
 
+describe('parseCSVRows — robustness', () => {
+  it('strips a UTF-8 BOM from the start of the file', () => {
+    const text = '\uFEFFa,b\n1,2'
+    expect(parseCSVRows(text, ',')).toEqual([
+      ['a', 'b'],
+      ['1', '2'],
+    ])
+  })
+
+  it('handles mixed CRLF and LF line endings', () => {
+    const text = 'a,b\r\n1,2\n3,4\r\n5,6'
+    expect(parseCSVRows(text, ',')).toEqual([
+      ['a', 'b'],
+      ['1', '2'],
+      ['3', '4'],
+      ['5', '6'],
+    ])
+  })
+
+  it('handles CR-only line endings (Mac classic)', () => {
+    const text = 'a,b\r1,2\r3,4'
+    expect(parseCSVRows(text, ',')).toEqual([
+      ['a', 'b'],
+      ['1', '2'],
+      ['3', '4'],
+    ])
+  })
+
+  it('accepts quoted header cells', () => {
+    const text = '"source","target"\na,b'
+    expect(parseCSVRows(text, ',')).toEqual([
+      ['source', 'target'],
+      ['a', 'b'],
+    ])
+  })
+
+  it('preserves unicode content in cells and headers', () => {
+    const text = 'name,emoji\nAlíçe,🎉\n博,Bob'
+    expect(parseCSVRows(text, ',')).toEqual([
+      ['name', 'emoji'],
+      ['Alíçe', '🎉'],
+      ['博', 'Bob'],
+    ])
+  })
+
+  it('preserves a whitespace-only cell as its literal content', () => {
+    const text = 'a,b\n , '
+    expect(parseCSVRows(text, ',')).toEqual([
+      ['a', 'b'],
+      [' ', ' '],
+    ])
+  })
+})
+
 describe('detectDelimiter', () => {
   it('detects comma by default', () => {
     expect(detectDelimiter('a,b,c')).toBe(',')

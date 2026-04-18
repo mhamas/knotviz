@@ -223,4 +223,102 @@ describe('parseGEXF', () => {
     const g = parseGEXF(xml)
     expect(g.nodes[0].properties).toEqual({ tags: ['red', 'green', 'blue'] })
   })
+
+  it('keeps self-loops and parallel edges', () => {
+    const xml = `<gexf>
+  <graph>
+    <nodes><node id="a"/><node id="b"/></nodes>
+    <edges>
+      <edge source="a" target="a"/>
+      <edge source="a" target="b"/>
+      <edge source="a" target="b"/>
+    </edges>
+  </graph>
+</gexf>`
+    const g = parseGEXF(xml)
+    expect(g.edges).toHaveLength(3)
+    expect(g.edges[0]).toEqual({ source: 'a', target: 'a' })
+  })
+
+  it('ignores edge id attribute (we do not store edge ids)', () => {
+    const xml = `<gexf>
+  <graph>
+    <nodes><node id="a"/><node id="b"/></nodes>
+    <edges>
+      <edge id="e0" source="a" target="b"/>
+    </edges>
+  </graph>
+</gexf>`
+    const g = parseGEXF(xml)
+    expect(g.edges[0]).toEqual({ source: 'a', target: 'b' })
+  })
+
+  it('warns and skips edges missing source or target', () => {
+    const xml = `<gexf>
+  <graph>
+    <nodes><node id="a"/></nodes>
+    <edges>
+      <edge target="a"/>
+      <edge source="a"/>
+    </edges>
+  </graph>
+</gexf>`
+    const g = parseGEXF(xml)
+    expect(g.edges).toEqual([])
+    expect(console.warn).toHaveBeenCalled()
+  })
+
+  it('ignores viz:color, viz:size, and viz:shape', () => {
+    const xml = `<gexf>
+  <graph>
+    <nodes>
+      <node id="a">
+        <viz:color r="255" g="0" b="0" xmlns:viz="http://gexf.net/1.3/viz"/>
+        <viz:size value="12" xmlns:viz="http://gexf.net/1.3/viz"/>
+        <viz:shape value="disc" xmlns:viz="http://gexf.net/1.3/viz"/>
+      </node>
+    </nodes>
+    <edges/>
+  </graph>
+</gexf>`
+    const g = parseGEXF(xml)
+    expect(g.nodes).toHaveLength(1)
+    expect(g.nodes[0]).toEqual({ id: 'a' })
+  })
+
+  it('ignores <spells> dynamic-attribute blocks', () => {
+    const xml = `<gexf>
+  <graph>
+    <nodes>
+      <node id="a">
+        <spells>
+          <spell start="2020-01-01" end="2021-01-01"/>
+        </spells>
+      </node>
+    </nodes>
+    <edges/>
+  </graph>
+</gexf>`
+    const g = parseGEXF(xml)
+    expect(g.nodes).toHaveLength(1)
+    expect(g.nodes[0]).toEqual({ id: 'a' })
+  })
+
+  it('coerces integer attribute type', () => {
+    const xml = `<gexf>
+  <graph>
+    <attributes class="node">
+      <attribute id="0" title="count" type="integer"/>
+    </attributes>
+    <nodes>
+      <node id="a">
+        <attvalues><attvalue for="0" value="42"/></attvalues>
+      </node>
+    </nodes>
+    <edges/>
+  </graph>
+</gexf>`
+    const g = parseGEXF(xml)
+    expect(g.nodes[0].properties).toEqual({ count: 42 })
+  })
 })

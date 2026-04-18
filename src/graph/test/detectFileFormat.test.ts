@@ -84,4 +84,34 @@ describe('detectFileFormat', () => {
   it('throws on zero files', () => {
     expect(() => detectFileFormat([])).toThrow()
   })
+
+  it('pairs CSV filenames containing spaces around the tokens', () => {
+    const r = detectFileFormat([{ name: 'graph nodes.csv' }, { name: 'graph edges.csv' }])
+    expect(r.format).toBe('csv-pair')
+    expect(r.orderedFiles.map((f) => f.name)).toEqual(['graph nodes.csv', 'graph edges.csv'])
+  })
+
+  it('throws when one filename contains both nodes and edges tokens', () => {
+    // Ambiguous: both nodes and edges match the same file.
+    expect(() =>
+      detectFileFormat([{ name: 'nodes-and-edges.csv' }, { name: 'friends.csv' }]),
+    ).toThrow(/nodes.*edges/)
+  })
+
+  it('throws clearly for three or more files', () => {
+    expect(() =>
+      detectFileFormat([
+        { name: 'a.csv' },
+        { name: 'b.csv' },
+        { name: 'c.csv' },
+        { name: 'd.csv' },
+      ]),
+    ).toThrow(/4 files/)
+  })
+
+  it('throws when two CSVs both match only the nodes token', () => {
+    expect(() =>
+      detectFileFormat([{ name: 'nodes.csv' }, { name: 'more-nodes.csv' }]),
+    ).toThrow(/nodes.*edges/)
+  })
 })

@@ -217,4 +217,83 @@ describe('parseGraphML', () => {
     const g = parseGraphML(xml)
     expect(g.nodes[0].properties).toEqual({ joined: '2021-03-15' })
   })
+
+  it('keeps self-loops (source === target)', () => {
+    const xml = `<graphml>
+  <graph edgedefault="directed">
+    <node id="a"/>
+    <edge source="a" target="a"/>
+  </graph>
+</graphml>`
+    const g = parseGraphML(xml)
+    expect(g.edges).toEqual([{ source: 'a', target: 'a' }])
+  })
+
+  it('keeps parallel edges (multiple edges between the same pair)', () => {
+    const xml = `<graphml>
+  <graph edgedefault="directed">
+    <node id="a"/>
+    <node id="b"/>
+    <edge source="a" target="b"/>
+    <edge source="a" target="b"/>
+  </graph>
+</graphml>`
+    const g = parseGraphML(xml)
+    expect(g.edges).toHaveLength(2)
+  })
+
+  it('applies `for="all"` keys to both nodes and edges', () => {
+    const xml = `<graphml>
+  <key id="tag" for="all" attr.name="tag" attr.type="string"/>
+  <graph edgedefault="directed">
+    <node id="a"><data key="tag">alpha</data></node>
+    <node id="b"/>
+    <edge source="a" target="b"><data key="tag">ignored</data></edge>
+  </graph>
+</graphml>`
+    const g = parseGraphML(xml)
+    // Node receives the all-targeted key
+    expect(g.nodes[0].properties).toEqual({ tag: 'alpha' })
+    // Edge also accepts the key for matching — but since attrName is "tag"
+    // (not "label" or "weight"), the edge value has nowhere to go and is dropped.
+    expect(g.edges[0]).toEqual({ source: 'a', target: 'b' })
+  })
+
+  it('decodes XML entities in attribute values', () => {
+    const xml = `<graphml>
+  <key id="n" for="node" attr.name="note" attr.type="string"/>
+  <graph edgedefault="directed">
+    <node id="a"><data key="n">fish &amp; chips &lt;yum&gt;</data></node>
+  </graph>
+</graphml>`
+    const g = parseGraphML(xml)
+    expect(g.nodes[0].properties).toEqual({ note: 'fish & chips <yum>' })
+  })
+
+  it('parses a GraphML with only nodes and zero edges', () => {
+    const xml = `<graphml>
+  <graph edgedefault="directed">
+    <node id="a"/>
+    <node id="b"/>
+  </graph>
+</graphml>`
+    const g = parseGraphML(xml)
+    expect(g.nodes).toHaveLength(2)
+    expect(g.edges).toEqual([])
+  })
+
+  it('ignores unknown optional child elements like <desc>', () => {
+    const xml = `<graphml>
+  <desc>Human description of this graph.</desc>
+  <graph edgedefault="directed">
+    <desc>Graph desc</desc>
+    <node id="a"><desc>Node desc</desc></node>
+    <node id="b"/>
+    <edge source="a" target="b"><desc>Edge desc</desc></edge>
+  </graph>
+</graphml>`
+    const g = parseGraphML(xml)
+    expect(g.nodes).toHaveLength(2)
+    expect(g.edges).toHaveLength(1)
+  })
 })

@@ -236,6 +236,9 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
             <p className="mt-1 text-xs text-slate-400">
               JSON, CSV/TSV, GraphML, or GEXF — or click to browse
             </p>
+            <p className="mt-1 text-xs text-slate-400">
+              CSV pair: select both <span className="font-mono">*nodes*.csv</span> + <span className="font-mono">*edges*.csv</span> at once
+            </p>
             <button
               className="mt-3 cursor-pointer text-xs text-slate-400 underline hover:text-slate-600"
               onClick={(e): void => {

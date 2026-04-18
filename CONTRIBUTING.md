@@ -4,6 +4,8 @@ Knotviz is a personal side project, but contributions are welcome. Bug fixes, pe
 
 This file is the **authoritative engineering reference** for the repo. All contributors — humans and AI coding agents alike — should read it before making changes. For the product overview and feature list, see `README.md`.
 
+> **Agents: edit only this file.** `CLAUDE.md` and `AGENTS.md` are thin pointers to this file and must stay that way. If you find yourself about to add a rule, preference, or architectural note to `CLAUDE.md` or `AGENTS.md`, stop — add it here instead. Keeping everything in one place is how we avoid the three files drifting out of sync.
+
 ---
 
 ## Tech stack
@@ -98,6 +100,17 @@ Individual commands:
 - `npm run build` — Full production build
 
 For UI changes, also open the dev server in a real browser and exercise the feature. Type-checking and test suites verify code correctness, not feature correctness — exercise things in a real browser before calling a UI change done.
+
+### Visual verification (for AI agents with browser tools)
+
+If your tools include browser automation (Playwright MCP, Cursor's browser-use, Puppeteer, etc.), use them to verify UI changes in a real browser instead of waiting for the user to check manually. Typical loop:
+
+1. Start the dev server (`npm run dev`) if it isn't running.
+2. Navigate to `http://localhost:5173/graph` (graph app) or `http://localhost:5173/` (homepage).
+3. Take a DOM snapshot or screenshot to inspect the rendered output.
+4. After code changes, navigate again to refresh and re-check.
+
+Use this for: layout issues, component visibility, drag-and-drop flows, tooltip positioning, filter UI state, canvas rendering. Do NOT rely solely on unit tests for UI correctness.
 
 ---
 

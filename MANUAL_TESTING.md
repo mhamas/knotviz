@@ -16,20 +16,38 @@ node scripts/generate-test-graphs.mjs --format=csv-edge-list           # one for
 node scripts/generate-test-graphs.mjs --format=json --sizes=3000000    # a single file
 ```
 
-Contents (60 files, 5 sizes × 5 formats × valid+invalid):
+Contents (60 files, 5 sizes × 5 formats × valid+invalid) organised into per-format subfolders so you can exercise one format at a time:
 
-| File | Format | What it exercises |
-|---|---|---|
-| `valid-json-{size}.json` | JSON | Baseline; streaming parser kicks in at ≥200 MB |
-| `invalid-json-{size}.json` | JSON | Missing top-level `version` field |
-| `valid-csv-edge-list-{size}.csv` | CSV edge-list | Single-file drop, nodes auto-derived |
-| `invalid-csv-edge-list-{size}.csv` | CSV edge-list | Header uses `src,dst` instead of `source,target` |
-| `valid-csv-pair-{size}-nodes.csv` + `-edges.csv` | CSV pair | Two-file drop; typed headers |
-| `invalid-csv-pair-{size}-nodes.csv` + `-edges.csv` | CSV pair | Nodes file header uses `name` instead of `id` |
-| `valid-graphml-{size}.graphml` | GraphML | Standard W3C-ish schema |
-| `invalid-graphml-{size}.graphml` | GraphML | Wrapped in `<notgraphml>` root |
-| `valid-gexf-{size}.gexf` | GEXF | GEXF 1.3 static |
-| `invalid-gexf-{size}.gexf` | GEXF | Wrapped in `<notgexf>` root |
+```
+graphs_for_manual_testing_various_formats/
+├── json/
+│   ├── valid-{size}.json
+│   └── invalid-{size}.json
+├── csv-edge-list/
+│   ├── valid-{size}.csv
+│   └── invalid-{size}.csv
+├── csv-pair/
+│   ├── valid-{size}-nodes.csv
+│   ├── valid-{size}-edges.csv
+│   ├── invalid-{size}-nodes.csv
+│   └── invalid-{size}-edges.csv
+├── graphml/
+│   ├── valid-{size}.graphml
+│   └── invalid-{size}.graphml
+└── gexf/
+    ├── valid-{size}.gexf
+    └── invalid-{size}.gexf
+```
+
+What each invalid variant breaks:
+
+| Folder | Invalid fault |
+|---|---|
+| `json/` | Every node object uses JS-style unquoted keys so the per-item `JSON.parse` fails; streaming path produces zero nodes and downstream reports "Graph has no nodes to display" |
+| `csv-edge-list/` | Header uses `src,dst` instead of `source,target` |
+| `csv-pair/` | Nodes file header uses `name` instead of `id` |
+| `graphml/` | Wrapped in `<notgraphml>` root |
+| `gexf/` | Wrapped in `<notgexf>` root |
 
 Sizes: `10k`, `100k`, `500k`, `1M`, `3M`.
 

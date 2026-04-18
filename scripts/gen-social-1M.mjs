@@ -4,13 +4,18 @@
  * Same shape as gen-social-50k.mjs but scaled up and written via a streaming
  * file writer so it doesn't blow the Node heap on 1M nodes + ~3M edges.
  *
- * Model:
- *   - Communities with power-law-distributed sizes (50–1000 nodes typical,
- *     a 15% tail of large communities up to ~5× the base).
- *   - 80% of edges intra-community; 20% inter-community, with a bias toward
- *     "adjacent" communities so the cluster graph itself has some topology.
- *   - Per-node degree 1–5, weighted toward 2–3 (roughly realistic social).
- *   - Node properties useful for filter/color testing: community (string),
+ * Model — tuned for visual cluster legibility at fit-view, not for
+ * "realistic social-graph topology". Real social graphs at 1M nodes have
+ * thousands of tiny communities that blend into uniform noise on screen;
+ * this generator makes fewer, much bigger clusters so the community
+ * structure is visible once you colour by `community`.
+ *
+ *   - ~40 communities, sizes 5k–200k (power-law toward the large end).
+ *   - 92% of edges intra-community (high cohesion).
+ *   - 8% inter-community with a bias toward adjacent clusters so the
+ *     cluster-of-clusters graph itself has some structure.
+ *   - Per-node degree 1–5, weighted toward 2–3.
+ *   - Node properties useful for filter/colour testing: community (string),
  *     followers (number, power-law), isVerified (bool, ~5%), joinDate (date),
  *     activityScore (number).
  *
@@ -27,17 +32,36 @@ const OUT_PATH = 'graphs_for_manual_testing_various_formats/clustered-social-1M.
 
 mkdirSync(dirname(OUT_PATH), { recursive: true })
 
-// ─── Community sizes (power-law tail) ──────────────────────────────────────
+// ─── Community sizes — few & large, power-law toward big ───────────────────
 
+const TARGET_COMMUNITIES = 40 // aim for ~this many big clusters
 const communitySizes = []
 {
   let remaining = TOTAL_NODES
-  while (remaining > 0) {
-    const base = 50 + Math.floor(Math.random() * 150) // 50–200
-    const scale = Math.random() < 0.15 ? 3 + Math.random() * 2 : 1 // 15% long tail
-    const size = Math.min(Math.floor(base * scale), remaining)
-    communitySizes.push(size)
-    remaining -= size
+  // First pass: allocate with a power-law that favours 20k–80k with a long
+  // right tail (a few communities of 100k–200k).
+  const weights = []
+  let total = 0
+  for (let c = 0; c < TARGET_COMMUNITIES; c++) {
+    // Skewed toward big: weight ∈ [1, 10]
+    const w = 1 + Math.pow(Math.random(), 0.5) * 9
+    weights.push(w)
+    total += w
+  }
+  for (let c = 0; c < TARGET_COMMUNITIES; c++) {
+    const size = Math.max(5_000, Math.floor((weights[c] / total) * TOTAL_NODES))
+    if (size <= remaining) {
+      communitySizes.push(size)
+      remaining -= size
+    }
+  }
+  // Last community absorbs whatever is left.
+  if (remaining > 0) {
+    if (communitySizes.length > 0) {
+      communitySizes[communitySizes.length - 1] += remaining
+    } else {
+      communitySizes.push(remaining)
+    }
   }
 }
 const numCommunities = communitySizes.length
@@ -168,7 +192,7 @@ for (let i = 0; i < TOTAL_NODES; i++) {
   const degree = pickDegree()
   const c = nodeToCommunity[i]
   for (let j = 0; j < degree; j++) {
-    const isIntra = Math.random() < 0.8
+    const isIntra = Math.random() < 0.92
     const target = isIntra ? pickIntraCommunity(i, c) : pickInterCommunity(c)
     if (target === i) continue
     const a = i < target ? i : target

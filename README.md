@@ -17,17 +17,17 @@ Open `http://localhost:5173`, then drag-and-drop a JSON graph file onto the drop
 
 ### How big can your graph be?
 
-Measured ceilings per format at a **4 GB heap** (typical Chrome tab), 1.5 edges per node, file generated from random ids:
+Measured ceilings per format at a **4 GB heap** (typical Chrome tab), 1.5 edges per node, random node ids:
 
 | Format | Ceiling | File at ceiling | Parse time | Peak RSS | Limited by |
 |---|---|---|---|---|---|
-| JSON | **~15M nodes** | ~3 GB | ~90s | ~600 MB + ~1 GB builder | streaming parser is fine past 24M; worker's `nodeIndexMap: Map<string, number>` hits the V8 cap at ~2²⁴ entries (~16.7M) |
-| CSV edge list | **~15M nodes** | ~650 MB | ~30s | ~1.2 GB | streaming parser's `knownNodeIds: Set<string>` hits the same V8 cap |
-| CSV nodes+edges pair | **~15M nodes** | ~1.3 GB | ~50s | ~1.4 GB | same V8 `Set` cap |
-| GraphML | **~1M nodes** | ~240 MB | ~30s | OOM above | `fast-xml-parser` builds the full DOM in memory. Past ~1M it blows the 4 GB heap. |
-| GEXF | **~1.5M nodes** | ~360 MB | ~40s | OOM above | same as GraphML |
+| JSON | **~15M nodes** | ~3 GB | ~90s | ~1.4 GB | Worker's `nodeIndexMap: Map<string, number>` hits the V8 cap at 2²⁴ entries (~16.7M). The streaming JSON parser itself has no such cap — the bottleneck is node-indexing in `GraphBuilder`. |
+| CSV edge list | **~15M nodes** | ~650 MB | ~30s | ~1.2 GB | Streaming parser's `knownNodeIds: Set<string>` hits the same V8 cap. |
+| CSV nodes+edges pair | **~15M nodes** | ~1.3 GB | ~50s | ~1.4 GB | Same V8 `Set` cap. |
+| GraphML | **~1M nodes** | ~240 MB | ~30s | OOM above | `fast-xml-parser` is non-streaming — it builds the full DOM in memory. Past ~1M, a 4 GB heap is exhausted. |
+| GEXF | **~1.5M nodes** | ~360 MB | ~40s | OOM above | Same as GraphML. |
 
-Numbers were measured by `scripts/experiment-large-sizes.ts` — a probe-and-binary-search run at 4 GB heap with a 5-minute per-probe timeout. See `MANUAL_TESTING.md` and `large_size_experiment/results.md` for the raw per-probe log.
+These were measured empirically: generate a file of size N in each format, run the production parser in a 4 GB Node process with a 5-minute timeout, record outcome + peak memory + elapsed. Double the size until parsing fails, then binary-search between last-success and first-failure to pinpoint the ceiling. Failures were consistent `RangeError: Set maximum size exceeded` for the streaming formats and heap OOM for the XML formats. The `graphs_for_manual_testing_various_formats/` corpus is generated up to these limits (see `MANUAL_TESTING.md`) so you can reproduce the behaviour in a real browser tab.
 
 **Interaction tier** once loaded:
 

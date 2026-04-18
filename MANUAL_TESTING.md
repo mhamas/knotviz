@@ -10,14 +10,25 @@ node scripts/generate-test-graphs.mjs
 
 Output lands in `graphs_for_manual_testing_various_formats/` (gitignored). By default only **valid** files are produced; automated tests cover the invalid side (`npm run test:large-graphs`). To regenerate with invalid variants too, pass `--include-invalid`.
 
+The size ladder climbs to each format's empirical ceiling (measured by `scripts/experiment-large-sizes.ts`), so the biggest file per format shows you what the format can barely still handle in a real browser tab:
+
+| Format | Default ladder |
+|---|---|
+| JSON | 10k, 100k, 500k, 1M, 5M, 10M, **15M** (≈ceiling) |
+| CSV edge-list | 10k, 100k, 500k, 1M, 5M, 10M, **15M** (≈ceiling) |
+| CSV pair | 10k, 100k, 500k, 1M, 5M, 10M, **15M** (≈ceiling) |
+| GraphML | 10k, 100k, 500k, **1M** (≈ceiling) |
+| GEXF | 10k, 100k, 500k, 1M, **1.5M** (≈ceiling) |
+
 ```bash
-node scripts/generate-test-graphs.mjs --sizes=10000,100000          # small sizes only
-node scripts/generate-test-graphs.mjs --format=csv-edge-list         # one format
-node scripts/generate-test-graphs.mjs --format=json --sizes=3000000  # a single file
-node scripts/generate-test-graphs.mjs --include-invalid              # add malformed variants
+node scripts/generate-test-graphs.mjs                                # full ladder, all formats
+node scripts/generate-test-graphs.mjs --format=json                   # one format
+node scripts/generate-test-graphs.mjs --sizes=1000000                 # override the ladder (same size for all formats)
+node scripts/generate-test-graphs.mjs --format=csv-edge-list --sizes=15000000  # just the ceiling probe
+node scripts/generate-test-graphs.mjs --include-invalid               # add malformed variants
 ```
 
-Contents (30 files by default — 5 sizes × 5 formats; doubles to 60 with `--include-invalid`) organised into per-format subfolders so you can exercise one format at a time:
+Contents organised into per-format subfolders so you can exercise one format at a time:
 
 ```
 graphs_for_manual_testing_various_formats/

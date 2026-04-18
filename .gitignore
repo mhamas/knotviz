@@ -21,7 +21,10 @@ __pycache__/
 # Manual testing graphs
 graphs_for_manual_testing/
 graphs_for_manual_testing_various_formats/
-large_size_experiment/
+graphs_for_manual_testing_various_formats_old/
+
+# Agent runtime state
+.claude/
 
 # Playwright MCP
 .playwright-mcp

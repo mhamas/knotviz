@@ -1,9 +1,16 @@
 #!/usr/bin/env node
 /**
- * Generate manual-testing graph files in every supported format, at multiple sizes.
- * By default produces only valid files; pass `--include-invalid` to also generate
- * deliberately malformed variants (the automated large-files test suite covers those
- * end-to-end, so most manual testing only needs the valid side).
+ * Generate manual-testing graph files in every supported format. By default
+ * produces only valid files at a per-format ladder of sizes that climbs up to
+ * the empirical ceiling (as measured by `scripts/experiment-large-sizes.ts`):
+ *
+ *   JSON / CSV edge-list / CSV pair: 10k → 15M (limit: V8 Set/Map cap at 2^24)
+ *   GraphML:                         10k → 1M  (limit: fast-xml-parser DOM in RAM)
+ *   GEXF:                            10k → 1.5M (limit: same)
+ *
+ * Pass `--sizes=N[,N,...]` to override with a single list used for every
+ * selected format (keeps backward compatibility). Pass `--include-invalid` to
+ * also write `invalid-<size>.*` variants alongside each valid file.
  *
  * Output directory: graphs_for_manual_testing_various_formats/
  *   json/<size>.json
@@ -12,13 +19,11 @@
  *   graphml/<size>.graphml
  *   gexf/<size>.gexf
  *
- * With --include-invalid, each subfolder also gets invalid-<size>.* files.
- *
  * Usage:
- *   node scripts/generate-test-graphs.mjs
- *   node scripts/generate-test-graphs.mjs --sizes=10000,100000
- *   node scripts/generate-test-graphs.mjs --format=json
- *   node scripts/generate-test-graphs.mjs --include-invalid
+ *   node scripts/generate-test-graphs.mjs                       # all formats, per-format defaults
+ *   node scripts/generate-test-graphs.mjs --format=json         # one format
+ *   node scripts/generate-test-graphs.mjs --sizes=1000000       # override size
+ *   node scripts/generate-test-graphs.mjs --include-invalid     # add malformed variants
  */
 
 import fs from 'node:fs'
@@ -36,9 +41,29 @@ const args = new Map(
   }),
 )
 
-const sizes = (args.get('sizes') ?? '10000,100000,500000,1000000,3000000')
-  .split(',')
-  .map((s) => Number(s))
+// Per-format default sizes based on the empirical ceilings measured by
+// `scripts/experiment-large-sizes.ts`. Each series climbs from small to the
+// size where loading starts to hurt, so you can drop a file of each format
+// and feel where it tops out.
+//
+//   JSON / CSV: limit is V8's 2^24 cap on the Set/Map used for node dedup —
+//     ~15M nodes, ~1.2 GB peak RSS, 30–90s parse.
+//   GraphML / GEXF: limit is fast-xml-parser's full DOM in memory —
+//     ~1M / 1.5M nodes before the 4 GB heap blows.
+const DEFAULT_SIZES_PER_FORMAT = {
+  json: [10_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000, 15_000_000],
+  'csv-edge-list': [10_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000, 15_000_000],
+  'csv-pair': [10_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000, 15_000_000],
+  graphml: [10_000, 100_000, 500_000, 1_000_000],
+  gexf: [10_000, 100_000, 500_000, 1_000_000, 1_500_000],
+}
+
+const explicitSizes = args.get('sizes')
+  ? args
+      .get('sizes')
+      .split(',')
+      .map((s) => Number(s))
+  : null
 const onlyFormat = args.get('format') ?? 'all'
 const includeInvalid = args.get('include-invalid') === 'true'
 const formats = ['json', 'csv-edge-list', 'csv-pair', 'graphml', 'gexf']
@@ -326,9 +351,14 @@ async function runOne(format, size, invalid) {
 const targetFormats = onlyFormat === 'all' ? formats : [onlyFormat]
 const variants = includeInvalid ? [false, true] : [false]
 
-for (const size of sizes) {
-  console.log(`\n→ ${humanSize(size)} nodes`)
-  for (const format of targetFormats) {
+for (const format of targetFormats) {
+  const sizesForFormat = explicitSizes ?? DEFAULT_SIZES_PER_FORMAT[format]
+  if (!sizesForFormat) {
+    console.warn(`No default sizes for format "${format}", skipping`)
+    continue
+  }
+  console.log(`\n→ ${format}`)
+  for (const size of sizesForFormat) {
     for (const invalid of variants) {
       await runOne(format, size, invalid)
     }

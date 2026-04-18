@@ -15,78 +15,56 @@ Open `http://localhost:5173`, then drag-and-drop a JSON graph file onto the drop
 
 ## Performance and Capacity
 
-### How big can your graph be?
+### The honest working ceiling: ~1 million nodes
 
-These are the **comfortable** ceilings — sizes verified to load reliably in a real Chrome tab. Below each number the app loads without drama; right at it you'll see a noticeable pause around "Finalizing… 90%" but it completes; past it you're in crash territory ("Aw, Snap!" renderer OOM).
+You can actually work with Knotviz productively up to **roughly 1 million nodes**, maybe 2 million for highly clustered graphs where clusters still separate visually. Past that, the app can still *load* your file, but you won't get much value out of it. Two independent things break down at once:
 
-| Format | Comfortable ceiling | File at ceiling | Load time | Why here |
-|---|---|---|---|---|
-| JSON | **~5M nodes** | ~1 GB | ~20s | 4 property columns + `Map<id, index>` + edge typed arrays fill most of a 4 GB browser heap; margin left for cosmos + main thread |
-| CSV edge list | **~5M nodes** | ~215 MB | ~10s | No property columns (lighter than JSON), but double dedup (streaming parser's `Set` + builder's `Map`) eats into the same budget |
-| CSV nodes+edges pair | **~2M nodes** | ~175 MB | ~10s | Property columns compound: ~250 MB per typed property, which sums fast |
-| GraphML | **~500k nodes** | ~118 MB | ~15s | `fast-xml-parser` builds a full DOM before returning anything — the DOM alone eats most of the heap |
-| GEXF | **~1M nodes** | ~235 MB | ~25s | Same full-DOM story as GraphML |
+1. **The simulation grid saturates.** Cosmos runs the force simulation on a fixed **8192×8192** internal grid (this cap is hard — upgrading your GPU does not lift it). That's ~67 million pixels. At 1M nodes you have ~67 px² per node at fit-view — nodes are already visually touching. At 2M+ they sit on top of each other; at fit-view the graph is a solid blob of colour. Force repulsion starts pushing nodes into the grid boundary, where they pile up against the wall.
 
-The Node-measured ceiling is roughly 2× higher per format (JSON 10M, CSV edge-list 10M, CSV pair 5M, GraphML 1M, GEXF 1.5M), but that ignores the browser's own overhead on top of the worker's heap: main-thread receive of transferables, zustand store, cosmos GPU buffers, React, the Chrome renderer process itself. The comfortable numbers above account for that; the automated `npm run test:large-graphs` suite verifies code passes cleanly at the higher Node ceilings so there's safety margin between "test green" and "user crash".
+2. **Interaction degrades.** Pan / zoom / simulation stay above 30 FPS through ~1–2M, but the input-event loop is competing with force computation for GPU cycles. At 5M you're at 15 FPS — technically interactive, practically frustrating.
 
-### Interaction tier once loaded
+So the useful ceiling is **~1M nodes for most graphs**, creeping up to **~2M for strongly clustered ones** (clusters clump and leave empty space in the grid). Below 500k, everything is instant and legible. Tree-like / very sparse graphs can stay legible past 2M because they don't fill the grid the same way.
 
-| Graph size | Load | Interaction |
+### Loading can go higher, but that's not the same as usable
+
+Knotviz's parsers can technically load files larger than the useful ceiling — the automated test suite verifies these loading numbers up to a 4 GB browser heap. **Past the useful ceiling the tool is loading data you won't really look at.** Honest distinction:
+
+| Format | Loads up to | Useful up to |
 |---|---|---|
-| 10K | <1s | 60 FPS, instant everything |
-| 100K | ~2s | 60 FPS |
-| 1M | ~10s | 30+ FPS |
-| 5M | ~30s | 15+ FPS, labels auto-sampled during simulation |
+| JSON | ~5M nodes (~1 GB file) | ~1M (up to ~2M if highly clustered) |
+| CSV edge list | ~5M nodes (~215 MB file) | ~1M |
+| CSV nodes+edges pair | ~2M nodes (~175 MB file) | ~1M |
+| GraphML | ~500k nodes (~118 MB file) | ~500k (loading limit lands below the visual ceiling) |
+| GEXF | ~1M nodes (~235 MB file) | ~1M (same) |
 
-### The visual-density ceiling (a cosmos limit, not a GPU limit)
+Past the "loads up to" column the tab crashes ("Aw, Snap!" renderer OOM). Past the "useful up to" column the load completes but the graph is a blob that you navigate only via filter + search + colour + zoom, not by eyeballing the whole thing.
 
-> **Important, and counterintuitive: upgrading your graphics card won't let you visualise a bigger graph in Knotviz today.** Cosmos.gl runs the force simulation on a fixed **8192×8192** internal grid and does not scale it up even when your GPU would allow it. A 2025 MacBook Pro with a `MAX_TEXTURE_SIZE` of 16384 gets the exact same simulation area as a 2019 Chromebook with 8192 — roughly 67 million pixels to divide among however many nodes you have.
+### Interaction tier
+
+| Graph size | Load | Interaction | What it looks like |
+|---|---|---|---|
+| 10K | <1s | 60 FPS | Sparse, every connection traceable |
+| 100K | ~2s | 60 FPS | Dense but clusters cleanly separated |
+| 500K | ~5s | 60 FPS | Most of the grid used, clusters still distinct |
+| 1M | ~10s | 30+ FPS | Grid saturating, clusters visible if graph has them |
+| 2M | ~20s | 30 FPS | Edge of useful — only clustered graphs stay legible |
+| 5M | ~30s | 15 FPS | Solid blob at fit-view; filter/search territory only |
+
+### Why cosmos's 8192 cap matters more than your GPU
+
+Cosmos caps `spaceSize` at 8192 internally. A 2025 MacBook Pro with `MAX_TEXTURE_SIZE` of 16384 gets the exact same simulation area as a 2019 Chromebook with 8192. **Upgrading your graphics card won't let you visualise a bigger graph in Knotviz today.**
 
 Your GPU's `MAX_TEXTURE_SIZE` matters only as a *lower bound*: weaker GPUs get less than 8192 and cosmos warns in the console (`The spaceSize has been reduced to N due to WebGL limits`). If you don't see that warning, you're on the full 8192×8192.
 
-Inside that fixed grid, what you see at fit-view depends on density:
+This is the load-bearing fact behind the 1M ceiling. The cap could be lifted — one-line change to pass a larger `spaceSize` in `useCosmos.ts` — but it's not a universal upgrade: users on weaker GPUs silently get a different experience, and simulation convergence gets slower. Not shipped today.
 
-| Graph size | What the canvas looks like at fit-view |
-|---|---|
-| ≤100k | Sparse, easy to trace individual connections |
-| 100k–500k | Dense but clusters clearly separable |
-| 500k–1M | Most of the square is covered; individual nodes start blurring into a "field of dots" |
-| 1M+ | The simulation square is filled edge-to-edge. Community structure (clusters) is often still visible, but node-level detail requires zoom |
+### If you have more than 1M nodes
 
-The exact crossover depends on your graph's topology:
+You're past the open-and-explore zone. The tool still works, but the workflow changes:
 
-- **Strong community structure** — clusters clump, leaving empty space. Stays legible longer (often up to 2–3M nodes).
-- **Uniform / random connectivity** — nodes spread evenly across the whole grid; visual ceiling can hit as low as 500k.
-- **Tree-like / sparse graphs** — can stay legible past 5M because they occupy less area per edge.
-
-### What this actually means: the practical working size
-
-Three independent ceilings gate "how big a graph you can actually work with":
-
-1. **Memory ceiling** (can it load): per the comfortable table above — JSON/CSV edge-list 5M, CSV pair 2M, GraphML 500k, GEXF 1M
-2. **Visual ceiling** (can you see it at fit-view): ~500k uniform / ~1M clustered / ~2M highly clustered — this one is **shared across all users regardless of hardware**
-3. **Interaction ceiling** (is it responsive): 60 FPS through ~1M, 30+ FPS through ~2M, 15+ FPS at 5M
-
-> **The sweet spot for the average user is ~500k–1M nodes** — where all three ceilings sit comfortably below their limits. Below 500k, everything is trivially fast and readable. At 500k–1M you're in the productive zone: loads in seconds, pans and zooms at 60 FPS, structure and individual clusters are still visually distinguishable.
-
-Past 1M, **the intended workflow changes**: you can no longer read the whole graph at a glance, and you're not supposed to try. Instead:
-
-- **Filter** by property to hide nodes you don't care about right now (hidden nodes are fully culled, not just dimmed)
-- **Search** to jump to nodes by id / label substring
-- **Color** by a property to separate clusters visually even when they overlap spatially
-- **Zoom in** to inspect local neighbourhoods where the rendered density is back to normal
-
-The upper-end sizes from the loading ceiling (5M JSON, 2M CSV pair) are where this "filter/search/color to navigate a blob" workflow lives. It works, but it's not the same as eyeballing the whole graph — plan for 500k–1M if you want the latter.
-
-### If you need to go bigger
-
-- Use JSON or CSV edge-list (the lighter formats) up to their 5M comfortable limit
-- Split your graph into subgraphs and load them separately
-- Pre-filter / pre-sample before exporting for Knotviz
-
-Lifting the **loading** ceiling would mean rewriting `GraphBuilder` to release its JS-side arrays eagerly after converting to typed arrays in `finalize`, and replacing the `Set`/`Map` node-dedup with a structure that scales past V8's 2²⁴ internal limit (roaring bitmap, flat-buffer sparse set, or a `{id → index}` plain object).
-
-Lifting the **visual** ceiling would mean configuring cosmos with a larger `spaceSize` (e.g. 16384 on modern GPUs, four times the current area) at the cost of higher GPU texture memory and slower convergence. One-line change in `useCosmos.ts`, but not a universal upgrade — users on weaker GPUs would silently get the reduced size and a different experience from users on modern ones.
+- **Pre-filter or pre-sample before exporting** from whatever produced the graph. A 10M graph filtered down to 300k at export time is more useful than loading 10M and fighting the display.
+- **Split into subgraphs** and load them separately. Per-community exploration often beats whole-graph-at-once past 1M anyway.
+- **Use filter + search + colour + zoom** to carve out a useful view from within the tool — filter-hidden nodes are fully culled (alpha=0, size=0) so what's left reads at normal density.
 
 ### Architecture
 

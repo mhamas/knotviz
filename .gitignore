@@ -21,6 +21,7 @@ __pycache__/
 # Manual testing graphs
 graphs_for_manual_testing/
 graphs_for_manual_testing_various_formats/
+large_size_experiment/
 
 # Playwright MCP
 .playwright-mcp

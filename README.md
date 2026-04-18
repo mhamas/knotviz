@@ -17,25 +17,29 @@ Open `http://localhost:5173`, then drag-and-drop a JSON graph file onto the drop
 
 ### How big can your graph be?
 
-| Graph Size | Load time | Interaction | Notes |
-|---|---|---|---|
-| 10K nodes | <1s | 60 FPS | Instant everything |
-| 100K nodes | ~2s | 60 FPS | All features fluid |
-| 1M nodes | ~10s | 30+ FPS | Filters/colors via Web Worker, labels auto-sampled |
-| 2M nodes | ~20s | 30+ FPS | Streaming loader engages for ≥200 MB inputs |
-| 3–5M nodes | ~30–60s | 15+ FPS | Only JSON and CSV can actually reach here — GraphML/GEXF OOM earlier (see below) |
+Measured ceilings per format at a **4 GB heap** (typical Chrome tab), 1.5 edges per node, file generated from random ids:
 
-### Capacity ceiling by file format
+| Format | Ceiling | File at ceiling | Parse time | Peak RSS | Limited by |
+|---|---|---|---|---|---|
+| JSON | **~15M nodes** | ~3 GB | ~90s | ~600 MB + ~1 GB builder | streaming parser is fine past 24M; worker's `nodeIndexMap: Map<string, number>` hits the V8 cap at ~2²⁴ entries (~16.7M) |
+| CSV edge list | **~15M nodes** | ~650 MB | ~30s | ~1.2 GB | streaming parser's `knownNodeIds: Set<string>` hits the same V8 cap |
+| CSV nodes+edges pair | **~15M nodes** | ~1.3 GB | ~50s | ~1.4 GB | same V8 `Set` cap |
+| GraphML | **~1M nodes** | ~240 MB | ~30s | OOM above | `fast-xml-parser` builds the full DOM in memory. Past ~1M it blows the 4 GB heap. |
+| GEXF | **~1.5M nodes** | ~360 MB | ~40s | OOM above | same as GraphML |
 
-Not every format can reach the same scale. The limit is parser memory, not rendering:
+Numbers were measured by `scripts/experiment-large-sizes.ts` — a probe-and-binary-search run at 4 GB heap with a 5-minute per-probe timeout. See `MANUAL_TESTING.md` and `large_size_experiment/results.md` for the raw per-probe log.
 
-| Format | Node ceiling (approx.) | Why |
+**Interaction tier** once loaded:
+
+| Graph size | Load | Interaction |
 |---|---|---|
-| JSON | ~10M | Streaming parser (bracket counting + per-item `JSON.parse`) never holds the full tree in memory |
-| CSV edge list | ~10M | Streaming parser kicks in at ≥200 MB; memory is O(unique node ids), not O(file size) |
-| CSV nodes+edges pair | ~5M | Same streaming path; slightly lower because nodes file is wider |
-| GraphML | ~2M | `fast-xml-parser` builds a complete DOM in memory — a 3M-node GraphML is ~720 MB on disk and peaks around 4–5 GB parsed. Use JSON/CSV for larger graphs. |
-| GEXF | ~2M | Same as GraphML |
+| 10K | <1s | 60 FPS, instant everything |
+| 100K | ~2s | 60 FPS |
+| 1M | ~10s | 30+ FPS |
+| 5M | ~30s | 15+ FPS, labels auto-sampled during simulation |
+| 15M | ~50–90s | still interactive once loaded; search, filter, and color help find what you need |
+
+**If you actually have >15M nodes** today: use JSON or CSV up to the ceiling, split the graph into subgraphs, or pre-filter before dropping in. Lifting the 15M cap cleanly would mean replacing the `Set`/`Map` node-dedup with a structure that scales past V8's 2²⁴ internal limit (roaring bitmap, flat-buffer sparse set, or a `{id → index}` plain object).
 
 ### The simulation-space ceiling (GPU-bound, varies by hardware)
 

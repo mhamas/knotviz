@@ -44,7 +44,6 @@ knotviz/
 ├── index.html                  # Homepage (static HTML + Tailwind) → serves at /
 ├── graph/
 │   └── index.html              # Graph SPA HTML entry → serves at /graph
-├── plan/                       # Product spec, implementation plan, roadmap tasks
 ├── e2e/                        # Playwright E2E tests
 │   ├── fixtures/               # Test graph files (sample, screenshot, invalid, empty, etc.)
 │   ├── homepage.spec.ts        # Homepage E2E tests
@@ -126,7 +125,7 @@ Use this for: layout issues, component visibility, drag-and-drop flows, tooltip 
 
 ## Task Workflow
 
-Progress is tracked in `plan/implementation_roadmap/progress_tracking.md`. Before starting work, read that file to find the next task. After completing a task:
+After completing a task:
 
 1. **Write tests** — every task/feature must include appropriate tests:
    - **Unit tests** (`src/graph/test/`) for new or changed pure functions in `lib/`.
@@ -135,12 +134,9 @@ Progress is tracked in `plan/implementation_roadmap/progress_tracking.md`. Befor
    - Choose the test type that best covers the change. Many tasks warrant multiple types.
 2. Run `npm run test:all` — must pass with zero errors.
 3. **Do not commit if any test fails.** Fix the issue first.
-5. If the task adds UI, use Playwright MCP to visually verify the rendered output.
-6. If the task warrants user testing (UI changes, new interactions), tell the user what to test and how (e.g. "run `npm run dev` and try dragging a JSON file onto the drop zone").
-7. Mark the task `[x]` in `progress_tracking.md` and update the "Next task" line.
-8. Commit and push.
-
-Status markers: `[x]` done, `[ ]` not started, `[>]` in progress.
+4. If the task adds UI, use Playwright MCP to visually verify the rendered output.
+5. If the task warrants user testing (UI changes, new interactions), tell the user what to test and how (e.g. "run `npm run dev` and try dragging a JSON file onto the drop zone").
+6. Commit and push.
 
 ---
 

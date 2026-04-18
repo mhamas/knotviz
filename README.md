@@ -325,7 +325,6 @@ knotviz/
 │   └── shared/                 # Code shared between apps (future use)
 ├── public/                     # Static assets (favicon, logos, screenshots)
 ├── scripts/                    # Utility scripts (graph generation, CSV conversion)
-├── plan/                       # Product specification and roadmap
 └── playwright.config.ts, vite.config.ts, tsconfig.json, eslint.config.js
 ```
 

@@ -10,7 +10,6 @@ Tasks to complete before making the repo public.
 
 ## Should fix
 
-- [ ] **Remove or reframe `plan/` directory** — internal planning docs (product_specification.md, product_roadmap.md, implementation_plan.md, filter-system-plan.md). Either remove, gitignore, or move to `docs/` as architecture docs
 - [ ] **`logos/` directory** — currently untracked. Either commit (if needed for README/homepage) or add to .gitignore
 - [ ] **Add `__pycache__/` to .gitignore** — Python cache in `scripts/` directory
 - [ ] **Add CONTRIBUTING.md** — short file: how to run tests, PR expectations, "side project" disclaimer if relevant
@@ -21,3 +20,8 @@ Tasks to complete before making the repo public.
 - [ ] **Search/find node** — no way to find a specific node in a 1M-node graph without scrolling
 - [ ] **Edge labels/tooltips** — clicking a node shows properties, but no way to inspect an edge
 - [ ] **Dark mode**
+- [ ] **Dual-line tooltip for non-date properties (formatted + raw)** — only dates show two lines currently
+- [ ] **Active filter indicator dot on collapsed filter panel header** — visual signal when filter has non-default values
+- [ ] **String / date distribution charts in Stats tab** — number stats only today
+- [ ] **Expanded histogram modal** — no click-to-expand currently
+- [ ] **Community detection / clustering visualization**

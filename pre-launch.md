@@ -17,7 +17,7 @@ Tasks to complete before making the repo public.
 ## Nice to have (post-launch)
 
 - [ ] **CSV/TSV import** — JSON-only is a barrier. `scripts/csv-to-graph.mjs` exists but no in-app support. At minimum, document the script in README
-- [ ] **Search/find node** — no way to find a specific node in a 1M-node graph without scrolling
+- [x] **Search/find node** — no way to find a specific node in a 1M-node graph without scrolling
 - [ ] **Edge labels/tooltips** — clicking a node shows properties, but no way to inspect an edge
 - [ ] **Dark mode**
 - [ ] **Dual-line tooltip for non-date properties (formatted + raw)** — only dates show two lines currently

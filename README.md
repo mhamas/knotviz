@@ -37,11 +37,20 @@ Not every format can reach the same scale. The limit is parser memory, not rende
 | GraphML | ~2M | `fast-xml-parser` builds a complete DOM in memory — a 3M-node GraphML is ~720 MB on disk and peaks around 4–5 GB parsed. Use JSON/CSV for larger graphs. |
 | GEXF | ~2M | Same as GraphML |
 
-### The simulation-space ceiling (GPU-bound, not software-bound)
+### The simulation-space ceiling (GPU-bound, varies by hardware)
 
-The force-directed simulation runs on a bounded 2D grid. The grid side length is capped at **8192 px** by WebGL texture-size limits — **this is a hardware limit, not something a bigger GPU will lift.** Every GPU tops out at 8192 for standard render targets.
+The force-directed simulation runs on a bounded 2D grid, and the grid side length is bounded by your GPU's WebGL `MAX_TEXTURE_SIZE`. That number is **hardware-specific**:
 
-Inside that bounded square, nodes can't spread indefinitely. Past a certain density the simulation keeps running correctly — the physics is still fine — but the *image* saturates:
+| GPU tier | Typical MAX_TEXTURE_SIZE | Knotviz simulation side |
+|---|---|---|
+| Modern desktop / recent laptops | 16384+ | capped at 8192 (cosmos's internal upper bound) |
+| Older discrete / integrated | 8192 | 8192 |
+| Weak iGPUs, Chromebooks, some mobile | 4096 | 4096 |
+| Very old / headless SwiftShader | 2048–4096 | whatever the GPU reports |
+
+Cosmos auto-reduces `spaceSize` to what your GPU actually supports and logs a console warning if it had to drop below the requested size (`The spaceSize has been reduced to N due to WebGL limits`). If you're running on an older machine and hitting visual saturation earlier than you'd expect, check the console — you might be on a 4096 box.
+
+Inside whatever square your GPU gives you, nodes can't spread indefinitely. Past a certain density the simulation keeps running correctly — the physics is still GPU-bound, not CPU-bound — but the *image* saturates:
 
 | Graph size | What the canvas looks like at fit-view |
 |---|---|

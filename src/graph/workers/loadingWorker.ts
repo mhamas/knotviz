@@ -22,6 +22,10 @@ import { parseEdgeListCSV } from '../lib/parseEdgeListCSV'
 import { parseGEXF } from '../lib/parseGEXF'
 import { parseGraphML } from '../lib/parseGraphML'
 import { parseNodeEdgeCSV } from '../lib/parseNodeEdgeCSV'
+import {
+  parseStreamingEdgeListCSV,
+  parseStreamingNodeEdgeCSV,
+} from '../lib/streamingCsvGraphParser'
 import { parseStreamingJsonGraph } from '../lib/streamingJsonGraphParser'
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -123,6 +127,20 @@ async function loadWithJsonParse(file: File): Promise<ProcessResult> {
 async function loadNonJson(files: File[], format: FileFormat): Promise<ProcessResult> {
   post({ type: 'progress', stage: 'Reading file…', percent: 0 })
 
+  // CSV paths use a streaming pipeline once the file (or the pair total) crosses
+  // the streaming threshold — reading a 500 MB CSV into a string and then again
+  // into GraphData would peak around 2 GB. Streaming keeps memory O(built graph).
+  try {
+    if (format === 'csv-edge-list' && files[0].size >= STREAMING_THRESHOLD) {
+      return await loadCsvEdgeListStreaming(files[0])
+    }
+    if (format === 'csv-pair' && files[0].size + files[1].size >= STREAMING_THRESHOLD) {
+      return await loadCsvPairStreaming(files[0], files[1])
+    }
+  } catch (err) {
+    throw new Error(err instanceof Error ? err.message : 'Failed to parse file')
+  }
+
   let graph: GraphData
   try {
     if (format === 'csv-edge-list') {
@@ -155,6 +173,109 @@ async function loadNonJson(files: File[], format: FileFormat): Promise<ProcessRe
   post({ type: 'progress', stage: 'Building graph…', percent: 40 })
   await yieldWorker()
   return await processRawGraph(graph)
+}
+
+// ─── Strategy 1c: streaming CSV (edge-list + pair) ────────────────────────
+
+function fileTextStream(file: File, onBytes: (n: number) => void): AsyncIterable<string> {
+  const reader = file.stream().getReader()
+  const decoder = new TextDecoder('utf-8')
+  return {
+    [Symbol.asyncIterator](): AsyncIterator<string> {
+      return {
+        async next(): Promise<IteratorResult<string>> {
+          const { done, value } = await reader.read()
+          if (done) return { value: undefined, done: true }
+          onBytes(value.byteLength)
+          return { value: decoder.decode(value, { stream: true }), done: false }
+        },
+      }
+    },
+  }
+}
+
+async function loadCsvEdgeListStreaming(file: File): Promise<ProcessResult> {
+  const builder = new GraphBuilder()
+  const totalBytes = file.size
+  let bytesRead = 0
+  let edgeCount = 0
+
+  post({ type: 'progress', stage: 'Streaming CSV edges…', percent: 0 })
+  await yieldWorker()
+
+  const chunks = fileTextStream(file, (n) => {
+    bytesRead += n
+  })
+  await parseStreamingEdgeListCSV(chunks, {
+    onNode: (n) => {
+      builder.addNode(n as unknown as Record<string, unknown>)
+    },
+    onEdge: (e) => {
+      builder.addEdge(e as unknown as Record<string, unknown>)
+      edgeCount++
+      if (edgeCount % 100_000 === 0) {
+        const pct = Math.min(90, Math.round((bytesRead / totalBytes) * 90))
+        post({
+          type: 'progress',
+          stage: `Streaming edges… ${edgeCount.toLocaleString()}`,
+          percent: pct,
+        })
+      }
+    },
+  })
+
+  post({ type: 'progress', stage: 'Finalizing…', percent: 90 })
+  await yieldWorker()
+  return { ...builder.finalize(), nodePropertiesMetadata: undefined }
+}
+
+async function loadCsvPairStreaming(nodesFile: File, edgesFile: File): Promise<ProcessResult> {
+  const builder = new GraphBuilder()
+  const totalBytes = nodesFile.size + edgesFile.size
+  let bytesRead = 0
+  let nodeCount = 0
+  let edgeCount = 0
+
+  post({ type: 'progress', stage: 'Streaming nodes CSV…', percent: 0 })
+  await yieldWorker()
+
+  const nodesChunks = fileTextStream(nodesFile, (n) => {
+    bytesRead += n
+  })
+  const edgesChunks = fileTextStream(edgesFile, (n) => {
+    bytesRead += n
+  })
+
+  await parseStreamingNodeEdgeCSV(nodesChunks, edgesChunks, {
+    onNode: (n) => {
+      builder.addNode(n as unknown as Record<string, unknown>)
+      nodeCount++
+      if (nodeCount % 100_000 === 0) {
+        const pct = Math.min(80, Math.round((bytesRead / totalBytes) * 80))
+        post({
+          type: 'progress',
+          stage: `Streaming nodes… ${nodeCount.toLocaleString()}`,
+          percent: pct,
+        })
+      }
+    },
+    onEdge: (e) => {
+      builder.addEdge(e as unknown as Record<string, unknown>)
+      edgeCount++
+      if (edgeCount % 100_000 === 0) {
+        const pct = Math.min(90, Math.round((bytesRead / totalBytes) * 90))
+        post({
+          type: 'progress',
+          stage: `Streaming edges… ${edgeCount.toLocaleString()}`,
+          percent: pct,
+        })
+      }
+    },
+  })
+
+  post({ type: 'progress', stage: 'Finalizing…', percent: 90 })
+  await yieldWorker()
+  return { ...builder.finalize(), nodePropertiesMetadata: undefined }
 }
 
 // ─── Strategy 2: Streaming parser (large files) ──────────────────────────

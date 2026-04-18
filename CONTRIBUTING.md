@@ -105,9 +105,11 @@ For UI changes, also open the dev server in a real browser and exercise the feat
 
 Every task or feature must include tests. Non-negotiable.
 
-### Red/Green TDD (required for agents and humans alike)
+### Red/Green TDD (required for AI coding agents)
 
-Always use Test-Driven Development:
+**If you are an AI coding agent (Claude, Cursor, Copilot, Codex, Aider, etc.), you MUST follow Red/Green TDD on this project.** Human contributors are welcome to use TDD but aren't required to — test coverage at the end is what matters for humans.
+
+For agents, the workflow is:
 
 1. **RED** — write the failing test first. Run it and see it fail for the right reason. Skipping this step is the single biggest cause of tests that pass but don't actually verify the behavior they claim to.
 2. **GREEN** — write the minimum implementation that makes the test pass.

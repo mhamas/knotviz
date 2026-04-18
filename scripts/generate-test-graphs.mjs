@@ -6,11 +6,13 @@
  * end-to-end, so most manual testing only needs the valid side).
  *
  * Output directory: graphs_for_manual_testing_various_formats/
- *   json/valid-<size>.json
- *   csv-edge-list/valid-<size>.csv
- *   csv-pair/valid-<size>-nodes.csv + valid-<size>-edges.csv
- *   graphml/valid-<size>.graphml
- *   gexf/valid-<size>.gexf
+ *   json/<size>.json
+ *   csv-edge-list/<size>.csv
+ *   csv-pair/<size>-nodes.csv + <size>-edges.csv
+ *   graphml/<size>.graphml
+ *   gexf/<size>.gexf
+ *
+ * With --include-invalid, each subfolder also gets invalid-<size>.* files.
  *
  * Usage:
  *   node scripts/generate-test-graphs.mjs
@@ -106,8 +108,8 @@ function writeStream(filePath) {
 // ─── JSON generator ───────────────────────────────────────────────────────
 
 async function genJson(size, invalid) {
-  const variant = invalid ? 'invalid' : 'valid'
-  const file = path.join(formatDir('json'), `${variant}-${humanSize(size)}.json`)
+  const name = invalid ? `invalid-${humanSize(size)}.json` : `${humanSize(size)}.json`
+  const file = path.join(formatDir('json'), name)
   const w = writeStream(file)
   const rng = makeRng(size + (invalid ? 1 : 0))
 
@@ -149,8 +151,8 @@ async function genJson(size, invalid) {
 // ─── CSV edge-list generator ──────────────────────────────────────────────
 
 async function genCsvEdgeList(size, invalid) {
-  const variant = invalid ? 'invalid' : 'valid'
-  const file = path.join(formatDir('csv-edge-list'), `${variant}-${humanSize(size)}.csv`)
+  const name = invalid ? `invalid-${humanSize(size)}.csv` : `${humanSize(size)}.csv`
+  const file = path.join(formatDir('csv-edge-list'), name)
   const w = writeStream(file)
   const rng = makeRng(size + (invalid ? 2 : 0))
 
@@ -176,10 +178,10 @@ async function genCsvEdgeList(size, invalid) {
 // ─── CSV pair generator (two files) ───────────────────────────────────────
 
 async function genCsvPair(size, invalid) {
-  const variant = invalid ? 'invalid' : 'valid'
+  const prefix = invalid ? `invalid-${humanSize(size)}` : humanSize(size)
   const dir = formatDir('csv-pair')
-  const nodesFile = path.join(dir, `${variant}-${humanSize(size)}-nodes.csv`)
-  const edgesFile = path.join(dir, `${variant}-${humanSize(size)}-edges.csv`)
+  const nodesFile = path.join(dir, `${prefix}-nodes.csv`)
+  const edgesFile = path.join(dir, `${prefix}-edges.csv`)
   const nw = writeStream(nodesFile)
   const ew = writeStream(edgesFile)
   const rng = makeRng(size + (invalid ? 3 : 0))
@@ -215,8 +217,8 @@ async function genCsvPair(size, invalid) {
 // ─── GraphML generator ────────────────────────────────────────────────────
 
 async function genGraphML(size, invalid) {
-  const variant = invalid ? 'invalid' : 'valid'
-  const file = path.join(formatDir('graphml'), `${variant}-${humanSize(size)}.graphml`)
+  const name = invalid ? `invalid-${humanSize(size)}.graphml` : `${humanSize(size)}.graphml`
+  const file = path.join(formatDir('graphml'), name)
   const w = writeStream(file)
   const rng = makeRng(size + (invalid ? 4 : 0))
 
@@ -253,8 +255,8 @@ async function genGraphML(size, invalid) {
 // ─── GEXF generator ───────────────────────────────────────────────────────
 
 async function genGexf(size, invalid) {
-  const variant = invalid ? 'invalid' : 'valid'
-  const file = path.join(formatDir('gexf'), `${variant}-${humanSize(size)}.gexf`)
+  const name = invalid ? `invalid-${humanSize(size)}.gexf` : `${humanSize(size)}.gexf`
+  const file = path.join(formatDir('gexf'), name)
   const w = writeStream(file)
   const rng = makeRng(size + (invalid ? 5 : 0))
 

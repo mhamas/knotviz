@@ -21,14 +21,14 @@ Contents (30 files by default — 5 sizes × 5 formats; doubles to 60 with `--in
 
 ```
 graphs_for_manual_testing_various_formats/
-├── json/              valid-{size}.json
-├── csv-edge-list/     valid-{size}.csv
-├── csv-pair/          valid-{size}-nodes.csv + valid-{size}-edges.csv
-├── graphml/           valid-{size}.graphml
-└── gexf/              valid-{size}.gexf
+├── json/              {size}.json
+├── csv-edge-list/     {size}.csv
+├── csv-pair/          {size}-nodes.csv + {size}-edges.csv
+├── graphml/           {size}.graphml
+└── gexf/              {size}.gexf
 ```
 
-With `--include-invalid`, each subfolder also gets `invalid-{size}.*` files. What each invalid variant breaks:
+With `--include-invalid`, each subfolder also gets `invalid-{size}.*` files alongside. What each invalid variant breaks:
 
 | Folder | Invalid fault |
 |---|---|

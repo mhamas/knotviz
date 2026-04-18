@@ -105,21 +105,24 @@ async function genJson(size, invalid) {
   const w = writeStream(file)
   const rng = makeRng(size + (invalid ? 1 : 0))
 
-  if (invalid) {
-    // Missing `version` field, so schema validation fails immediately despite full content.
-    await w.write('{"nodes":[\n')
-  } else {
-    await w.write('{"version":"1","nodes":[\n')
-  }
+  await w.write('{"version":"1","nodes":[\n')
 
   for (let i = 0; i < size; i++) {
     const p = nodeProps(rng, i)
-    const obj = {
-      id: `n${i}`,
-      label: LABELS[i % LABELS.length],
-      properties: { age: p.age, active: p.active, joined: p.joined, tags: p.tags },
+    // Invalid variant: every node has JS-style unquoted keys so JSON.parse rejects.
+    // The streaming parser silently skips malformed items (by design) so breaking
+    // ONE node isn't enough — breaking all of them leaves zero parseable nodes,
+    // which downstream GraphBuilder surfaces as "Graph has no nodes to display".
+    if (invalid) {
+      await w.write(`{id: n${i}, broken: true}`)
+    } else {
+      const obj = {
+        id: `n${i}`,
+        label: LABELS[i % LABELS.length],
+        properties: { age: p.age, active: p.active, joined: p.joined, tags: p.tags },
+      }
+      await w.write(JSON.stringify(obj))
     }
-    await w.write(JSON.stringify(obj))
     if (i < size - 1) await w.write(',\n')
   }
   await w.write('\n],"edges":[\n')

@@ -69,8 +69,24 @@ export default defineConfig({
           environment: 'jsdom',
           setupFiles: './src/graph/test/setup.ts',
           include: ['src/graph/test/**/*.test.{ts,tsx}'],
-          exclude: ['node_modules/**'],
+          // Large-file tests are opt-in via `test:large-graphs`, not part of the default suite.
+          exclude: ['node_modules/**', 'src/graph/test/large-files/**'],
           coverage: { provider: 'v8', reporter: ['text', 'lcov'] },
+        },
+      },
+      {
+        plugins: [react()],
+        resolve: { alias },
+        test: {
+          name: 'large-files',
+          globals: true,
+          environment: 'node',
+          include: ['src/graph/test/large-files/**/*.test.ts'],
+          testTimeout: 600_000,
+          hookTimeout: 600_000,
+          // One test process at a time so a 3M-node XML parse can use the whole heap.
+          pool: 'forks',
+          fileParallelism: false,
         },
       },
       {

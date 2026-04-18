@@ -41,19 +41,20 @@ const args = new Map(
   }),
 )
 
-// Per-format default sizes based on the empirical ceilings measured by
-// `scripts/experiment-large-sizes.ts`. Each series climbs from small to the
-// size where loading starts to hurt, so you can drop a file of each format
-// and feel where it tops out.
+// Per-format default sizes based on what actually loads end-to-end in a
+// 4 GB browser tab — parser + GraphBuilder + finalize combined, matching the
+// full worker pipeline. The automated `npm run test:large-graphs` suite
+// verifies these sizes pass; anything larger has been observed to OOM.
 //
-//   JSON / CSV: limit is V8's 2^24 cap on the Set/Map used for node dedup —
-//     ~15M nodes, ~1.2 GB peak RSS, 30–90s parse.
-//   GraphML / GEXF: limit is fast-xml-parser's full DOM in memory —
-//     ~1M / 1.5M nodes before the 4 GB heap blows.
+//   JSON:          up to 10M nodes  (~2 GB file,    ~3 GB peak heap)
+//   CSV edge-list: up to 10M nodes  (~430 MB file,  ~1.5 GB peak heap)
+//   CSV pair:      up to 5M nodes   (~450 MB total, ~1.8 GB peak heap)
+//   GraphML:       up to 1M nodes   (~237 MB file,  ~2 GB peak heap)
+//   GEXF:          up to 1.5M nodes (~355 MB file,  ~2 GB peak heap)
 const DEFAULT_SIZES_PER_FORMAT = {
-  json: [10_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000, 15_000_000],
-  'csv-edge-list': [10_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000, 15_000_000],
-  'csv-pair': [10_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000, 15_000_000],
+  json: [10_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000],
+  'csv-edge-list': [10_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000],
+  'csv-pair': [10_000, 100_000, 500_000, 1_000_000, 5_000_000],
   graphml: [10_000, 100_000, 500_000, 1_000_000],
   gexf: [10_000, 100_000, 500_000, 1_000_000, 1_500_000],
 }

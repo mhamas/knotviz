@@ -10,15 +10,15 @@ node scripts/generate-test-graphs.mjs
 
 Output lands in `graphs_for_manual_testing_various_formats/` (gitignored). By default only **valid** files are produced; automated tests cover the invalid side (`npm run test:large-graphs`). To regenerate with invalid variants too, pass `--include-invalid`.
 
-The size ladder climbs to each format's empirical ceiling (measured by `scripts/experiment-large-sizes.ts`), so the biggest file per format shows you what the format can barely still handle in a real browser tab:
+The size ladder climbs to each format's empirical ceiling — measured end-to-end through the full production pipeline (parser → `GraphBuilder` → `finalize`) at a 4 GB heap, and verified by the automated `npm run test:large-graphs` suite. The biggest file per format is right at what a real browser tab can still handle:
 
-| Format | Default ladder |
-|---|---|
-| JSON | 10k, 100k, 500k, 1M, 5M, 10M, **15M** (≈ceiling) |
-| CSV edge-list | 10k, 100k, 500k, 1M, 5M, 10M, **15M** (≈ceiling) |
-| CSV pair | 10k, 100k, 500k, 1M, 5M, 10M, **15M** (≈ceiling) |
-| GraphML | 10k, 100k, 500k, **1M** (≈ceiling) |
-| GEXF | 10k, 100k, 500k, 1M, **1.5M** (≈ceiling) |
+| Format | Default ladder | Why it tops out where it does |
+|---|---|---|
+| JSON | 10k, 100k, 500k, 1M, 5M, **10M** (≈ceiling) | 4 property columns + `Map<id, index>` + edge typed arrays peak ~3 GB heap |
+| CSV edge-list | 10k, 100k, 500k, 1M, 5M, **10M** (≈ceiling) | No property columns, so fits comfortably; same `Map` cap story |
+| CSV pair | 10k, 100k, 500k, 1M, **5M** (≈ceiling) | Lower than JSON despite same parser: property columns × typed headers add ~250 MB per property at 10M |
+| GraphML | 10k, 100k, 500k, **1M** (≈ceiling) | `fast-xml-parser` builds full DOM in memory |
+| GEXF | 10k, 100k, 500k, 1M, **1.5M** (≈ceiling) | Same as GraphML |
 
 ```bash
 node scripts/generate-test-graphs.mjs                                # full ladder, all formats

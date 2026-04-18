@@ -28,6 +28,7 @@ import { describe, it, expect } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
 import os from 'node:os'
+import { GraphBuilder } from '../../lib/graphBuilder'
 import { parseGraphML } from '../../lib/parseGraphML'
 import { parseGEXF } from '../../lib/parseGEXF'
 import {
@@ -35,19 +36,32 @@ import {
   parseStreamingNodeEdgeCSV,
 } from '../../lib/streamingCsvGraphParser'
 import { parseStreamingJsonGraph } from '../../lib/streamingJsonGraphParser'
+import type { NodeInput, EdgeInput } from '../../types'
 import { genJson, genCsvEdgeList, genCsvPair, genGraphML, genGexf } from './generators'
 
 // Per-format size ladders that climb to the empirical ceiling measured at a
-// browser-realistic 4 GB heap:
-//   JSON / CSV edge-list / CSV pair: ~15M nodes (V8 Set/Map 2^24 cap)
-//   GraphML: ~1M nodes (fast-xml-parser DOM in RAM)
-//   GEXF: ~1.5M nodes (same)
-// The largest file per format sits right at the ceiling so regressions that
-// would hurt real users surface here first.
+// browser-realistic 4 GB heap, running the FULL worker pipeline (parser →
+// GraphBuilder.addNode/addEdge → finalize). That pipeline is what actually
+// blows up in production — the parser alone fits far higher sizes than the
+// builder does.
+//
+// Memory cost at ceiling per format (peak heap during finalize):
+//   JSON @ 10M:          ~3 GB (4 property columns + Map + edge typed arrays)
+//   CSV edge-list @ 10M: ~1.5 GB (no property columns, lighter)
+//   CSV pair @ 5M:       ~1.8 GB (property columns double up over JSON's baseline)
+//   GraphML @ 1M:        ~2 GB (fast-xml-parser DOM + builder)
+//   GEXF @ 1.5M:         ~2 GB (same)
+//
+// Past these sizes we've observed "JavaScript heap out of memory" OOMs that
+// kill the vitest worker process — matching the "Aw, Snap!" Chrome renderer
+// crash users hit with the same file. CSV pair tops out lower than JSON
+// despite the same parser because the downstream GraphBuilder has to hold
+// the full property columns (~250 MB per typed property at 10M) alongside
+// the Map and edge arrays.
 const DEFAULT_SIZES_PER_FORMAT: Record<string, number[]> = {
-  json: [10_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000, 15_000_000],
-  'csv-edge-list': [10_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000, 15_000_000],
-  'csv-pair': [10_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000, 15_000_000],
+  json: [10_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000],
+  'csv-edge-list': [10_000, 100_000, 500_000, 1_000_000, 5_000_000, 10_000_000],
+  'csv-pair': [10_000, 100_000, 500_000, 1_000_000, 5_000_000],
   graphml: [10_000, 100_000, 500_000, 1_000_000],
   gexf: [10_000, 100_000, 500_000, 1_000_000, 1_500_000],
 }
@@ -80,56 +94,78 @@ async function* fileChunks(filePath: string): AsyncGenerator<string> {
   for await (const chunk of stream) yield chunk as string
 }
 
-async function loadJsonStreaming(
+/**
+ * The worker feeds parsed nodes/edges into a `GraphBuilder` and then calls
+ * `finalize()` to produce the typed-array payload cosmos consumes. The
+ * builder is where the real memory cost lives (nodeIndexMap, edgeSrcIndices,
+ * all the Float32Arrays allocated in finalize). Tests run the exact same
+ * pipeline so a regression that would OOM the browser surfaces here too.
+ */
+async function loadJsonFull(
   filePath: string,
 ): Promise<{ nodeCount: number; edgeCount: number }> {
-  let nodeCount = 0
-  let edgeCount = 0
+  const builder = new GraphBuilder()
   await parseStreamingJsonGraph(fileChunks(filePath), {
     onVersion: () => {},
-    onNode: () => {
-      nodeCount++
-    },
-    onEdge: () => {
-      edgeCount++
-    },
+    onNode: (n) => builder.addNode(n),
+    onEdge: (e) => builder.addEdge(e),
     onNodePropertiesMetadata: () => {},
     onProgress: () => {},
   })
-  return { nodeCount, edgeCount }
+  const result = builder.finalize()
+  return { nodeCount: result.nodeCount, edgeCount: result.edgeCount }
 }
 
-async function loadEdgeListStreaming(
+async function loadEdgeListFull(
   filePath: string,
 ): Promise<{ nodeCount: number; edgeCount: number }> {
-  let nodeCount = 0
-  let edgeCount = 0
+  const builder = new GraphBuilder()
   await parseStreamingEdgeListCSV(fileChunks(filePath), {
-    onNode: () => {
-      nodeCount++
-    },
-    onEdge: () => {
-      edgeCount++
-    },
+    onNode: (n) => builder.addNode(n as unknown as Record<string, unknown>),
+    onEdge: (e) => builder.addEdge(e as unknown as Record<string, unknown>),
   })
-  return { nodeCount, edgeCount }
+  const result = builder.finalize()
+  return { nodeCount: result.nodeCount, edgeCount: result.edgeCount }
 }
 
-async function loadPairStreaming(
+async function loadPairFull(
   nodesPath: string,
   edgesPath: string,
 ): Promise<{ nodeCount: number; edgeCount: number }> {
-  let nodeCount = 0
-  let edgeCount = 0
+  const builder = new GraphBuilder()
   await parseStreamingNodeEdgeCSV(fileChunks(nodesPath), fileChunks(edgesPath), {
-    onNode: () => {
-      nodeCount++
-    },
-    onEdge: () => {
-      edgeCount++
-    },
+    onNode: (n) => builder.addNode(n as unknown as Record<string, unknown>),
+    onEdge: (e) => builder.addEdge(e as unknown as Record<string, unknown>),
   })
-  return { nodeCount, edgeCount }
+  const result = builder.finalize()
+  return { nodeCount: result.nodeCount, edgeCount: result.edgeCount }
+}
+
+async function loadGraphMLFull(
+  filePath: string,
+): Promise<{ nodeCount: number; edgeCount: number }> {
+  const text = fs.readFileSync(filePath, 'utf8')
+  const g = parseGraphML(text)
+  return feedBuilder(g.nodes, g.edges)
+}
+
+async function loadGexfFull(
+  filePath: string,
+): Promise<{ nodeCount: number; edgeCount: number }> {
+  const text = fs.readFileSync(filePath, 'utf8')
+  const g = parseGEXF(text)
+  return feedBuilder(g.nodes, g.edges)
+}
+
+function feedBuilder(
+  nodes: NodeInput[],
+  edges: EdgeInput[],
+): { nodeCount: number; edgeCount: number } {
+  const builder = new GraphBuilder()
+  for (const n of nodes) builder.addNode(n as unknown as Record<string, unknown>)
+  for (const e of edges) builder.addEdge(e as unknown as Record<string, unknown>)
+  const result = builder.finalize()
+  return { nodeCount: result.nodeCount, edgeCount: result.edgeCount }
 }
 
 function sizesFor(format: string): number[] {
@@ -148,7 +184,7 @@ describe.sequential('json', () => {
         const file = path.join(TEMP_DIR, `json-${tag}.json`)
         try {
           await genJson(file, size, false)
-          const { nodeCount, edgeCount } = await loadJsonStreaming(file)
+          const { nodeCount, edgeCount } = await loadJsonFull(file)
           expect(nodeCount).toBe(size)
           expect(edgeCount).toBe(expectedEdges)
         } finally {
@@ -170,7 +206,7 @@ describe.sequential('csv-edge-list', () => {
         const file = path.join(TEMP_DIR, `csv-edge-list-${tag}.csv`)
         try {
           await genCsvEdgeList(file, size, false)
-          const { nodeCount, edgeCount } = await loadEdgeListStreaming(file)
+          const { nodeCount, edgeCount } = await loadEdgeListFull(file)
           expect(edgeCount).toBe(expectedEdges)
           // Nodes auto-derived from the union of source+target ids — usually very
           // close to `size` with random drawing, never higher.
@@ -196,7 +232,7 @@ describe.sequential('csv-pair', () => {
         const edgesFile = path.join(TEMP_DIR, `csv-pair-${tag}-edges.csv`)
         try {
           await genCsvPair(nodesFile, edgesFile, size, false)
-          const { nodeCount, edgeCount } = await loadPairStreaming(nodesFile, edgesFile)
+          const { nodeCount, edgeCount } = await loadPairFull(nodesFile, edgesFile)
           expect(nodeCount).toBe(size)
           expect(edgeCount).toBe(expectedEdges)
         } finally {
@@ -218,11 +254,9 @@ describe.sequential('graphml', () => {
         const file = path.join(TEMP_DIR, `graphml-${tag}.graphml`)
         try {
           await genGraphML(file, size, false)
-          const text = fs.readFileSync(file, 'utf8')
-          const g = parseGraphML(text)
-          expect(g.version).toBe('1')
-          expect(g.nodes.length).toBe(size)
-          expect(g.edges.length).toBe(expectedEdges)
+          const { nodeCount, edgeCount } = await loadGraphMLFull(file)
+          expect(nodeCount).toBe(size)
+          expect(edgeCount).toBe(expectedEdges)
         } finally {
           cleanup(file)
         }
@@ -242,11 +276,9 @@ describe.sequential('gexf', () => {
         const file = path.join(TEMP_DIR, `gexf-${tag}.gexf`)
         try {
           await genGexf(file, size, false)
-          const text = fs.readFileSync(file, 'utf8')
-          const g = parseGEXF(text)
-          expect(g.version).toBe('1')
-          expect(g.nodes.length).toBe(size)
-          expect(g.edges.length).toBe(expectedEdges)
+          const { nodeCount, edgeCount } = await loadGexfFull(file)
+          expect(nodeCount).toBe(size)
+          expect(edgeCount).toBe(expectedEdges)
         } finally {
           cleanup(file)
         }

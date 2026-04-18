@@ -90,6 +90,11 @@ const humanSize = (n) => {
 
 const LABELS = ['Alice', 'Bob', 'Carol', 'Dave', 'Eve', 'Frank', 'Grace', 'Heidi']
 const TAG_POOL = ['engineer', 'designer', 'founder', 'alumnus', 'board', 'advisor']
+const COMMUNITY_NAMES = [
+  'Tech', 'Finance', 'Arts', 'Sports', 'Science', 'Music', 'Gaming',
+  'Food', 'Travel', 'Health', 'Education', 'Media', 'Fashion', 'Auto',
+  'Crypto', 'Film', 'Books', 'Fitness', 'Politics', 'Design',
+]
 
 // Mulberry32 — tiny deterministic PRNG so re-runs give identical output
 function makeRng(seed) {
@@ -114,6 +119,101 @@ function nodeProps(rng, i) {
   const tags = []
   for (let t = 0; t < tagCount; t++) tags.push(TAG_POOL[Math.floor(rng() * TAG_POOL.length)])
   return { age, active, joined, tags }
+}
+
+// ─── Clustered topology ───────────────────────────────────────────────────
+//
+// Builds a community structure scaled by graph size:
+//   - Community count: 5 at 10k, ~40 at 500k+ (sqrt(size)/20, clamped)
+//   - Power-law community sizes biased toward the large end
+//   - 92% of edges stay within a community; 8% are bridges (biased to
+//     adjacent communities) so the cluster-of-clusters has some topology
+//
+// Returns cluster data plus a `pickTarget(sourceIdx)` that returns a target
+// node index given the same `rng`. Use in the edge loop instead of a uniform
+// random pick to get real-world-looking community structure.
+
+function setupClustering(size, rng) {
+  const numCommunities = Math.max(5, Math.min(40, Math.floor(Math.sqrt(size) / 20)))
+
+  // Community sizes — power-law skewed toward big.
+  const weights = []
+  let totalWeight = 0
+  for (let c = 0; c < numCommunities; c++) {
+    const w = 1 + Math.pow(rng(), 0.5) * 9
+    weights.push(w)
+    totalWeight += w
+  }
+  const minSize = Math.max(100, Math.floor(size / (numCommunities * 5)))
+  const communitySizes = []
+  let remaining = size
+  for (let c = 0; c < numCommunities; c++) {
+    const nominal = Math.floor((weights[c] / totalWeight) * size)
+    const s = Math.max(minSize, Math.min(remaining, nominal))
+    communitySizes.push(s)
+    remaining -= s
+  }
+  if (remaining > 0) communitySizes[communitySizes.length - 1] += remaining
+
+  // Precompute node → community + community spans (O(1) edge-time lookup).
+  const nodeToCommunity = new Uint32Array(size)
+  const communityStart = new Uint32Array(numCommunities)
+  const communityEnd = new Uint32Array(numCommunities)
+  let offset = 0
+  for (let c = 0; c < numCommunities; c++) {
+    communityStart[c] = offset
+    communityEnd[c] = offset + communitySizes[c]
+    for (let i = offset; i < communityEnd[c]; i++) nodeToCommunity[i] = c
+    offset += communitySizes[c]
+  }
+
+  function gaussian() {
+    const u1 = rng()
+    const u2 = rng()
+    return Math.sqrt(-2 * Math.log(u1 || 1e-9)) * Math.cos(2 * Math.PI * u2)
+  }
+
+  function pickIntra(nodeIdx, c) {
+    const start = communityStart[c]
+    const end = communityEnd[c]
+    const range = end - start
+    if (range <= 1) return nodeIdx
+    // Bias toward nearby nodes in the same community — simulates local connections.
+    const step = Math.floor(Math.abs(gaussian()) * range * 0.3) + 1
+    const dir = rng() < 0.5 ? 1 : -1
+    let t = nodeIdx + dir * step
+    if (t < start) t = start
+    else if (t >= end) t = end - 1
+    return t
+  }
+
+  function pickInter(c) {
+    if (numCommunities <= 1) return Math.floor(rng() * size)
+    let targetC
+    if (rng() < 0.6) {
+      const delta = rng() < 0.5 ? -1 : 1
+      targetC = ((c + delta) % numCommunities + numCommunities) % numCommunities
+    } else {
+      targetC = Math.floor(rng() * numCommunities)
+    }
+    if (targetC === c) targetC = (c + 1) % numCommunities
+    const start = communityStart[targetC]
+    const end = communityEnd[targetC]
+    return start + Math.floor(rng() * (end - start))
+  }
+
+  function pickTarget(i) {
+    const c = nodeToCommunity[i]
+    const isIntra = rng() < 0.92
+    const t = isIntra ? pickIntra(i, c) : pickInter(c)
+    return t === i ? (t + 1) % size : t
+  }
+
+  function communityLabel(c) {
+    return `${COMMUNITY_NAMES[c % COMMUNITY_NAMES.length]}_${c}`
+  }
+
+  return { numCommunities, nodeToCommunity, communityStart, pickTarget, communityLabel }
 }
 
 // ─── Generic streaming writer ─────────────────────────────────────────────
@@ -141,6 +241,7 @@ async function genJson(size, invalid) {
   const file = path.join(formatDir('json'), name)
   const w = writeStream(file)
   const rng = makeRng(size + (invalid ? 1 : 0))
+  const { nodeToCommunity, pickTarget, communityLabel } = setupClustering(size, rng)
 
   await w.write('{"version":"1","nodes":[\n')
 
@@ -153,10 +254,17 @@ async function genJson(size, invalid) {
     if (invalid) {
       await w.write(`{id: n${i}, broken: true}`)
     } else {
+      const community = communityLabel(nodeToCommunity[i])
       const obj = {
         id: `n${i}`,
         label: LABELS[i % LABELS.length],
-        properties: { age: p.age, active: p.active, joined: p.joined, tags: p.tags },
+        properties: {
+          community,
+          age: p.age,
+          active: p.active,
+          joined: p.joined,
+          tags: p.tags,
+        },
       }
       await w.write(JSON.stringify(obj))
     }
@@ -167,8 +275,7 @@ async function genJson(size, invalid) {
   const edgeCount = Math.floor(size * 1.5)
   for (let e = 0; e < edgeCount; e++) {
     const src = Math.floor(rng() * size)
-    let dst = Math.floor(rng() * size)
-    if (dst === src) dst = (dst + 1) % size
+    const dst = pickTarget(src)
     const edge = { source: `n${src}`, target: `n${dst}`, weight: Math.round(rng() * 100) / 100 }
     await w.write(JSON.stringify(edge))
     if (e < edgeCount - 1) await w.write(',\n')
@@ -184,6 +291,7 @@ async function genCsvEdgeList(size, invalid) {
   const file = path.join(formatDir('csv-edge-list'), name)
   const w = writeStream(file)
   const rng = makeRng(size + (invalid ? 2 : 0))
+  const { pickTarget } = setupClustering(size, rng)
 
   if (invalid) {
     // Wrong column names — parser rejects at header validation.
@@ -195,8 +303,7 @@ async function genCsvEdgeList(size, invalid) {
   const edgeCount = Math.floor(size * 1.5)
   for (let e = 0; e < edgeCount; e++) {
     const src = Math.floor(rng() * size)
-    let dst = Math.floor(rng() * size)
-    if (dst === src) dst = (dst + 1) % size
+    const dst = pickTarget(src)
     const weight = Math.round(rng() * 100) / 100
     const label = rng() > 0.5 ? 'knows' : 'follows'
     await w.write(`n${src},n${dst},${weight},${label}\n`)
@@ -214,19 +321,23 @@ async function genCsvPair(size, invalid) {
   const nw = writeStream(nodesFile)
   const ew = writeStream(edgesFile)
   const rng = makeRng(size + (invalid ? 3 : 0))
+  const { nodeToCommunity, pickTarget, communityLabel } = setupClustering(size, rng)
 
+  const header = 'community:string,age:number,active:boolean,joined:date,tags:string[]'
   if (invalid) {
     // Missing `id` column in the nodes CSV — the parser throws at validation.
-    await nw.write('name,label,age:number,active:boolean,joined:date,tags:string[]\n')
+    await nw.write(`name,label,${header}\n`)
   } else {
-    await nw.write('id,label,age:number,active:boolean,joined:date,tags:string[]\n')
+    await nw.write(`id,label,${header}\n`)
   }
 
   for (let i = 0; i < size; i++) {
     const p = nodeProps(rng, i)
     const tagsStr = p.tags.join('|')
-    const nameOrId = `n${i}`
-    await nw.write(`${nameOrId},${LABELS[i % LABELS.length]},${p.age},${p.active},${p.joined},${tagsStr}\n`)
+    const community = communityLabel(nodeToCommunity[i])
+    await nw.write(
+      `n${i},${LABELS[i % LABELS.length]},${community},${p.age},${p.active},${p.joined},${tagsStr}\n`,
+    )
   }
   await nw.close()
 
@@ -234,8 +345,7 @@ async function genCsvPair(size, invalid) {
   const edgeCount = Math.floor(size * 1.5)
   for (let e = 0; e < edgeCount; e++) {
     const src = Math.floor(rng() * size)
-    let dst = Math.floor(rng() * size)
-    if (dst === src) dst = (dst + 1) % size
+    const dst = pickTarget(src)
     const weight = Math.round(rng() * 100) / 100
     const label = rng() > 0.5 ? 'knows' : 'follows'
     await ew.write(`n${src},n${dst},${weight},${label}\n`)
@@ -250,6 +360,7 @@ async function genGraphML(size, invalid) {
   const file = path.join(formatDir('graphml'), name)
   const w = writeStream(file)
   const rng = makeRng(size + (invalid ? 4 : 0))
+  const { nodeToCommunity, pickTarget, communityLabel } = setupClustering(size, rng)
 
   const rootOpen = invalid ? '<notgraphml>' : '<graphml xmlns="http://graphml.graphdrawing.org/xmlns">'
   const rootClose = invalid ? '</notgraphml>' : '</graphml>'
@@ -257,6 +368,7 @@ async function genGraphML(size, invalid) {
   await w.write('<?xml version="1.0" encoding="UTF-8"?>\n')
   await w.write(`${rootOpen}\n`)
   await w.write('<key id="lbl" for="node" attr.name="label" attr.type="string"/>\n')
+  await w.write('<key id="com" for="node" attr.name="community" attr.type="string"/>\n')
   await w.write('<key id="age" for="node" attr.name="age" attr.type="int"/>\n')
   await w.write('<key id="act" for="node" attr.name="active" attr.type="boolean"/>\n')
   await w.write('<key id="jnd" for="node" attr.name="joined" attr.type="string"/>\n')
@@ -265,14 +377,16 @@ async function genGraphML(size, invalid) {
 
   for (let i = 0; i < size; i++) {
     const p = nodeProps(rng, i)
-    await w.write(`<node id="n${i}"><data key="lbl">${LABELS[i % LABELS.length]}</data><data key="age">${p.age}</data><data key="act">${p.active}</data><data key="jnd">${p.joined}</data></node>\n`)
+    const community = communityLabel(nodeToCommunity[i])
+    await w.write(
+      `<node id="n${i}"><data key="lbl">${LABELS[i % LABELS.length]}</data><data key="com">${community}</data><data key="age">${p.age}</data><data key="act">${p.active}</data><data key="jnd">${p.joined}</data></node>\n`,
+    )
   }
 
   const edgeCount = Math.floor(size * 1.5)
   for (let e = 0; e < edgeCount; e++) {
     const src = Math.floor(rng() * size)
-    let dst = Math.floor(rng() * size)
-    if (dst === src) dst = (dst + 1) % size
+    const dst = pickTarget(src)
     const weight = Math.round(rng() * 100) / 100
     await w.write(`<edge source="n${src}" target="n${dst}"><data key="w">${weight}</data></edge>\n`)
   }
@@ -288,6 +402,7 @@ async function genGexf(size, invalid) {
   const file = path.join(formatDir('gexf'), name)
   const w = writeStream(file)
   const rng = makeRng(size + (invalid ? 5 : 0))
+  const { nodeToCommunity, pickTarget, communityLabel } = setupClustering(size, rng)
 
   const rootOpen = invalid ? '<notgexf>' : '<gexf xmlns="http://gexf.net/1.3" version="1.3">'
   const rootClose = invalid ? '</notgexf>' : '</gexf>'
@@ -296,15 +411,19 @@ async function genGexf(size, invalid) {
   await w.write(`${rootOpen}\n`)
   await w.write('<graph mode="static" defaultedgetype="directed">\n')
   await w.write('<attributes class="node">\n')
-  await w.write('<attribute id="0" title="age" type="integer"/>\n')
-  await w.write('<attribute id="1" title="active" type="boolean"/>\n')
-  await w.write('<attribute id="2" title="joined" type="string"/>\n')
+  await w.write('<attribute id="0" title="community" type="string"/>\n')
+  await w.write('<attribute id="1" title="age" type="integer"/>\n')
+  await w.write('<attribute id="2" title="active" type="boolean"/>\n')
+  await w.write('<attribute id="3" title="joined" type="string"/>\n')
   await w.write('</attributes>\n')
   await w.write('<nodes>\n')
 
   for (let i = 0; i < size; i++) {
     const p = nodeProps(rng, i)
-    await w.write(`<node id="n${i}" label="${LABELS[i % LABELS.length]}"><attvalues><attvalue for="0" value="${p.age}"/><attvalue for="1" value="${p.active}"/><attvalue for="2" value="${p.joined}"/></attvalues></node>\n`)
+    const community = communityLabel(nodeToCommunity[i])
+    await w.write(
+      `<node id="n${i}" label="${LABELS[i % LABELS.length]}"><attvalues><attvalue for="0" value="${community}"/><attvalue for="1" value="${p.age}"/><attvalue for="2" value="${p.active}"/><attvalue for="3" value="${p.joined}"/></attvalues></node>\n`,
+    )
   }
   await w.write('</nodes>\n')
   await w.write('<edges>\n')
@@ -312,8 +431,7 @@ async function genGexf(size, invalid) {
   const edgeCount = Math.floor(size * 1.5)
   for (let e = 0; e < edgeCount; e++) {
     const src = Math.floor(rng() * size)
-    let dst = Math.floor(rng() * size)
-    if (dst === src) dst = (dst + 1) % size
+    const dst = pickTarget(src)
     const weight = Math.round(rng() * 100) / 100
     await w.write(`<edge source="n${src}" target="n${dst}" weight="${weight}"/>\n`)
   }

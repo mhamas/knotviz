@@ -13,6 +13,7 @@ export default defineConfig({
       description:
         'Graph visualization in the browser. Drop a file, explore, filter, colour, export.',
       favicon: '/favicon.ico',
+      tableOfContents: false,
       logo: {
         light: './public/logo-light.png',
         dark: './public/logo-dark.png',

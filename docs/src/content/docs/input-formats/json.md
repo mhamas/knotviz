@@ -24,7 +24,7 @@ description: Native Knotviz format. Versioned schema. Full fidelity for every fe
 }
 ```
 
-[Download example](/samples/json/1k.json) · [Try it in Knotviz →](/graph?example=json/1k)
+[Download example](/samples/json/1k.json) · [Try it in Knotviz ↗](/graph?example=json/1k)
 
 ## Shape
 

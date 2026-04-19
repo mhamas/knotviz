@@ -14,7 +14,7 @@ bob,carol,1.2,follows
 alice,carol,0.5,knows
 ```
 
-[Download example](/samples/csv-edge-list/1k.csv) · [Try it in Knotviz →](/graph?example=csv-edge-list/1k)
+[Download example](/samples/csv-edge-list/1k.csv) · [Try it in Knotviz ↗](/graph?example=csv-edge-list/1k)
 
 Same file with tab delimiters works too — rename to `.tsv`.
 

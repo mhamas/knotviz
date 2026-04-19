@@ -24,7 +24,7 @@ description: W3C-ish XML standard. Round-trips Gephi, NetworkX, yEd exports.
 </graphml>
 ```
 
-[Download example](/samples/graphml/1k.graphml) · [Try it in Knotviz →](/graph?example=graphml/1k)
+[Download example](/samples/graphml/1k.graphml) · [Try it in Knotviz ↗](/graph?example=graphml/1k)
 
 ## Supported attribute types
 

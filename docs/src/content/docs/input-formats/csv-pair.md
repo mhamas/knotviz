@@ -20,7 +20,7 @@ n1,n2,0.8,knows
 n2,n3,1.2,follows
 ```
 
-[Download nodes.csv](/samples/csv-pair/1k-nodes.csv) · [Download edges.csv](/samples/csv-pair/1k-edges.csv) · [Try it in Knotviz →](/graph?example=csv-pair/1k)
+[Download nodes.csv](/samples/csv-pair/1k-nodes.csv) · [Download edges.csv](/samples/csv-pair/1k-edges.csv) · [Try it in Knotviz ↗](/graph?example=csv-pair/1k)
 
 TSV variants work identically — rename to `.tsv`.
 

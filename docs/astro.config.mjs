@@ -12,7 +12,7 @@ export default defineConfig({
       title: 'Knotviz docs',
       description:
         'Graph visualization in the browser. Drop a file, explore, filter, colour, export.',
-      favicon: '/favicon.svg',
+      favicon: '/favicon.ico',
       logo: {
         light: './public/logo-light.png',
         dark: './public/logo-dark.png',

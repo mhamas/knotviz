@@ -1,5 +1,33 @@
 ---
 import Default from '@astrojs/starlight/components/Header.astro'
+
+// Dev-only: docs run on :4321 while the app runs on :5173. In production both
+// will live under the same origin (knotviz.com) so absolute links like
+// /graph, /samples/... resolve natively — no rewrite needed. In dev we
+// rewrite those links client-side to the Vite app's origin so clicks don't
+// 404 on the docs server.
+const isDev = import.meta.env.DEV
 ---
 
 <Default><slot /></Default>
+
+{isDev && (
+  <script is:inline>
+    (() => {
+      const APP_ORIGIN = 'http://localhost:5173'
+      const APP_PATHS = ['/graph', '/samples']
+      const rewrite = () => {
+        document.querySelectorAll('a[href]').forEach((a) => {
+          const href = a.getAttribute('href')
+          if (!href) return
+          if (APP_PATHS.some((p) => href === p || href.startsWith(p + '/') || href.startsWith(p + '?'))) {
+            a.setAttribute('href', APP_ORIGIN + href)
+          }
+        })
+      }
+      rewrite()
+      // Starlight re-renders on navigation (view transitions); re-run on each
+      new MutationObserver(rewrite).observe(document.body, { childList: true, subtree: true })
+    })()
+  </script>
+)}

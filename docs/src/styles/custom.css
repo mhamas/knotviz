@@ -76,6 +76,24 @@
   font-size: 1.125rem;
 }
 
+/* Anchor-link icon next to headings — Starlight default leaves it sitting
+ * almost flush against the heading text (0.25em gap). Widen it so the
+ * # glyph reads as a distinct affordance, not a punctuation mark. */
+.sl-markdown-content .sl-heading-wrapper {
+  --sl-anchor-icon-size: 0.6em;
+  --sl-anchor-icon-gap: 0.6em;
+}
+
+/* Center the anchor icon vertically against the heading text. Starlight's
+ * default uses `vertical-align: top` plus a translateY nudge tuned for the
+ * stock icon/line-height ratio; with our smaller icon the nudge overshoots.
+ * `vertical-align: middle` is simpler and aligns the glyph with the text
+ * midline regardless of font-size. */
+.sl-markdown-content .sl-anchor-icon > svg {
+  vertical-align: middle;
+  transform: none;
+}
+
 /* Cap H4-H6 to body-sized bold (we never need more hierarchy in docs) */
 .sl-markdown-content h4,
 .sl-markdown-content h5,

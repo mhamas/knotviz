@@ -119,3 +119,7 @@ export const useGraphStore = create<GraphStore>()((set) => ({
   setSearchMatches: (m): void => set({ searchMatches: m }),
   resetStore: (): void => set(STORE_DEFAULTS),
 }))
+
+if (import.meta.env.DEV) {
+  ;(window as unknown as { __graphStore: typeof useGraphStore }).__graphStore = useGraphStore
+}

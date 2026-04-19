@@ -210,7 +210,11 @@ function setupClustering(size, rng) {
   }
 
   function communityLabel(c) {
-    return `${COMMUNITY_NAMES[c % COMMUNITY_NAMES.length]}_${c}`
+    // Only suffix the community index when we've exhausted the name list and
+    // need disambiguation. For smaller graphs where numCommunities ≤ names
+    // length, labels stay clean ("Tech", "Finance", …) instead of ("Tech_0").
+    const name = COMMUNITY_NAMES[c % COMMUNITY_NAMES.length]
+    return numCommunities <= COMMUNITY_NAMES.length ? name : `${name}_${c}`
   }
 
   return { numCommunities, nodeToCommunity, communityStart, pickTarget, communityLabel }

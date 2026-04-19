@@ -12,9 +12,11 @@ import filtered from '../../assets/quickstart/filtered.png'
 Open a file, run the simulation, colour by a property, filter to what matters, export. Five minutes from here to actually understanding your graph.
 
 <LinkCard
-  title="Open with a 1,000-node sample"
+  title="Try with a 1,000-node sample"
   description="A synthetic social network with 5 communities, 1,488 edges, and 5 property types (number, string, boolean, date, string[]). Everything below walks through this graph."
   href="/graph?example=json/1k"
+  target="_blank"
+  rel="noopener"
 />
 
 Want to use your own data? Every [input-format page](/docs/input-formats) has a drop-in template and a try-it link. Same five steps apply.
@@ -35,7 +37,7 @@ Knotviz drops you straight into the canvas, but with random positions the graph 
 
 You can already *see* the five community clusters as loose clumps, connected by sparser bridge edges. That's step 2 working: you now have structure on the screen. We'll make it explicit in a moment.
 
-If your graph never looks right, try tuning: **Repulsion** (wider spread), **Friction** (faster settle), or **Link spring** (tighter clusters) in the left sidebar, then hit **Restart**. Running the sim past ~2M nodes starts dropping frames — [full reference →](/docs/simulation)
+If your graph never looks right, try tuning: **Repulsion** (wider spread), **Friction** (faster settle), or **Link spring** (tighter clusters) in the left sidebar, then hit **Restart**. Running the sim past ~2M nodes starts dropping frames — [full reference](/docs/simulation)
 
 ## 2. Explore
 
@@ -46,7 +48,7 @@ Direct canvas manipulation, no tool modes or menus to learn.
 - Tick **Highlight neighbours on hover** in the left sidebar — now hovering any node keeps its direct neighbours opaque and dims everything else. Local structure without zooming in
 - Press **?** anywhere for the full keyboard-shortcut list
 
-[Full reference →](/docs/explore)
+[Full reference](/docs/explore)
 
 ## 3. Colour by a property
 
@@ -56,15 +58,15 @@ The graph has shape, but nothing tells you what that shape *means*. Colour is ho
 
 1. Open the **Analyze** panel on the right (the palette icon).
 2. Set **Property → community**. Each distinct community becomes a chip in the legend; nodes re-colour instantly. Mode is **Color** by default.
-3. Swap palettes if you want — the Palette dropdown has 19 presets (Viridis is the safe default) plus a custom editor.
+3. Swap palettes if you want — the Palette dropdown has 19 presets plus a custom editor.
 
 </Steps>
 
-<Image src={colouredCommunity} alt="The same graph, now coloured by community. Five distinct colour regions match the visual clusters — Tech_0 yellow at the bottom-left, Sports_3 green at the top, and so on. The legend and Statistics panel on the right show the five communities with their counts." />
+<Image src={colouredCommunity} alt="The same graph, now coloured by community. Five distinct colour regions match the visual clusters — Tech yellow at the bottom-right, Sports green at the bottom-left, Arts purple at the top, and so on. The legend and Statistics panel on the right show the five communities with their counts." />
 
-The clusters you half-saw in step 1 are now explicit. The **Statistics** panel underneath the legend breaks down every distinct value — `Sports_3: 246 (24.6%)`, `Finance_1: 239 (23.9%)`, … — so you immediately know which segments dominate your graph and which are rare.
+The clusters you half-saw in step 1 are now explicit. The **Statistics** panel underneath the legend breaks down every distinct value — `Sports: 246 (24.6%)`, `Finance: 239 (23.9%)`, … — so you immediately know which segments dominate your graph and which are rare.
 
-Numbers and dates behave differently: they get a **continuous gradient** and a histogram. Try **Property → joined** to watch membership grow over time, or **Property → age** for a distribution with mean / p25 / p50 / p75 computed live. Only one encoding is active at a time — switch between **color** and **size** modes at the top of the panel. [Full reference →](/docs/analyze)
+Numbers and dates behave differently: they get a **continuous gradient** and a histogram. Try **Property → joined** to watch membership grow over time, or **Property → age** for a distribution with mean / p25 / p50 / p75 computed live. Only one encoding is active at a time — switch between **color** and **size** modes at the top of the panel. [Full reference](/docs/analyze)
 
 ## 4. Filter down
 
@@ -74,13 +76,13 @@ Colour shows you *what's there*. Filter controls *what to look at*.
 
 1. Open the **Filter** panel (the sliders icon).
 2. Toggle the **active** filter to `true`. Node count at the top drops from `1,000/1,000` to `714/1,000` — the inactive 28.6% vanish, along with every edge attached to them.
-3. Stack filters to narrow further. `age ≤ 30` AND `tags includes "founder"` AND `community = Tech_0` gives you the young Tech founders — a handful of nodes you can inspect one by one. Multiple filters combine with AND.
+3. Stack filters to narrow further. `age ≤ 30` AND `tags includes "founder"` AND `community = Tech` gives you the young Tech founders — a handful of nodes you can inspect one by one. Multiple filters combine with AND.
 
 </Steps>
 
 <Image src={filtered} alt="The graph with the active=true filter applied. 714 of 1,000 nodes match; the rest and their edges are gone from the canvas. The Filter panel on the right shows filters for every property type. The Analyze panel is still open in the middle with the community colouring intact." />
 
-Filter-hidden nodes don't dim — they disappear. That's deliberate: filters carve the view; [search](/docs/search) finds inside it. Each filter has its own enable checkbox so you can toggle on/off without losing the values you set — handy for A/B comparisons. String and string[] filters have a search box and select-all / clear-all shortcuts. Number and date filters have a log-scale toggle for power-law distributions. [Full reference →](/docs/filter)
+Filter-hidden nodes don't dim — they disappear. That's deliberate: filters carve the view; [search](/docs/search) finds inside it. Each filter has its own enable checkbox so you can toggle on/off without losing the values you set — handy for A/B comparisons. String and string[] filters have a search box and select-all / clear-all shortcuts. Number and date filters have a log-scale toggle for power-law distributions. [Full reference](/docs/filter)
 
 ## 5. Export
 
@@ -92,7 +94,7 @@ Click **↓ Download graph** in the left sidebar. You get a JSON file with every
 Drop that JSON back into Knotviz anytime and the graph renders exactly where you left it — positions preserved, no re-simulation needed. That's how you save a layout. The file is standard [Knotviz JSON](/docs/input-formats/json), so other tools can read it too.
 </Aside>
 
-What's **not** saved: filter state, colour / size encoding, palette choice. Those are view-only — re-apply them after re-opening. That keeps the export file small and interop-friendly. [Full reference →](/docs/export)
+What's **not** saved: filter state, colour / size encoding, palette choice. Those are view-only — re-apply them after re-opening. That keeps the export file small and interop-friendly. [Full reference](/docs/export)
 
 ## That's the loop
 

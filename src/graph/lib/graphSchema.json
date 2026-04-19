@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Grapphy Graph",
-  "description": "A graph data file for the Grapphy visualizer. Contains versioned node and edge definitions with optional properties for visualization and analysis.",
+  "title": "Knotviz Graph",
+  "description": "A graph data file for the Knotviz visualizer. Contains versioned node and edge definitions with optional properties for visualization and analysis.",
   "type": "object",
   "required": ["version", "nodes", "edges"],
   "additionalProperties": false,

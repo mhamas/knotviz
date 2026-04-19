@@ -26,7 +26,7 @@ interface Props {
     filename: string,
   ) => void
   fileInputRef?: React.RefObject<HTMLInputElement | null>
-  pendingFile?: File | null
+  pendingFile?: File | File[] | null
 }
 
 /**
@@ -170,8 +170,6 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
     [runLoader],
   )
 
-  const processFile = useCallback((file: File): void => processFiles([file]), [processFiles])
-
   /** Load the CSV pair as soon as both slots are filled. */
   const maybeLoadPair = useCallback(
     (nodes: File | null, edges: File | null): void => {
@@ -201,14 +199,15 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
     [maybeLoadPair, pairNodesFile],
   )
 
-  // Auto-process a file passed from drag-drop on loaded graph
-  const [initialPendingFile] = useState(pendingFile)
+  // Auto-process a file (or files, for csv-pair) passed from drag-drop on a
+  // loaded graph or set asynchronously from a ?example= URL param.
   useEffect(() => {
-    if (initialPendingFile) {
-      const id = requestAnimationFrame(() => processFile(initialPendingFile))
-      return (): void => cancelAnimationFrame(id)
-    }
-  }, [initialPendingFile, processFile])
+    if (!pendingFile) return
+    const files = Array.isArray(pendingFile) ? pendingFile : [pendingFile]
+    if (files.length === 0) return
+    const id = requestAnimationFrame(() => processFiles(files))
+    return (): void => cancelAnimationFrame(id)
+  }, [pendingFile, processFiles])
 
   const handleDragOver = useCallback((e: React.DragEvent): void => {
     e.preventDefault()

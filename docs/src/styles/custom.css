@@ -1,0 +1,402 @@
+/* Knotviz docs — matches the app: Geist body + mono, slate neutrals, Knotviz blue accent */
+
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap');
+
+:root {
+  --sl-font: 'Geist', system-ui, sans-serif;
+  --sl-font-mono: 'Geist Mono', ui-monospace, monospace;
+}
+
+/* Accent — matches the homepage's Tailwind blue-600 CTA exactly (#2563eb) */
+:root {
+  --sl-color-accent-low: #dbeafe;   /* blue-100 */
+  --sl-color-accent: #2563eb;       /* blue-600 — same as homepage CTA */
+  --sl-color-accent-high: #1d4ed8;  /* blue-700 — hover + emphasis */
+}
+
+:root[data-theme='dark'] {
+  --sl-color-accent-low: #1e3a8a;   /* blue-900 */
+  --sl-color-accent: #3b82f6;       /* blue-500 — slightly lifted for dark bg */
+  --sl-color-accent-high: #93c5fd;  /* blue-300 — emphasis on dark */
+}
+
+/* Tighter reading measure on content */
+.sl-markdown-content {
+  max-width: 72ch;
+  line-height: 1.65;
+}
+
+/* Breadcrumb trail above H1 on nested pages */
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--sl-color-gray-3);
+  margin-bottom: 0.75rem;
+}
+.breadcrumbs a {
+  color: var(--sl-color-gray-3);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.breadcrumbs a:hover {
+  color: var(--sl-color-accent);
+}
+.breadcrumbs .current {
+  color: var(--sl-color-text);
+  font-weight: 500;
+}
+.breadcrumbs span[aria-hidden='true'] {
+  color: var(--sl-color-gray-5);
+}
+
+/* Heading rhythm — more breathing room between sections */
+.sl-markdown-content h1 {
+  font-size: 2.25rem;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.sl-markdown-content h2 {
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  letter-spacing: -0.01em;
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid var(--sl-color-hairline);
+}
+.sl-markdown-content h3 {
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  font-size: 1.125rem;
+}
+
+/* Cap H4-H6 to body-sized bold (we never need more hierarchy in docs) */
+.sl-markdown-content h4,
+.sl-markdown-content h5,
+.sl-markdown-content h6 {
+  font-size: var(--sl-text-body);
+  font-weight: 600;
+  color: var(--sl-color-text);
+}
+
+/* Lede — the italic first-paragraph TL;DR pattern.
+ * Magazine-style: larger type, muted color, no box. Reads as a summary, not a warning. */
+.sl-markdown-content > p:first-child:has(> em:only-child) {
+  margin: 0.5rem 0 2rem 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 1.2rem;
+  line-height: 1.55;
+  color: var(--sl-color-gray-2);
+  font-weight: 400;
+  letter-spacing: -0.005em;
+}
+.sl-markdown-content > p:first-child:has(> em:only-child) > em {
+  font-style: normal;
+  color: inherit;
+}
+:root[data-theme='dark'] .sl-markdown-content > p:first-child:has(> em:only-child) {
+  color: var(--sl-color-gray-3);
+}
+
+/* Tables — zebra stripes, stronger header, tighter cells */
+.sl-markdown-content table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 1.5rem 0;
+  font-size: 0.95rem;
+  border: 1px solid var(--sl-color-hairline);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.sl-markdown-content table th {
+  background: color-mix(in oklab, var(--sl-color-bg-sidebar) 50%, transparent);
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--sl-color-text);
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--sl-color-hairline);
+}
+.sl-markdown-content table td {
+  padding: 0.55rem 0.9rem;
+  border-bottom: 1px solid var(--sl-color-hairline);
+  vertical-align: top;
+}
+.sl-markdown-content table tr:last-child td {
+  border-bottom: 0;
+}
+.sl-markdown-content table tbody tr:nth-child(even) td {
+  background: color-mix(in oklab, var(--sl-color-bg-sidebar) 25%, transparent);
+}
+.sl-markdown-content table tbody tr:hover td {
+  background: color-mix(in oklab, var(--sl-color-accent-low) 25%, transparent);
+}
+
+/* Compare-page table — Knotviz column highlighted (second column, first row is a blank header cell) */
+.sl-markdown-content table th:nth-child(2),
+.sl-markdown-content table td:nth-child(2) {
+  /* keep neutral for non-compare tables */
+}
+/* Target only the compare table via descendant selector — we'll opt in with an
+ * explicit class on compare.md if we want to highlight; for now, keep subtle */
+
+/* Inline code — small bg, more noticeable */
+.sl-markdown-content :not(pre) > code {
+  background: color-mix(in oklab, var(--sl-color-bg-sidebar) 60%, transparent);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+/* Images — subtle border + shadow so they feel framed */
+.sl-markdown-content img {
+  border-radius: 8px;
+  border: 1px solid var(--sl-color-hairline);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 12px rgba(0, 0, 0, 0.04);
+  margin: 1.5rem 0;
+}
+/* Dark mode: tone down white app screenshots so they don't glow */
+:root[data-theme='dark'] .sl-markdown-content img {
+  border: 1px solid var(--sl-color-gray-5);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+  opacity: 0.92;
+  transition: opacity 0.15s ease;
+}
+:root[data-theme='dark'] .sl-markdown-content img:hover {
+  opacity: 1;
+}
+
+/* Scrollspy: ensure H2/H3 land below the fixed header so TOC active-state fires on time */
+.sl-markdown-content :is(h2, h3, h4)[id] {
+  scroll-margin-top: 6rem;
+}
+
+/* TOC active-state — Starlight default uses too-subtle gray; promote to accent blue */
+starlight-toc nav a[aria-current='true'],
+starlight-toc nav a.active {
+  color: var(--sl-color-accent-high) !important;
+  font-weight: 600;
+  border-inline-start-color: var(--sl-color-accent) !important;
+}
+
+/* Tables: horizontal scroll on narrow viewports so multi-column tables (Compare, Loading limits)
+ * don't crush cells onto 3-line wraps on mobile. */
+@media (max-width: 50rem) {
+  .sl-markdown-content table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+  .sl-markdown-content table td,
+  .sl-markdown-content table th {
+    white-space: normal;
+  }
+}
+
+/* Mobile: keep the floating "On this page" dropdown from overlapping the logo.
+ * Starlight's mobile TOC combobox uses z-index: 2; shift it off the logo's space. */
+@media (max-width: 50rem) {
+  mobile-starlight-toc {
+    inset-inline-end: 0.5rem;
+    inset-inline-start: auto !important;
+    width: auto !important;
+  }
+}
+
+/* Hide the auto-generated "Overview" TOC entry (Starlight adds it pointing at #_top,
+ * which is redundant with the H1 already being a visual anchor). */
+.right-sidebar nav[aria-label="On this page"] li:first-child > a[href="#_top"] {
+  display: none;
+}
+starlight-toc ul li:first-child > a[href="#_top"] {
+  display: none;
+}
+
+/* Header logo — width-based sizing so both light/dark variants render at the
+ * same visual size regardless of each PNG's aspect ratio (the user's dark
+ * variant has a small decorative glyph that keeps its height larger than the
+ * light variant's after trim). */
+.site-title img {
+  height: auto;
+  width: 140px;
+  max-height: 44px;
+  object-fit: contain;
+  object-position: left center;
+}
+@media (max-width: 50rem) {
+  .site-title img {
+    width: 110px;
+    max-height: 34px;
+  }
+}
+
+/* Docs footer — matches the homepage's branded footer layout */
+.site-footer {
+  border-top: 1px solid var(--sl-color-hairline);
+  padding: 2.5rem 1.5rem;
+  margin-top: 4rem;
+}
+.site-footer-inner {
+  max-width: 60rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--sl-color-gray-3);
+}
+@media (min-width: 40rem) {
+  .site-footer-inner {
+    flex-direction: row;
+    justify-content: space-between;
+    text-align: left;
+  }
+}
+.site-footer-brand {
+  display: inline-flex;
+  align-items: center;
+}
+.site-footer-brand img {
+  height: 32px;
+  width: auto;
+}
+/* Theme-aware footer icon — show the right variant per mode */
+.site-footer-logo-dark { display: none; }
+:root[data-theme='dark'] .site-footer-logo-light { display: none; }
+:root[data-theme='dark'] .site-footer-logo-dark { display: inline; }
+.site-footer p {
+  margin: 0;
+}
+.site-footer-github {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--sl-color-gray-3);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.site-footer-github:hover {
+  color: var(--sl-color-text);
+}
+
+/* "Open Knotviz" CTA button in the top-right of the site header,
+ * placed ahead of the GitHub/social-icons list via the SocialIcons override.
+ * Note: force visibility on mobile — Starlight's default hides the social-icons
+ * container at narrow widths, and the CTA is our primary conversion. */
+.header-cta {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.9rem;
+  background: var(--sl-color-accent);
+  color: white !important;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 6px;
+  margin-right: 0.5rem;
+  transition: background 0.15s ease, transform 0.15s ease;
+  white-space: nowrap;
+}
+.header-cta:hover,
+.header-cta:focus-visible {
+  background: var(--sl-color-accent-high);
+  transform: translateY(-1px);
+}
+.header-cta-arrow {
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+.header-cta:hover .header-cta-arrow {
+  transform: translateX(2px);
+}
+
+/* Mobile: collapse the CTA label but keep the button visible — icon-only variant
+ * so the primary "Open Knotviz" action doesn't disappear below 50rem.
+ * Starlight hides the whole .right-group container below md; we force it visible
+ * and tighten the inner items. */
+@media (max-width: 50rem) {
+  /* Make the right-group container visible and put just the CTA in it —
+   * hide GitHub + theme-toggle to stay uncluttered on narrow screens. */
+  .right-group {
+    display: flex !important;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .right-group .social-icons {
+    display: flex !important;
+  }
+  .right-group .social-icons > a:not(.header-cta) {
+    display: none !important;
+  }
+  starlight-theme-select {
+    display: none !important;
+  }
+  .header-cta {
+    padding: 0.4rem 0.55rem;
+    font-size: 0;
+    gap: 0;
+    margin-right: 0;
+  }
+  .header-cta::before {
+    content: '↗';
+    font-size: 0.9rem;
+    line-height: 1;
+    color: white;
+    font-weight: 700;
+  }
+  .header-cta-arrow {
+    display: none;
+  }
+}
+
+/* Gotchas section — visually distinct from normative body prose.
+ * Every page's trailing "Gotchas" H2 + its list/content gets a warning-tinted treatment. */
+.sl-heading-wrapper:has(> h2#gotchas) {
+  margin-top: 3.5rem;
+}
+.sl-heading-wrapper:has(> h2#gotchas) + ul,
+.sl-heading-wrapper:has(> h2#gotchas) + p,
+.sl-heading-wrapper:has(> h2#gotchas) + p + ul {
+  padding: 1rem 1.25rem;
+  border-left: 3px solid #f59e0b;
+  background: color-mix(in oklab, #fef3c7 40%, transparent);
+  border-radius: 0 6px 6px 0;
+  margin: 0.5rem 0;
+}
+:root[data-theme='dark'] .sl-heading-wrapper:has(> h2#gotchas) + ul,
+:root[data-theme='dark'] .sl-heading-wrapper:has(> h2#gotchas) + p,
+:root[data-theme='dark'] .sl-heading-wrapper:has(> h2#gotchas) + p + ul {
+  background: color-mix(in oklab, #78350f 30%, transparent);
+  border-left-color: #fbbf24;
+}
+.sl-heading-wrapper:has(> h2#gotchas) h2 {
+  border-bottom: 0;
+  padding-bottom: 0;
+  font-size: 1.15rem;
+}
+.sl-heading-wrapper:has(> h2#gotchas) h2::before {
+  content: '⚠ ';
+  color: #f59e0b;
+  font-weight: 700;
+}
+
+/* Compare-page table — highlight the Knotviz column (second column, first data column).
+ * Starlight wraps H2s in div.sl-heading-wrapper, so we :has() the wrapper and
+ * target the immediately-following table. */
+.sl-heading-wrapper:has(> h2#at-a-glance) + table tbody td:nth-child(2),
+.sl-heading-wrapper:has(> h2#at-a-glance) + table thead th:nth-child(2) {
+  background: color-mix(in oklab, var(--sl-color-accent-low) 55%, transparent) !important;
+  color: var(--sl-color-accent-high);
+  font-weight: 600;
+}

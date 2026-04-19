@@ -1,0 +1,28 @@
+---
+import Default from '@astrojs/starlight/components/PageTitle.astro'
+
+// Lightweight breadcrumb: splits the current entry id on '/' and builds a trail.
+// For top-level pages (single segment) we don't render anything.
+const entryId = Astro.locals.starlightRoute?.entry?.id ?? ''
+const segments = entryId.split('/').filter(Boolean)
+
+// Map raw slug segments to human labels. Only segments matching a known parent
+// get a breadcrumb — everything else falls through to the PageTitle default.
+const SEGMENT_LABELS: Record<string, string> = {
+  'input-formats': 'Input formats',
+}
+
+const shouldRenderBreadcrumb = segments.length > 1 && SEGMENT_LABELS[segments[0]]
+---
+
+{shouldRenderBreadcrumb && (
+  <nav aria-label="Breadcrumbs" class="breadcrumbs">
+    <a href="/docs">Docs</a>
+    <span aria-hidden="true">/</span>
+    <a href={`/docs/${segments[0]}`}>{SEGMENT_LABELS[segments[0]]}</a>
+    <span aria-hidden="true">/</span>
+    <span class="current" aria-current="page">{Astro.locals.starlightRoute?.entry?.data?.title}</span>
+  </nav>
+)}
+
+<Default><slot /></Default>

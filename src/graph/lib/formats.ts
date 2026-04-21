@@ -141,8 +141,10 @@ function coerceSampleValue(raw: string): PropertyValue {
 /**
  * Infer a column's PropertyType from a sample of raw cell strings. Empty cells are ignored.
  *
- * Arrays (`string[]`) are never inferred — they must be declared explicitly via a
- * `:string[]` type hint — because pipe characters can legitimately appear inside strings.
+ * Arrays (`string[]`) are inferred opportunistically: if every non-empty cell contains at
+ * least one unescaped pipe, the column is treated as `string[]`. Mixed columns (some cells
+ * with pipes, some without) fall back to `string`; authors can force either interpretation
+ * with an explicit `:string` or `:string[]` hint.
  *
  * Numbers are guarded against leading-zero integer strings (e.g. zip codes like `0012`)
  * to avoid corrupting ID-shaped data.
@@ -152,11 +154,19 @@ function coerceSampleValue(raw: string): PropertyValue {
  */
 export function inferColumnType(samples: string[]): PropertyType {
   const state = createTypeState()
+  let nonEmptyCount = 0
+  let allHavePipe = true
   for (const raw of samples) {
     if (raw === '') continue
+    nonEmptyCount++
+    if (!raw.includes('|')) allHavePipe = false
     updateTypeState(state, coerceSampleValue(raw))
   }
   const resolved = resolveType(state)
+  // Promote a string-resolved column to string[] when every non-empty sample
+  // contains a pipe — most real pipe-delimited columns look like this, and the
+  // explicit `:string` suffix is still available as an escape hatch.
+  if (resolved === 'string' && nonEmptyCount > 0 && allHavePipe) return 'string[]'
   // resolveType can return 'string[]' only if we fed arrays; we never do.
   return resolved === 'string[]' ? 'string' : resolved
 }

@@ -1,4 +1,4 @@
-import type { EdgeInput, GraphData, NodeInput, PropertyType, PropertyValue } from '../types'
+import type { EdgeInput, GraphData, NodeInput, ParseOptions, PropertyType, PropertyValue } from '../types'
 import {
   inferColumnType,
   parseTypedCell,
@@ -45,14 +45,18 @@ interface StructuralIndices {
  * const edges = 'source,target\nn1,n2'
  * parseNodeEdgeCSV(nodes, edges)
  */
-export function parseNodeEdgeCSV(nodesText: string, edgesText: string): GraphData {
-  const nodes = parseNodesCSV(nodesText)
+export function parseNodeEdgeCSV(
+  nodesText: string,
+  edgesText: string,
+  options?: ParseOptions,
+): GraphData {
+  const nodes = parseNodesCSV(nodesText, options)
   const knownIds = new Set(nodes.map((n) => n.id))
   const edges = parseEdgesCSV(edgesText, knownIds)
   return { version: '1', nodes, edges }
 }
 
-function parseNodesCSV(text: string): NodeInput[] {
+function parseNodesCSV(text: string, options?: ParseOptions): NodeInput[] {
   const firstLine = text.split(/[\r\n]/, 1)[0] ?? ''
   const delimiter = detectDelimiter(firstLine)
   const rows = parseCSVRows(text, delimiter)
@@ -118,9 +122,16 @@ function parseNodesCSV(text: string): NodeInput[] {
         try {
           coerced = parseTypedCell(raw, spec.type)
         } catch (err) {
-          console.warn(
-            `Nodes CSV row ${r + 2}: ${(err as Error).message} for property "${spec.name}"`,
-          )
+          const message = (err as Error).message
+          console.warn(`Nodes CSV row ${r + 2}: ${message} for property "${spec.name}"`)
+          options?.onWarning?.({
+            scope: 'nodes',
+            kind: 'coercion',
+            propertyKey: spec.name,
+            row: r + 2,
+            value: raw,
+            message,
+          })
           coerced = undefined
         }
         if (coerced !== undefined) properties[spec.name] = coerced
@@ -129,6 +140,28 @@ function parseNodesCSV(text: string): NodeInput[] {
     }
     nodes.push(node)
   }
+
+  // Preserve declared-but-empty columns: if a property column had a header but
+  // every data cell was empty, ensure the key still appears (as null) on every
+  // node so detectPropertyTypes picks it up and applyNullDefaults fills it with
+  // the type default. Without this, the column vanishes entirely and the UI
+  // has no record that it was declared.
+  const columnHasValue = new Map<string, boolean>()
+  for (const spec of propertyColumns) columnHasValue.set(spec.name, false)
+  for (const node of nodes) {
+    if (!node.properties) continue
+    for (const key of Object.keys(node.properties)) {
+      columnHasValue.set(key, true)
+    }
+  }
+  for (const [key, hasValue] of columnHasValue) {
+    if (hasValue) continue
+    for (const node of nodes) {
+      if (!node.properties) node.properties = {}
+      node.properties[key] = null
+    }
+  }
+
   return nodes
 }
 

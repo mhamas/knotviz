@@ -170,10 +170,15 @@ describe('inferColumnType', () => {
     expect(inferColumnType(['', '', ''])).toBe('number')
   })
 
-  it('does NOT infer string[] — pipe-containing cells become strings without an explicit type hint', () => {
-    // Rationale: arrays should be opt-in via typed headers (:string[]) to avoid
-    // misclassifying a legitimate string that happens to contain a pipe.
-    expect(inferColumnType(['a|b', 'c|d'])).toBe('string')
+  it('infers string[] when every non-empty sample contains a pipe', () => {
+    // Pipe-delimited columns are common enough in real CSVs that requiring a
+    // :string[] hint every time was friction. A column where every non-empty
+    // value has a pipe is treated as an array; :string is the escape hatch.
+    expect(inferColumnType(['a|b', 'c|d'])).toBe('string[]')
+  })
+
+  it('falls back to string when only some samples contain pipes (ambiguous)', () => {
+    expect(inferColumnType(['a|b', 'plain', 'c|d'])).toBe('string')
   })
 
   it('guards against leading-zero numeric strings (zip codes, phone numbers)', () => {

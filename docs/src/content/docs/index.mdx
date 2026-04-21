@@ -7,10 +7,12 @@ import { LinkCard, CardGrid, Steps, Aside } from '@astrojs/starlight/components'
 import { Image } from 'astro:assets'
 import laidOut from '../../assets/quickstart/laid-out.png'
 import colouredCommunity from '../../assets/quickstart/coloured-community.png'
+import sizedByAge from '../../assets/quickstart/sized-by-age.png'
 import filtered from '../../assets/quickstart/filtered.png'
 
 Open a file, run the simulation, colour by a property, filter to what matters, export. Five minutes from here to actually understanding your graph.
 
+<div class="featured-sample">
 <LinkCard
   title="Try with a 1,000-node sample"
   description="A synthetic social network with 5 communities, 1,488 edges, and 5 property types (number, string, boolean, date, string[]). Everything below walks through this graph."
@@ -18,6 +20,7 @@ Open a file, run the simulation, colour by a property, filter to what matters, e
   target="_blank"
   rel="noopener"
 />
+</div>
 
 Want to use your own data? Every [input-format page](/docs/input-formats) has a drop-in template and a try-it link. Same five steps apply.
 
@@ -52,7 +55,7 @@ Direct canvas manipulation, no tool modes or menus to learn.
 
 [Full reference](/docs/explore)
 
-## 3. Colour by a property
+## 3. Visualize by node colours
 
 The graph has shape, but nothing tells you what that shape *means*. Colour is how you encode meaning — pick a property and every node re-paints to match its value.
 
@@ -69,11 +72,26 @@ The graph has shape, but nothing tells you what that shape *means*. Colour is ho
 
 The clusters you half-saw in step 1 are now explicit. The **Statistics** panel underneath the legend breaks down every distinct value — `Sports: 246 (24.6%)`, `Finance: 239 (23.9%)`, … — so you immediately know which segments dominate your graph and which are rare.
 
-Numbers and dates behave differently: they get a **continuous gradient** and a histogram. Try **Property → joined** to watch membership grow over time, or **Property → age** for a distribution with mean / p25 / p50 / p75 computed live. Only one encoding is active at a time — switch between **color** and **size** modes at the top of the panel.
+Numbers and dates behave differently from strings: they get a **continuous gradient** and a histogram. Try **Property → joined** to watch membership grow over time, or **Property → age** for a distribution with mean / p25 / p50 / p75 computed live.
+
+## 4. Visualize by node size
+
+Colour tells you *what kind*. Size tells you *how much*. Scaling each node by a numeric value turns the blob into a spatial histogram — you see the distribution laid across every cluster, not just a bar chart.
+
+<Steps>
+
+1. Still in the Analyze panel, change **Property → age**.
+2. Click **Size** in the Mode selector. Each node scales to its age value; the **Statistics** panel switches to a histogram with total / mean / p25 / p50 / p75 computed live.
+
+</Steps>
+
+<Image src={sizedByAge} alt="The same graph, now sized by age. Older users render as larger dots, younger as smaller. The Statistics panel on the right shows the age distribution as a histogram with live quartile readouts." />
+
+Only one encoding is active at a time, so picking Size drops the community colours — re-apply them via **Property → community** and **Mode → Color** when you're done. For dates (`joined`), Size behaves the same way on the underlying epoch value.
 
 [Full reference](/docs/analyze)
 
-## 4. Filter down
+## 5. Filter down
 
 Colour shows you *what's there*. Filter controls *what to look at*.
 
@@ -91,7 +109,7 @@ Filter-hidden nodes don't dim — they disappear. That's deliberate: filters car
 
 [Full reference](/docs/filter)
 
-## 5. Export
+## 6. Export
 
 You've spent real time on the layout, the filter set, and maybe a custom palette. Save the state.
 
@@ -107,7 +125,7 @@ What's **not** saved: filter state, colour / size encoding, palette choice. Thos
 
 ## That's the loop
 
-**Load → lay out → explore → colour → filter → export.** Everything else in Knotviz — search, size gradients, per-property statistics, the five input formats, the 19 palettes — is variations on those six moves.
+**Load → lay out → explore → colour → size → filter → export.** Everything else in Knotviz — search, per-property statistics, the five input formats, the 19 palettes — is variations on those seven moves.
 
 <CardGrid>
   <LinkCard

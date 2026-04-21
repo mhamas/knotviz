@@ -30,6 +30,40 @@ export interface GraphData {
   nodePropertiesMetadata?: NodePropertiesMetadata
 }
 
+// ─── Load-time warnings ────────────────────────────────────────────────────
+
+/**
+ * A non-fatal issue encountered while parsing an input file. Parsers continue
+ * past the issue (dropping the offending value or row) but emit one of these
+ * so the UI can summarise data-quality problems to the user instead of
+ * silently swallowing them in the console.
+ */
+export interface LoadWarning {
+  scope: 'nodes' | 'edges'
+  kind: 'coercion'
+  propertyKey?: string
+  row: number
+  value?: string
+  message: string
+}
+
+/**
+ * Aggregated per-column coercion warnings, produced by the loading worker
+ * from the raw LoadWarning stream so the UI has one row per affected key.
+ */
+export interface CoercionWarningSummary {
+  scope: 'nodes' | 'edges'
+  propertyKey: string
+  failedCount: number
+  exampleValue?: string
+  exampleMessage: string
+}
+
+export interface ParseOptions {
+  /** Called once per non-fatal warning the parser encounters. */
+  onWarning?: (warning: LoadWarning) => void
+}
+
 // ─── Property system ───────────────────────────────────────────────────────
 
 export type PropertyType = 'number' | 'string' | 'string[]' | 'date' | 'boolean'

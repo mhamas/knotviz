@@ -17,7 +17,7 @@
  */
 
 import type { FileFormat } from '../lib/detectFileFormat'
-import type { GraphData } from '../types'
+import type { CoercionWarningSummary, GraphData, LoadWarning } from '../types'
 import { GraphBuilder, type GraphBuilderResult } from '../lib/graphBuilder'
 import { parseEdgeListCSV } from '../lib/parseEdgeListCSV'
 import { parseGEXF } from '../lib/parseGEXF'
@@ -124,6 +124,7 @@ async function loadNonJson(files: File[], format: FileFormat): Promise<ProcessRe
   }
 
   let graph: GraphData
+  const warnings: LoadWarning[] = []
   try {
     if (format === 'csv-edge-list') {
       const text = await files[0].text()
@@ -134,7 +135,7 @@ async function loadNonJson(files: File[], format: FileFormat): Promise<ProcessRe
       const [nodesText, edgesText] = await Promise.all([files[0].text(), files[1].text()])
       post({ type: 'progress', stage: 'Parsing CSV…', percent: 20 })
       await yieldWorker()
-      graph = parseNodeEdgeCSV(nodesText, edgesText)
+      graph = parseNodeEdgeCSV(nodesText, edgesText, { onWarning: (w) => warnings.push(w) })
     } else if (format === 'graphml') {
       const text = await files[0].text()
       post({ type: 'progress', stage: 'Parsing GraphML…', percent: 20 })
@@ -154,7 +155,9 @@ async function loadNonJson(files: File[], format: FileFormat): Promise<ProcessRe
 
   post({ type: 'progress', stage: 'Building graph…', percent: 40 })
   await yieldWorker()
-  return await processRawGraph(graph)
+  const result = await processRawGraph(graph)
+  result.coercionWarnings = summariseCoercionWarnings(warnings)
+  return result
 }
 
 // ─── Strategy 1c: streaming CSV (edge-list + pair) ────────────────────────
@@ -208,7 +211,7 @@ async function loadCsvEdgeListStreaming(file: File): Promise<ProcessResult> {
 
   post({ type: 'progress', stage: 'Finalizing…', percent: 90 })
   await yieldWorker()
-  return { ...builder.finalize(), nodePropertiesMetadata: undefined }
+  return { ...builder.finalize(), nodePropertiesMetadata: undefined, coercionWarnings: [] }
 }
 
 async function loadCsvPairStreaming(nodesFile: File, edgesFile: File): Promise<ProcessResult> {
@@ -217,6 +220,7 @@ async function loadCsvPairStreaming(nodesFile: File, edgesFile: File): Promise<P
   let bytesRead = 0
   let nodeCount = 0
   let edgeCount = 0
+  const warnings: LoadWarning[] = []
 
   post({ type: 'progress', stage: 'Streaming nodes CSV…', percent: 0 })
   await yieldWorker()
@@ -253,11 +257,16 @@ async function loadCsvPairStreaming(nodesFile: File, edgesFile: File): Promise<P
         })
       }
     },
+    onWarning: (w) => warnings.push(w),
   })
 
   post({ type: 'progress', stage: 'Finalizing…', percent: 90 })
   await yieldWorker()
-  return { ...builder.finalize(), nodePropertiesMetadata: undefined }
+  return {
+    ...builder.finalize(),
+    nodePropertiesMetadata: undefined,
+    coercionWarnings: summariseCoercionWarnings(warnings),
+  }
 }
 
 // ─── Strategy 2: Streaming parser (large files) ──────────────────────────
@@ -330,13 +339,39 @@ async function loadWithStreaming(file: File): Promise<ProcessResult> {
   post({ type: 'progress', stage: 'Finalizing…', percent: 90 })
   await yieldWorker()
 
-  return { ...builder.finalize(), nodePropertiesMetadata: metadata }
+  return { ...builder.finalize(), nodePropertiesMetadata: metadata, coercionWarnings: [] }
 }
 
 // ─── Worker-level result type ─────────────────────────────────────────────
 
 type ProcessResult = GraphBuilderResult & {
   nodePropertiesMetadata: Record<string, { description: string }> | undefined
+  coercionWarnings: CoercionWarningSummary[]
+}
+
+/**
+ * Collapse a stream of raw LoadWarnings into a per-property summary the UI
+ * can render as "N failed values for property `age`, e.g. '…'".
+ */
+function summariseCoercionWarnings(warnings: LoadWarning[]): CoercionWarningSummary[] {
+  const byKey = new Map<string, CoercionWarningSummary>()
+  for (const w of warnings) {
+    if (w.kind !== 'coercion' || !w.propertyKey) continue
+    const key = `${w.scope}::${w.propertyKey}`
+    const existing = byKey.get(key)
+    if (existing) {
+      existing.failedCount++
+    } else {
+      byKey.set(key, {
+        scope: w.scope,
+        propertyKey: w.propertyKey,
+        failedCount: 1,
+        exampleValue: w.value,
+        exampleMessage: w.message,
+      })
+    }
+  }
+  return Array.from(byKey.values())
 }
 
 // ─── JSON.parse path: reuses GraphBuilder ─────────────────────────────────
@@ -385,5 +420,5 @@ async function processRawGraph(raw: unknown): Promise<ProcessResult> {
   post({ type: 'progress', stage: 'Finalizing…', percent: 90 })
   await yieldWorker()
 
-  return { ...builder.finalize(), nodePropertiesMetadata: rawMetadata }
+  return { ...builder.finalize(), nodePropertiesMetadata: rawMetadata, coercionWarnings: [] }
 }

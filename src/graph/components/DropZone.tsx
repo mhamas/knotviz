@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import type { CosmosGraphData, NodePropertiesMetadata, PropertyMeta, PositionMode } from '../types'
+import type { CoercionWarningSummary, CosmosGraphData, NodePropertiesMetadata, PropertyMeta, PositionMode } from '../types'
 import type { PropertyColumns } from '../hooks/useFilterState'
 import type { FileFormat } from '../lib/detectFileFormat'
 import LoadingWorker from '@/workers/loadingWorker?worker'
@@ -50,6 +50,7 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
     positionMode: PositionMode
     filename: string
     replacementCount: number
+    coercionWarnings: CoercionWarningSummary[]
   } | null>(null)
 
   const [pairNodesFile, setPairNodesFile] = useState<File | null>(null)
@@ -122,8 +123,9 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
           const propertyMetas = msg.propertyMetas as PropertyMeta[]
           const nodePropertiesMetadata = msg.nodePropertiesMetadata as NodePropertiesMetadata | undefined
           const replacementCount = msg.replacementCount as number
+          const coercionWarnings = (msg.coercionWarnings as CoercionWarningSummary[] | undefined) ?? []
 
-          if (replacementCount > 0) {
+          if (replacementCount > 0 || coercionWarnings.length > 0) {
             setPendingLoad({
               cosmosData,
               propertyColumns,
@@ -132,6 +134,7 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
               positionMode: cosmosData.positionMode,
               filename: displayName,
               replacementCount,
+              coercionWarnings,
             })
             setIsLoading(false)
           } else {
@@ -339,13 +342,42 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
       <AlertDialog open={pendingLoad !== null} onOpenChange={(isOpen) => { if (!isOpen) handleCancelLoad() }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Missing property values</AlertDialogTitle>
+            <AlertDialogTitle>Data quality warnings</AlertDialogTitle>
             <AlertDialogDescription>
-              {pendingLoad?.replacementCount} values were replaced with defaults. Some nodes had
-              missing property values that were replaced with type defaults (number → 0, string →
-              &quot;&quot;, boolean → false, date → 1970-01-01).
+              {pendingLoad && pendingLoad.replacementCount > 0 && (
+                <>
+                  <strong>{pendingLoad.replacementCount.toLocaleString()}</strong> missing values
+                  will be replaced with type defaults (number → 0, string → &quot;&quot;, boolean → false,
+                  date → 1970-01-01).
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {pendingLoad && pendingLoad.coercionWarnings.length > 0 && (
+            <div data-testid="load-warning-coercion" className="text-sm text-slate-600">
+              <p>
+                Some cells didn&apos;t match the type declared in their column header and were
+                dropped:
+              </p>
+              <ul className="mt-1.5 space-y-1 pl-4">
+                {pendingLoad.coercionWarnings.map((w) => (
+                  <li key={`${w.scope}:${w.propertyKey}`} className="list-disc">
+                    <code className="text-xs">{w.propertyKey}</code>
+                    {' — '}
+                    <strong>{w.failedCount.toLocaleString()}</strong> {w.scope === 'nodes' ? 'node' : 'edge'}
+                    {w.failedCount === 1 ? '' : 's'} failed
+                    {w.exampleValue !== undefined && (
+                      <>
+                        {' (e.g. '}
+                        <code className="text-xs">&quot;{w.exampleValue}&quot;</code>
+                        {')'}
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel onClick={handleCancelLoad}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmLoad}>Load anyway</AlertDialogAction>

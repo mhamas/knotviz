@@ -1,8 +1,9 @@
 /**
- * Captures the three quickstart screenshots used on docs/index.mdx:
- *   - laid-out.png          (graph after force sim)
+ * Captures the four quickstart screenshots used on docs/index.mdx:
+ *   - laid-out.png           (graph after force sim)
  *   - coloured-community.png (same graph, coloured by `community`)
- *   - filtered.png           (same state, filtered to active=true)
+ *   - sized-by-age.png       (same graph, sized by `age` — Size mode)
+ *   - filtered.png           (community-colour + active=true filter)
  *
  * Prereq: `npm run dev` running on http://localhost:5173, and the root
  * devDependency `@playwright/test` installed with Chromium available.
@@ -57,6 +58,34 @@ await page.waitForTimeout(1_000)
 const colouredPath = join(OUT_DIR, 'coloured-community.png')
 await page.screenshot({ path: colouredPath })
 console.log(`✓ ${colouredPath}`)
+
+console.log('Switching to Size mode by age…')
+await page.getByTestId('color-property-select').click()
+await page.getByRole('option', { name: /^age/ }).click()
+await page.getByTestId('visual-mode-size').click()
+// Default size range is [1, 10]; widen dramatically so the tiny age=18 majority
+// almost disappears and the few elderly outliers render as huge solo circles.
+const minInput = page.getByTestId('size-range-min')
+const maxInput = page.getByTestId('size-range-max')
+await minInput.click()
+await minInput.fill('1')
+await minInput.press('Enter')
+await maxInput.click()
+await maxInput.fill('40')
+await maxInput.press('Enter')
+await page.waitForTimeout(1_000)
+
+const sizedPath = join(OUT_DIR, 'sized-by-age.png')
+await page.screenshot({ path: sizedPath })
+console.log(`✓ ${sizedPath}`)
+
+// Revert to community-colour so the `filtered` screenshot shows the filter
+// applied on top of the colour encoding the previous section established.
+console.log('Reverting to community + Color for filtered screenshot…')
+await page.getByTestId('color-property-select').click()
+await page.getByRole('option', { name: /^community/ }).click()
+await page.getByTestId('visual-mode-color').click()
+await page.waitForTimeout(500)
 
 console.log('Opening Filters panel and enabling active=true…')
 await page.getByTestId('left-toggle-filters').click()

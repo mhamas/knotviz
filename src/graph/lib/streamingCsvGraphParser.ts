@@ -1,4 +1,4 @@
-import type { EdgeInput, NodeInput, PropertyType, PropertyValue } from '../types'
+import type { EdgeInput, LoadWarning, NodeInput, PropertyType, PropertyValue } from '../types'
 import { inferColumnType, parseTypedCell, parseTypedHeader, type TypedHeader } from './formats'
 import { CSVRowStream, detectDelimiter } from './parseCSVRows'
 
@@ -6,6 +6,7 @@ export interface StreamingCsvCallbacks {
   onNode: (node: NodeInput) => void
   onEdge: (edge: EdgeInput) => void
   onProgress?: (bytesProcessed: number) => void
+  onWarning?: (warning: LoadWarning) => void
 }
 
 /**
@@ -106,10 +107,14 @@ export async function parseStreamingNodeEdgeCSV(
   callbacks: StreamingCsvCallbacks,
 ): Promise<void> {
   const knownIds = new Set<string>()
-  await streamNodes(nodesChunks, (node) => {
-    knownIds.add(node.id)
-    callbacks.onNode(node)
-  })
+  await streamNodes(
+    nodesChunks,
+    (node) => {
+      knownIds.add(node.id)
+      callbacks.onNode(node)
+    },
+    callbacks.onWarning,
+  )
   await streamEdges(edgesChunks, knownIds, callbacks)
 }
 
@@ -180,6 +185,7 @@ interface PropertyColumnSpec {
 async function streamNodes(
   chunks: AsyncIterable<string>,
   onNode: (node: NodeInput) => void,
+  onWarning?: (warning: LoadWarning) => void,
 ): Promise<void> {
   const iter = chunks[Symbol.asyncIterator]()
   const { headerText, leftover, done } = await readUntilNewline(iter)
@@ -229,12 +235,26 @@ async function streamNodes(
         try {
           coerced = parseTypedCell(raw, spec.type)
         } catch (err) {
-          console.warn(
-            `Nodes row ${dataRowIndex + 1}: ${(err as Error).message} for property "${spec.name}"`,
-          )
+          const message = (err as Error).message
+          console.warn(`Nodes row ${dataRowIndex + 1}: ${message} for property "${spec.name}"`)
+          onWarning?.({
+            scope: 'nodes',
+            kind: 'coercion',
+            propertyKey: spec.name,
+            row: dataRowIndex + 1,
+            value: raw,
+            message,
+          })
           coerced = undefined
         }
-        if (coerced !== undefined) properties[spec.name] = coerced
+        if (coerced !== undefined) {
+          properties[spec.name] = coerced
+        } else if (raw === '') {
+          // Preserve declared-but-empty columns so detectPropertyTypes still
+          // sees the key (parity with parseNodeEdgeCSV, and with JSON's null
+          // handling).
+          properties[spec.name] = null
+        }
       }
       if (Object.keys(properties).length > 0) node.properties = properties
     }

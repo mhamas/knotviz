@@ -408,6 +408,27 @@
   font-weight: 700;
 }
 
+/* Featured LinkCard treatment — the top-of-quickstart "Try with a 1,000-node sample"
+ * CTA. Starlight's default LinkCard blends into surrounding prose; we promote it with
+ * an accent left-border (on-brand blue), larger title, generous padding, and margin
+ * above/below so it reads as the primary action without a loud solid fill. */
+.featured-sample {
+  margin-block: 2rem;
+}
+.featured-sample .sl-link-card {
+  padding: 1.5rem 1.75rem;
+  border-inline-start: 4px solid var(--sl-color-accent);
+}
+.featured-sample .sl-link-card .title {
+  font-size: 1.25rem;
+}
+.featured-sample .sl-link-card .icon {
+  color: var(--sl-color-accent);
+}
+.featured-sample .sl-link-card:hover .icon {
+  color: var(--sl-color-accent-high);
+}
+
 /* Compare-page table — highlight the Knotviz column (second column, first data column).
  * Starlight wraps H2s in div.sl-heading-wrapper, so we :has() the wrapper and
  * target the immediately-following table. */

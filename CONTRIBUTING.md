@@ -278,3 +278,4 @@ Features outside scope will be declined regardless of quality.
 - **Performance rules apply** (see above). Main-thread iteration over all nodes, `Math.min(...array)`-style spreads, and similar patterns will be rejected regardless of test coverage.
 - **UI uses the design system** (`src/graph/components/sidebar/`). Icons from `lucide-react`.
 - **JSDoc on exports** (see above).
+- **No dead code.** Before committing, check that every file, script, export, type field, and fixture you're leaving behind is actually referenced somewhere. If an earlier step of your change replaced a module or fixture, delete the original in the same commit — do not leave "reference implementations" that the production pipeline no longer uses. Orphans rot fast and mislead the next reader into thinking they matter. `grep -rn <name>` across `src/`, `e2e/`, `docs/src/`, and `package.json` is usually enough to confirm.

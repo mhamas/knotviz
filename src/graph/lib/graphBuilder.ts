@@ -81,14 +81,19 @@ export class GraphBuilder {
       const props = n.properties as Record<string, unknown>
       for (const key of Object.keys(props)) {
         const val = props[key]
-        if (!isValidPropertyValue(val)) continue
+        const isNull = val === null || val === undefined
+        // null values register the column but do not advance the type state, so
+        // an all-null column resolves to the empty-state default ('number') and
+        // applyNullDefaults fills every slot downstream. This is what keeps a
+        // declared-but-empty CSV/JSON column visible instead of vanishing.
+        if (!isNull && !isValidPropertyValue(val)) continue
 
         if (!(key in this.propertyColumns)) {
           this.propertyColumns[key] = new Array(index).fill(undefined)
           this.typeStates[key] = createTypeState()
         }
-        this.propertyColumns[key].push(val as PropertyValue)
-        updateTypeState(this.typeStates[key], val)
+        this.propertyColumns[key].push(isNull ? (undefined as unknown as PropertyValue) : (val as PropertyValue))
+        if (!isNull) updateTypeState(this.typeStates[key], val)
       }
     }
 

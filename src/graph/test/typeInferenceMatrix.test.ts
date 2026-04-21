@@ -17,6 +17,7 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { detectPropertyTypes } from '../lib/detectPropertyTypes'
+import { GraphBuilder } from '../lib/graphBuilder'
 import { parseJSON } from '../lib/parseJSON'
 import { parseNodeEdgeCSV } from '../lib/parseNodeEdgeCSV'
 import { parseGraphML } from '../lib/parseGraphML'
@@ -265,6 +266,136 @@ describe('Type inference — CSV pair (no type suffixes in headers)', () => {
     expect(graph.nodes[0].properties?.x).toBeUndefined()
     expect(graph.nodes[0].properties?.y).toBeUndefined()
     expect(typesOf(graph.nodes)).toEqual({ age: 'number' })
+  })
+
+  it('mixed empty/filled `label` cells: the property mirrors only the filled ones', () => {
+    const csv = ['id,label', 'n1,Alice', 'n2,', 'n3,Carol'].join('\n')
+    const graph = parseNodeEdgeCSV(csv, 'source,target\n')
+    expect(graph.nodes[0].label).toBe('Alice')
+    expect(graph.nodes[0].properties?.label).toBe('Alice')
+    // Empty label cell — node.label absent AND property cell dropped (consistent with
+    // other missing-cell behaviour; applyNullDefaults backfills downstream).
+    expect(graph.nodes[1].label).toBeUndefined()
+    expect(graph.nodes[1].properties?.label).toBeUndefined()
+    expect(graph.nodes[2].label).toBe('Carol')
+  })
+
+  it('all-case boolean samples (TRUE / False / 1 / 0) infer as boolean', () => {
+    // parseTypedCell supports mixed case + 1/0, but only when declared via :boolean.
+    // Inference (coerceSampleValue) only picks up lowercase true/false, so this path
+    // documents current behaviour — TRUE / FALSE stay as strings unless declared.
+    const csv = ['id,active:boolean', 'n1,TRUE', 'n2,False', 'n3,1', 'n4,0'].join('\n')
+    const graph = parseNodeEdgeCSV(csv, 'source,target\n')
+    expect(graph.nodes[0].properties?.active).toBe(true)
+    expect(graph.nodes[1].properties?.active).toBe(false)
+    expect(graph.nodes[2].properties?.active).toBe(true)
+    expect(graph.nodes[3].properties?.active).toBe(false)
+    expect(typesOf(graph.nodes)).toEqual({ active: 'boolean' })
+  })
+
+  it('CSV (TSV) with a mix of declared and inferred columns works together', () => {
+    const tsv = [
+      'id\tlabel\tage:number\tjoined',
+      'n1\tAlice\t34\t2021-03-15',
+      'n2\tBob\t28\t2022-06-20',
+    ].join('\n')
+    const graph = parseNodeEdgeCSV(tsv, 'source\ttarget\nn1\tn2')
+    expect(typesOf(graph.nodes)).toMatchObject({
+      label: 'string',
+      age: 'number',
+      joined: 'date',
+    })
+  })
+})
+
+// ─── JSON without `properties` at all ─────────────────────────────────────
+
+describe('JSON — nodes without a properties field', () => {
+  it('nodes with no `properties` key at all contribute no type entries', () => {
+    const graph = parseJSON(
+      JSON.stringify({
+        version: '1',
+        nodes: [{ id: 'n1' }, { id: 'n2' }, { id: 'n3' }],
+        edges: [],
+      }),
+    ) as GraphData
+    expect(typesOf(graph.nodes)).toEqual({})
+  })
+
+  it('a single node carrying properties defines the type for the whole graph', () => {
+    const graph = parseJSON(
+      JSON.stringify({
+        version: '1',
+        nodes: [
+          { id: 'n1' },
+          { id: 'n2', properties: { age: 34 } },
+          { id: 'n3' },
+        ],
+        edges: [],
+      }),
+    ) as GraphData
+    expect(typesOf(graph.nodes)).toEqual({ age: 'number' })
+  })
+})
+
+// ─── GraphML / GEXF type-mismatch values ──────────────────────────────────
+
+describe('GraphML / GEXF — declared-type coercion drops unmappable values', () => {
+  it('GraphML: an `int`-typed value that does not parse as a number is dropped', () => {
+    const xml = `<?xml version="1.0"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns">
+  <key id="k_age" for="node" attr.name="age" attr.type="int"/>
+  <graph edgedefault="directed">
+    <node id="n1"><data key="k_age">34</data></node>
+    <node id="n2"><data key="k_age">thirty-four</data></node>
+  </graph>
+</graphml>`
+    const graph = parseGraphML(xml)
+    expect(graph.nodes[0].properties?.age).toBe(34)
+    // Unparseable value is dropped silently (preserves "rest of graph loads").
+    expect(graph.nodes[1].properties?.age).toBeUndefined()
+  })
+
+  it('GEXF: a `boolean`-typed value that is not `true`/`false` is dropped', () => {
+    const xml = `<?xml version="1.0"?>
+<gexf xmlns="http://gexf.net/1.3" version="1.3">
+  <graph>
+    <attributes class="node">
+      <attribute id="a_active" title="active" type="boolean"/>
+    </attributes>
+    <nodes>
+      <node id="n1"><attvalues><attvalue for="a_active" value="true"/></attvalues></node>
+      <node id="n2"><attvalues><attvalue for="a_active" value="maybe"/></attvalues></node>
+    </nodes>
+  </graph>
+</gexf>`
+    const graph = parseGEXF(xml)
+    expect(graph.nodes[0].properties?.active).toBe(true)
+    expect(graph.nodes[1].properties?.active).toBeUndefined()
+  })
+
+  it('GEXF empty liststring cell is treated as missing (consistent with other empty cells)', () => {
+    // An empty raw value returns undefined from coerceByGEXFType regardless of
+    // declared type, so the property is dropped for that node. Downstream
+    // applyNullDefaults still fills it with [] (the string[] default) as long
+    // as at least one other node carries a value and establishes the type.
+    const xml = `<?xml version="1.0"?>
+<gexf xmlns="http://gexf.net/1.3" version="1.3">
+  <graph>
+    <attributes class="node">
+      <attribute id="a_tags" title="tags" type="liststring"/>
+    </attributes>
+    <nodes>
+      <node id="n1"><attvalues><attvalue for="a_tags" value=""/></attvalues></node>
+      <node id="n2"><attvalues><attvalue for="a_tags" value="founder|advisor"/></attvalues></node>
+    </nodes>
+  </graph>
+</gexf>`
+    const graph = parseGEXF(xml)
+    expect(graph.nodes[0].properties?.tags).toBeUndefined()
+    expect(graph.nodes[1].properties?.tags).toEqual(['founder', 'advisor'])
+    // detectPropertyTypes still resolves the column to string[] thanks to n2.
+    expect(typesOf(graph.nodes)).toEqual({ tags: 'string[]' })
   })
 })
 
@@ -559,5 +690,44 @@ describe('Cross-format consistency — same logical graph → same type map', ()
     expect(typesOf(csvGraph.nodes)).toEqual(expected)
     expect(typesOf(graphmlGraph.nodes)).toEqual(expected)
     expect(typesOf(gexfGraph.nodes)).toEqual(expected)
+  })
+})
+
+// ─── Full pipeline: parser → GraphBuilder → propertyMetas ────────────────
+// The app builds `propertyMetas` inside GraphBuilder (not via
+// detectPropertyTypes). A previous regression had the builder silently drop
+// `null` values via isValidPropertyValue, which meant declared-but-all-empty
+// CSV columns vanished from filters even after parseNodeEdgeCSV preserved
+// them as null. These tests lock in the end-to-end behaviour.
+
+describe('Full pipeline — GraphBuilder registers null-only columns', () => {
+  function metasFor(nodes: NodeInput[]): Record<string, PropertyType> {
+    const builder = new GraphBuilder()
+    for (const node of nodes) builder.addNode(node as unknown as Record<string, unknown>)
+    const result = builder.finalize()
+    return Object.fromEntries(result.propertyMetas.map((m) => [m.key, m.type]))
+  }
+
+  it('CSV all-empty column survives into GraphBuilder.propertyMetas', () => {
+    const csv = ['id,label,notes', 'n1,Alice,', 'n2,Bob,', 'n3,Carol,'].join('\n')
+    const graph = parseNodeEdgeCSV(csv, 'source,target\n')
+    expect(metasFor(graph.nodes)).toEqual({ label: 'string', notes: 'number' })
+  })
+
+  it('JSON all-null column survives into GraphBuilder.propertyMetas', () => {
+    const nodes: NodeInput[] = [
+      { id: 'n1', properties: { age: 34, empty: null } },
+      { id: 'n2', properties: { age: 28, empty: null } },
+    ]
+    expect(metasFor(nodes)).toEqual({ age: 'number', empty: 'number' })
+  })
+
+  it('nulls mixed with real values resolve to the real-value type', () => {
+    const nodes: NodeInput[] = [
+      { id: 'n1', properties: { age: 34 } },
+      { id: 'n2', properties: { age: null } },
+      { id: 'n3', properties: { age: 28 } },
+    ]
+    expect(metasFor(nodes)).toEqual({ age: 'number' })
   })
 })

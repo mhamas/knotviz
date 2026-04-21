@@ -32,7 +32,13 @@ description: W3C-ish XML standard. Round-trips Gephi, NetworkX, yEd exports.
 |---|---|
 | `int`, `long`, `float`, `double` | `number` |
 | `boolean` | `boolean` |
-| `string` | `string` (dates inferred downstream from ISO values) |
+| `string` | `string`, or `date` if every value matches ISO 8601 (see below) |
+
+### Dates in GraphML
+
+The GraphML subset Knotviz reads has no native `date` type, so the idiomatic approach is to declare the column as `attr.type="string"` and store ISO-8601 values (`2021-03-15`, `2021-03-15T12:00:00Z`). Knotviz re-inspects the column after parse: if every value parses as ISO-8601, the column becomes `date` and you get a date picker in filters and a timeline gradient in the Analyze panel. If even one value isn't ISO, the column stays `string`.
+
+If you need an ISO-8601-looking string to stay a string (e.g. a version identifier), re-shape the value so it doesn't match — add a prefix, drop the dashes, etc.
 
 ## Structural mappings
 

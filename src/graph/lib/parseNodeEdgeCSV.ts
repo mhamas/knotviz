@@ -78,7 +78,12 @@ function parseNodesCSV(text: string, options?: ParseOptions): NodeInput[] {
 
   const propertyColumns: PropertyColumnSpec[] = []
   for (let i = 0; i < headers.length; i++) {
-    if (i === structural.idIdx || i === structural.labelIdx || i === structural.xIdx || i === structural.yIdx) {
+    // `id`, `x`, `y` are structural-only — they're consumed as the graph's
+    // identifier and coordinates, not surfaced as filterable properties.
+    // `label` is a special case: it's used as the display label, but we ALSO
+    // expose it as a property so users can filter / colour / group by it
+    // (otherwise a CSV that uses `label` as a real data column loses it).
+    if (i === structural.idIdx || i === structural.xIdx || i === structural.yIdx) {
       continue
     }
     const header = headers[i]

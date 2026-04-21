@@ -106,8 +106,8 @@ describe('parseStreamingNodeEdgeCSV', () => {
     const c = collect()
     await parseStreamingNodeEdgeCSV(chunksOf(nodes), chunksOf(edges), c.callbacks)
     expect(c.nodes).toEqual([
-      { id: 'n1', label: 'Alice', properties: { age: 34, active: true } },
-      { id: 'n2', label: 'Bob', properties: { age: 28, active: false } },
+      { id: 'n1', label: 'Alice', properties: { label: 'Alice', age: 34, active: true } },
+      { id: 'n2', label: 'Bob', properties: { label: 'Bob', age: 28, active: false } },
     ])
     expect(c.edges).toEqual([{ source: 'n1', target: 'n2' }])
   })

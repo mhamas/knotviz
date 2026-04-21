@@ -226,6 +226,46 @@ describe('Type inference — CSV pair (no type suffixes in headers)', () => {
     const graph = parseNodeEdgeCSV(tsv, 'source\ttarget\nn1\tn2')
     expect(typesOf(graph.nodes)).toEqual({ age: 'number' })
   })
+
+  // ─── `label` dual-role: structural display AND filterable property ─────
+
+  it('exposes the structural `label` column as a filterable property too', () => {
+    const csv = ['id,label,age', 'n1,Alice,34', 'n2,Bob,28'].join('\n')
+    const graph = parseNodeEdgeCSV(csv, 'source,target\n')
+    // Structural: still drives node display.
+    expect(graph.nodes[0].label).toBe('Alice')
+    expect(graph.nodes[1].label).toBe('Bob')
+    // Property: also available for filter/colour/group.
+    expect(graph.nodes[0].properties?.label).toBe('Alice')
+    expect(graph.nodes[1].properties?.label).toBe('Bob')
+    expect(typesOf(graph.nodes)).toMatchObject({ label: 'string', age: 'number' })
+  })
+
+  it('treats `Label` (mixed case) the same way — dual role', () => {
+    const csv = ['ID,Label', 'n1,Alice', 'n2,Bob'].join('\n')
+    const graph = parseNodeEdgeCSV(csv, 'source,target\n')
+    expect(graph.nodes[0].label).toBe('Alice')
+    expect(graph.nodes[0].properties?.Label).toBe('Alice')
+  })
+
+  it('honours `label:string` typed header — same dual treatment', () => {
+    const csv = ['id,label:string', 'n1,Alice', 'n2,Bob'].join('\n')
+    const graph = parseNodeEdgeCSV(csv, 'source,target\n')
+    expect(graph.nodes[0].label).toBe('Alice')
+    expect(graph.nodes[0].properties?.label).toBe('Alice')
+  })
+
+  it('`id`, `x`, `y` stay structural-only (not surfaced as properties)', () => {
+    const csv = ['id,x,y,age', 'n1,10,20,34', 'n2,30,40,28'].join('\n')
+    const graph = parseNodeEdgeCSV(csv, 'source,target\n')
+    expect(graph.nodes[0].x).toBe(10)
+    expect(graph.nodes[0].y).toBe(20)
+    // `id`, `x`, `y` must NOT appear in properties — they're consumed structurally only.
+    expect(graph.nodes[0].properties?.id).toBeUndefined()
+    expect(graph.nodes[0].properties?.x).toBeUndefined()
+    expect(graph.nodes[0].properties?.y).toBeUndefined()
+    expect(typesOf(graph.nodes)).toEqual({ age: 'number' })
+  })
 })
 
 // ─── CSV pair: declared (with :type suffixes) ──────────────────────────

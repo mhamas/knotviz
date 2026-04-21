@@ -43,12 +43,24 @@ Literal `|` inside a value escapes as `\|`; literal `\` escapes as `\\`. Applies
 
 A modal reports the replacement count before loading. Cancel if the count looks wrong.
 
-### Type inference
+### Type inference vs. declaration
 
-Knotviz infers column types from sample values unless declared explicitly. Two gotchas:
+Each format handles property types differently. Same five `PropertyType`s land in the UI in every case.
 
-- `string[]` is **never** inferred. Declare it with a `:string[]` header suffix or it'll come through as a plain string.
+| Format | Types are… | Notes |
+|---|---|---|
+| JSON | **inferred** from native values | Booleans, numbers, arrays are native; ISO-8601 strings become `date`. No declaration needed. |
+| CSV pair / TSV | **declared** via `:type` suffix **or inferred** from sample values | `string[]` is auto-detected if every non-empty cell contains `\|`; use `:string` as an escape hatch. |
+| CSV edge list | n/a | No custom properties. |
+| GraphML | **declared** via `attr.type` | `int/long/float/double → number`. Strings matching ISO 8601 are re-classified as `date` (GraphML has no native date type). |
+| GEXF | **declared** via `<attribute type>` | `integer/long/float/double → number`; `liststring → string[]`. ISO-8601 strings re-classified as `date`. |
+
+Inference rules applied in order: all booleans → `boolean`, all numbers → `number`, all ISO dates → `date`, all arrays (or pipe-per-cell in CSV) → `string[]`, otherwise `string`.
+
+Gotchas:
+
 - Leading-zero strings (zip codes, phone numbers) are kept as strings to avoid corrupting ids. Use `:number` to force numeric.
+- Columns inferred from sample values look only at non-empty cells; an all-empty column defaults to `number`.
 
 ### Positions
 
@@ -61,4 +73,6 @@ Knotviz infers column types from sample values unless declared explicitly. Two g
 ### Node property descriptions
 
 Optional `nodePropertiesMetadata` (JSON only) maps property keys to `{ description }`. Descriptions appear as `?` popovers in filter panels and the node tooltip.
+
+**This is description-only.** It does not declare types — Knotviz still infers them from the values. A `nodePropertiesMetadata` entry with no matching property in any node is ignored.
 

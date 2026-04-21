@@ -36,8 +36,10 @@ description: Gephi's native XML format. Supports viz:position for preserved layo
 |---|---|
 | `integer`, `long`, `float`, `double` | `number` |
 | `boolean` | `boolean` |
-| `string`, `anyURI` | `string` |
+| `string`, `anyURI` | `string`, or `date` if every value matches ISO 8601 |
 | `liststring` | `string[]` (pipe-decoded) |
+
+GEXF has no native date type; the convention is to use `type="string"` with ISO-8601 values (`2021-03-15`, `2021-03-15T12:00:00Z`). Knotviz re-inspects the column after parse and promotes it to `date` when every value matches — you get a date picker in filters and a timeline gradient in Analyze. If even one value isn't ISO, the column stays `string`.
 
 ## Structural mappings
 

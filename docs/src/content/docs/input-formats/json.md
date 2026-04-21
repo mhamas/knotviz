@@ -52,6 +52,25 @@ description: Native Knotviz format. Versioned schema. Full fidelity for every fe
 | `label` | no | Display text |
 | `weight` | no | Used for edge-filtering and size |
 
+## Property types
+
+JSON values pass through as-is; Knotviz **infers** each property's type from the values it sees. There's no type declaration in the schema, and no `:type` suffix like CSV — just use the native JS value.
+
+| Value shape | Inferred type |
+|---|---|
+| JS `number` (int or float) | `number` |
+| JS `boolean` | `boolean` |
+| JS array of strings | `string[]` |
+| String matching ISO 8601 (`2021-03-15`, `2021-03-15T12:00:00Z`, …) | `date` |
+| Any other string | `string` |
+| All values null/missing | `number` (default) |
+
+Mixed-type columns (e.g. half numbers, half strings) fall back to `string`. See [shared conventions](/docs/input-formats#type-inference-vs-declaration) for the full algorithm.
+
+### `nodePropertiesMetadata` is description-only
+
+The optional `nodePropertiesMetadata` field maps property keys to `{ description }`. Descriptions surface as `?` popovers in filter panels and the node tooltip. **It does not declare types** — Knotviz still infers them from the node values regardless of what's in metadata.
+
 ## Coming from another tool
 
 ### NetworkX

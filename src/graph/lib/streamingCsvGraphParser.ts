@@ -292,7 +292,9 @@ async function streamNodes(
         return
       }
       for (let i = 0; i < header.length; i++) {
-        if (i === structural.idIdx || i === structural.labelIdx || i === structural.xIdx || i === structural.yIdx) {
+        // `label` is intentionally left in the property loop so users can
+        // filter/colour by it — it's ALSO consumed structurally as NodeInput.label.
+        if (i === structural.idIdx || i === structural.xIdx || i === structural.yIdx) {
           continue
         }
         const h = header[i]

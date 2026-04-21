@@ -26,12 +26,14 @@ describe('parseNodeEdgeCSV', () => {
     expect(g.nodes.map((n) => n.id)).toEqual(['z', 'y', 'x'])
   })
 
-  it('reads optional label column', () => {
+  it('reads optional label column and mirrors it as a filterable property', () => {
+    // `label` is dual-role: structural display + a property so users can
+    // filter / colour / group by label value. See parseNodeEdgeCSV for rationale.
     const nodes = 'id,label\nn1,Alice\nn2,Bob'
     const edges = 'source,target\nn1,n2'
     const g = parseNodeEdgeCSV(nodes, edges)
-    expect(g.nodes[0]).toEqual({ id: 'n1', label: 'Alice' })
-    expect(g.nodes[1]).toEqual({ id: 'n2', label: 'Bob' })
+    expect(g.nodes[0]).toEqual({ id: 'n1', label: 'Alice', properties: { label: 'Alice' } })
+    expect(g.nodes[1]).toEqual({ id: 'n2', label: 'Bob', properties: { label: 'Bob' } })
   })
 
   it('reads optional x and y position columns as numbers', () => {
@@ -100,7 +102,13 @@ describe('parseNodeEdgeCSV', () => {
     const nodes = 'ID,Label,X,Y\nn1,Alice,1,2'
     const edges = 'SOURCE,TARGET\nn1,n1'
     const g = parseNodeEdgeCSV(nodes, edges)
-    expect(g.nodes[0]).toEqual({ id: 'n1', label: 'Alice', x: 1, y: 2 })
+    expect(g.nodes[0]).toEqual({
+      id: 'n1',
+      label: 'Alice',
+      x: 1,
+      y: 2,
+      properties: { Label: 'Alice' },
+    })
     expect(g.edges[0]).toEqual({ source: 'n1', target: 'n1' })
   })
 

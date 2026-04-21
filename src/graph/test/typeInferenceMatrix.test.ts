@@ -2,8 +2,8 @@
  * End-to-end type inference / declaration matrix.
  *
  * For each supported input format, verify that after `parseX()` the resulting
- * NodeInput[] carries the right values AND that `detectPropertyTypes()` — which
- * runs unconditionally inside `applyNullDefaults` for every format — produces
+ * NodeInput[] carries the right values AND that `detectPropertyTypes()` — the
+ * pure utility that mirrors the inline inference inside `GraphBuilder` — produces
  * the expected PropertyType for every property.
  *
  * Each format is driven through the five PropertyTypes (`number`, `string`,
@@ -202,8 +202,9 @@ describe('Type inference — CSV pair (no type suffixes in headers)', () => {
 
   it('defaults an all-empty column to number (parity with JSON all-null behaviour)', () => {
     // Empty CSV columns are preserved as `null` on every node so the column is
-    // still discoverable downstream (detectPropertyTypes → number default,
-    // applyNullDefaults → 0). Matches JSON's handling of all-null columns.
+    // still discoverable downstream (GraphBuilder resolves the key → 'number'
+    // via the empty-state default, then backfills every slot with 0). Matches
+    // JSON's handling of all-null columns.
     const csv = ['id,blank', 'n1,', 'n2,', 'n3,'].join('\n')
     const graph = parseNodeEdgeCSV(csv, 'source,target\n')
     expect(typesOf(graph.nodes)).toEqual({ blank: 'number' })
@@ -274,7 +275,7 @@ describe('Type inference — CSV pair (no type suffixes in headers)', () => {
     expect(graph.nodes[0].label).toBe('Alice')
     expect(graph.nodes[0].properties?.label).toBe('Alice')
     // Empty label cell — node.label absent AND property cell dropped (consistent with
-    // other missing-cell behaviour; applyNullDefaults backfills downstream).
+    // other missing-cell behaviour; GraphBuilder.finalize() backfills downstream).
     expect(graph.nodes[1].label).toBeUndefined()
     expect(graph.nodes[1].properties?.label).toBeUndefined()
     expect(graph.nodes[2].label).toBe('Carol')
@@ -376,9 +377,9 @@ describe('GraphML / GEXF — declared-type coercion drops unmappable values', ()
 
   it('GEXF empty liststring cell is treated as missing (consistent with other empty cells)', () => {
     // An empty raw value returns undefined from coerceByGEXFType regardless of
-    // declared type, so the property is dropped for that node. Downstream
-    // applyNullDefaults still fills it with [] (the string[] default) as long
-    // as at least one other node carries a value and establishes the type.
+    // declared type, so the property is dropped for that node. GraphBuilder.finalize()
+    // still fills it with [] (the string[] default) as long as at least one other
+    // node carries a value and establishes the type.
     const xml = `<?xml version="1.0"?>
 <gexf xmlns="http://gexf.net/1.3" version="1.3">
   <graph>

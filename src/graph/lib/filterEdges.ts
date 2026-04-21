@@ -14,7 +14,7 @@ export interface FilteredEdgesResult {
  * 2. Keep top `edgePercentage`% of edges by weight (using pre-sorted order).
  * 3. Merge in any protected edges that weren't already kept.
  *
- * @param fullLinkIndices - Original [src0,tgt0,src1,tgt1,…] from buildGraph.
+ * @param fullLinkIndices - Original [src0,tgt0,src1,tgt1,…] from GraphBuilder.finalize().
  * @param edgeSortOrder - Edge indices sorted by weight descending.
  * @param nodeCount - Total number of nodes (for protection array allocation).
  * @param totalEdgeCount - Total number of edges in the full graph.

@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import { GraphBuilder } from '../lib/graphBuilder'
 import { parseJsonGraphSync } from '../lib/streamingJsonGraphParser'
 
 function parse(json: string) {
@@ -30,6 +31,36 @@ describe('streamingJsonGraphParser', () => {
     expect(edges).toHaveLength(1)
     expect(edges[0].source).toBe('1')
     expect(edges[0].target).toBe('2')
+  })
+
+  it('passes null-valued properties through to onNode (preserves the key)', () => {
+    const { nodes } = parse(
+      '{"version":"1","nodes":[{"id":"1","properties":{"age":34,"empty":null}},{"id":"2","properties":{"age":28,"empty":null}}],"edges":[]}',
+    )
+    expect(nodes).toHaveLength(2)
+    const props0 = nodes[0].properties as Record<string, unknown>
+    expect(props0.age).toBe(34)
+    expect(props0.empty).toBeNull()
+    const props1 = nodes[1].properties as Record<string, unknown>
+    expect(props1.empty).toBeNull()
+  })
+
+  it('declared-but-all-null column survives through GraphBuilder as a number column', () => {
+    // The streaming JSON path (≥200MB files) feeds parsed records directly
+    // into GraphBuilder.addNode. This test locks in that a column every node
+    // has set to null still appears in propertyMetas after finalize().
+    const { nodes } = parse(
+      '{"version":"1","nodes":[{"id":"1","properties":{"empty":null}},{"id":"2","properties":{"empty":null}}],"edges":[{"source":"1","target":"2"}]}',
+    )
+    const builder = new GraphBuilder()
+    for (const n of nodes) builder.addNode(n as Record<string, unknown>)
+    builder.addEdge({ source: '1', target: '2' })
+    const result = builder.finalize()
+    const metas = Object.fromEntries(result.propertyMetas.map((m) => [m.key, m.type]))
+    expect(metas).toEqual({ empty: 'number' })
+    // Backfilled with the 'number' default (0) for every slot.
+    expect(result.propertyColumns.empty).toEqual([0, 0])
+    expect(result.replacementCount).toBe(2)
   })
 
   it('handles nodes with properties including nested objects', () => {

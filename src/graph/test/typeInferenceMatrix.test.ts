@@ -731,3 +731,45 @@ describe('Full pipeline — GraphBuilder registers null-only columns', () => {
     expect(metasFor(nodes)).toEqual({ age: 'number' })
   })
 })
+
+// ─── Drift-protection: both inference paths must agree ────────────────────
+// `detectPropertyTypes` (pure utility) and `GraphBuilder.addNode → finalize`
+// (the production path) both use the shared primitives from typeDetection.ts
+// but operate on different input shapes (NodeInput vs. raw record). When they
+// diverge, the "all-null column vanishes" bug is the kind of thing that slips
+// through. This test pins them to the same output for every non-trivial fixture.
+
+describe('Drift protection — detectPropertyTypes ≡ GraphBuilder propertyMetas', () => {
+  const fixtures: Array<{ name: string; nodes: NodeInput[] }> = [
+    {
+      name: 'mixed natural types',
+      nodes: [
+        { id: 'n1', properties: { age: 34, community: 'Tech', active: true, joined: '2021-03-15', tags: ['a'] } },
+        { id: 'n2', properties: { age: 28, community: 'Arts', active: false, joined: '2022-06-20', tags: ['b', 'c'] } },
+      ],
+    },
+    { name: 'all-null column', nodes: [{ id: 'n1', properties: { empty: null } }, { id: 'n2', properties: { empty: null } }] },
+    { name: 'nulls mixed with numbers', nodes: [{ id: 'n1', properties: { x: 42 } }, { id: 'n2', properties: { x: null } }, { id: 'n3', properties: { x: 7 } }] },
+    { name: 'ISO dates with varying precision', nodes: [{ id: 'n1', properties: { t: '2021-03-15' } }, { id: 'n2', properties: { t: '2021-03-16T12:00:00Z' } }] },
+    { name: 'mixed bool + number → string fallback', nodes: [{ id: 'n1', properties: { x: true } }, { id: 'n2', properties: { x: 1 } }] },
+    { name: 'empty arrays alongside filled', nodes: [{ id: 'n1', properties: { tags: [] } }, { id: 'n2', properties: { tags: ['a', 'b'] } }] },
+    { name: 'nodes without properties interleaved', nodes: [{ id: 'n1' }, { id: 'n2', properties: { k: 'v' } }, { id: 'n3' }] },
+  ]
+
+  for (const { name, nodes } of fixtures) {
+    it(`agrees on "${name}"`, () => {
+      const viaUtility = typesOf(nodes)
+
+      const builder = new GraphBuilder()
+      for (const n of nodes) builder.addNode(n as unknown as Record<string, unknown>)
+      // finalize() throws on zero edges, but these fixtures may have no edges.
+      // Add a no-op self-edge so finalize can run; it doesn't affect propertyMetas.
+      if (nodes.length > 0) builder.addEdge({ source: nodes[0].id, target: nodes[0].id })
+      const viaBuilder = Object.fromEntries(
+        builder.finalize().propertyMetas.map((m) => [m.key, m.type]),
+      )
+
+      expect(viaBuilder).toEqual(viaUtility)
+    })
+  }
+})

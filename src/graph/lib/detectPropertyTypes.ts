@@ -4,6 +4,14 @@ import { createTypeState, updateTypeState, resolveType } from './typeDetection'
 /**
  * Infers the type of every property key by examining all node values.
  *
+ * **Note on the production pipeline:** the loading worker builds a graph via
+ * `GraphBuilder.addNode` / `finalize`, which performs the same inference
+ * row-by-row using the shared primitives in `typeDetection.ts`. This
+ * standalone helper is kept as a pure utility for tests and one-off
+ * analyses where you have a full `NodeInput[]` in memory. The
+ * `typeInferenceMatrix.test.ts` suite pins both paths to the same output
+ * so they don't drift.
+ *
  * Rules (applied in order):
  * 1. All non-null values are JS booleans → 'boolean'
  * 2. All non-null values are JS numbers → 'number'

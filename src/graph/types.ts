@@ -251,11 +251,6 @@ export interface TooltipState {
 
 // ─── Loading pipeline ──────────────────────────────────────────────────────
 
-export interface NullDefaultResult {
-  data: GraphData
-  replacementCount: number
-}
-
 export type PositionMode = 'all' | 'none' | 'partial'
 
 // ─── Cosmos graph data ────────────────────────────────────────────────────

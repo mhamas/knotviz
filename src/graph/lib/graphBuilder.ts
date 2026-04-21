@@ -84,8 +84,9 @@ export class GraphBuilder {
         const isNull = val === null || val === undefined
         // null values register the column but do not advance the type state, so
         // an all-null column resolves to the empty-state default ('number') and
-        // applyNullDefaults fills every slot downstream. This is what keeps a
-        // declared-but-empty CSV/JSON column visible instead of vanishing.
+        // finalize() backfills every slot with TYPE_DEFAULTS downstream. This
+        // is what keeps a declared-but-empty CSV/JSON column visible instead of
+        // vanishing from the filter panel.
         if (!isNull && !isValidPropertyValue(val)) continue
 
         if (!(key in this.propertyColumns)) {

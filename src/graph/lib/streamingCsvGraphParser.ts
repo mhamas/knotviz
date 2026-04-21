@@ -250,9 +250,8 @@ async function streamNodes(
         if (coerced !== undefined) {
           properties[spec.name] = coerced
         } else if (raw === '') {
-          // Preserve declared-but-empty columns so detectPropertyTypes still
-          // sees the key (parity with parseNodeEdgeCSV, and with JSON's null
-          // handling).
+          // Preserve declared-but-empty columns so GraphBuilder registers the
+          // key (parity with parseNodeEdgeCSV, and with JSON's null handling).
           properties[spec.name] = null
         }
       }

@@ -148,7 +148,7 @@ function parseNodesCSV(text: string, options?: ParseOptions): NodeInput[] {
 
   // Preserve declared-but-empty columns: if a property column had a header but
   // every data cell was empty, ensure the key still appears (as null) on every
-  // node so detectPropertyTypes picks it up and applyNullDefaults fills it with
+  // node so GraphBuilder registers the column and finalize() backfills it with
   // the type default. Without this, the column vanishes entirely and the UI
   // has no record that it was declared.
   const columnHasValue = new Map<string, boolean>()

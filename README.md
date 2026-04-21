@@ -190,6 +190,12 @@ Supported types: `integer` / `long` / `float` / `double` / `boolean` / `string` 
 | `npm run lint` | ESLint |
 | `npm run format` | Prettier formatting |
 
+### Editing code imported by the loading worker
+
+The file-loading pipeline (`src/graph/workers/loadingWorker.ts` and everything it imports — parsers, `GraphBuilder`, `typeDetection`, etc.) runs inside a Web Worker. Vite bundles this worker via the `?worker` import suffix; when you edit any file in its import graph, Vite issues a **full page reload** rather than an in-place HMR update, because the worker module has to be re-instantiated to pick up the new code. You'll see `[vite] (client) page reload <file>` in the dev-server log.
+
+In practice: just save and the browser tab reloads. Drop your test file again to exercise the new code path. No `npm run dev` restart needed. If you ever see stale behaviour after an edit (rare), hard-reload the tab (`Cmd+Shift+R` / `Ctrl+Shift+R`) to force the worker bundle to re-fetch.
+
 ## Testing
 
 Three tiers, all gated by `npm run test:all` (four GPU-dependent tests skip in headless SwiftShader):

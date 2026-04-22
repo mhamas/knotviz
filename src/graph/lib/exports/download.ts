@@ -3,9 +3,12 @@
  * serializer — the caller passes the Blob it built and the suggested
  * filename, the browser's native download flow does the rest.
  *
- * Implementation note: the object URL is revoked immediately after the
- * `click()` dispatches, which is safe because the browser captures the
- * URL synchronously.
+ * Revoking the object URL immediately after `click()` raced the download
+ * start in some browsers (the click would queue the request but revoke
+ * before the browser had captured the data). Deferred revocation lets the
+ * browser finish handing the blob to its download manager before the URL
+ * disappears. One second is well beyond any real-world click-to-capture
+ * window while still reclaiming the memory promptly.
  */
 export function triggerDownload(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob)
@@ -13,7 +16,7 @@ export function triggerDownload(blob: Blob, filename: string): void {
   a.href = url
   a.download = filename
   a.click()
-  URL.revokeObjectURL(url)
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 /**

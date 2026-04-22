@@ -50,4 +50,12 @@ describe('exportAsGexf', () => {
     const text = await readBlob(exportAsGexf(snap).blob)
     expect(text).toContain('a&lt;b&amp;c&quot;d')
   })
+
+  it('handles an empty-graph snapshot (wrapper elements only)', async () => {
+    const empty = { nodes: [], edges: [], propertyMetas: [] }
+    const text = await readBlob(exportAsGexf(empty).blob)
+    const parsed = parseGEXF(text)
+    expect(parsed.nodes).toHaveLength(0)
+    expect(parsed.edges).toHaveLength(0)
+  })
 })

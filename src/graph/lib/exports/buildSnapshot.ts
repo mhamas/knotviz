@@ -30,12 +30,21 @@ export function buildExportSnapshot(
     const properties: Record<string, string | number | boolean | string[]> = {}
     for (const meta of propertyMetas) {
       const v = propertyColumns[meta.key]?.[i]
-      if (v !== undefined) properties[meta.key] = v
+      if (v === undefined) continue
+      // Non-finite numbers (NaN, ±Infinity) are dropped at the snapshot
+      // boundary so every downstream serializer sees clean data. JSON
+      // would emit `null`, CSV would render "Infinity" (which won't
+      // re-import as a number), XML parsers outright reject these
+      // tokens — the consistent choice is "treat as missing".
+      if (typeof v === 'number' && !Number.isFinite(v)) continue
+      properties[meta.key] = v
     }
+    const clampedX = Number.isFinite(positions[i * 2] ?? 0) ? (positions[i * 2] ?? 0) : 0
+    const clampedY = Number.isFinite(positions[i * 2 + 1] ?? 0) ? (positions[i * 2 + 1] ?? 0) : 0
     const node: ExportNode = {
       id: cosmosData.nodeIds[i],
-      x: positions[i * 2] ?? 0,
-      y: positions[i * 2 + 1] ?? 0,
+      x: clampedX,
+      y: clampedY,
       properties,
     }
     const label = cosmosData.nodeLabels[i]

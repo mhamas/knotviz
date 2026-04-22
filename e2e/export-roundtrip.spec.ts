@@ -27,6 +27,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import os from 'node:os'
 import { fileURLToPath } from 'node:url'
+import { readZipEntries } from '../src/graph/test/exports/readZip'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const SOURCE_JSON = path.join(__dirname, 'fixtures', 'export-roundtrip', 'source.json')
@@ -265,56 +266,6 @@ function assertArrayFlattened(final: RoundTripJson): void {
   expect(n1.properties!.tags).toBe('engineer|founder')
 }
 
-// ─── Hand-rolled ZIP reader ───────────────────────────────────────────────
-// Same logic as src/graph/test/exports/csvPair.test.ts — handles client-zip's
-// data-descriptor streaming mode (local-header sizes are zero; actual sizes
-// arrive in a trailing data descriptor). STORE-only.
-
 function readZip(buffer: Buffer): Record<string, string> {
-  const data = new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength)
-  const decoder = new TextDecoder()
-  const files: Record<string, string> = {}
-  const LFH_SIG = [0x50, 0x4b, 0x03, 0x04]
-  const CDIR_SIG = [0x50, 0x4b, 0x01, 0x02]
-  const DD_SIG = [0x50, 0x4b, 0x07, 0x08]
-
-  function matchesAt(pos: number, sig: number[]): boolean {
-    for (let i = 0; i < sig.length; i++) if (data[pos + i] !== sig[i]) return false
-    return true
-  }
-
-  let offset = 0
-  while (offset < data.length - 4 && matchesAt(offset, LFH_SIG)) {
-    const view = new DataView(data.buffer, data.byteOffset + offset)
-    const gpFlags = view.getUint16(6, true)
-    const lfhCompressed = view.getUint32(18, true)
-    const nameLen = view.getUint16(26, true)
-    const extraLen = view.getUint16(28, true)
-    const nameStart = offset + 30
-    const name = decoder.decode(data.subarray(nameStart, nameStart + nameLen))
-    const dataStart = nameStart + nameLen + extraLen
-
-    if ((gpFlags & 0x0008) !== 0) {
-      let p = dataStart
-      while (
-        p < data.length - 4 &&
-        !matchesAt(p, DD_SIG) &&
-        !matchesAt(p, LFH_SIG) &&
-        !matchesAt(p, CDIR_SIG)
-      ) {
-        p++
-      }
-      const ddView = new DataView(data.buffer, data.byteOffset + p)
-      const withSig = matchesAt(p, DD_SIG)
-      const ddCompressed = withSig ? ddView.getUint32(8, true) : ddView.getUint32(4, true)
-      const ddLen = (withSig ? 4 : 0) + 12
-      files[name] = decoder.decode(data.subarray(dataStart, dataStart + ddCompressed))
-      offset = p + ddLen
-      continue
-    }
-
-    files[name] = decoder.decode(data.subarray(dataStart, dataStart + lfhCompressed))
-    offset = dataStart + lfhCompressed
-  }
-  return files
+  return readZipEntries(new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength))
 }

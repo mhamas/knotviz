@@ -61,4 +61,12 @@ describe('exportAsJson', () => {
     expect(parsed.edges[0].weight).toBe(0.8)
     expect(parsed.edges[1].weight).toBeUndefined()
   })
+
+  it('handles an empty-graph snapshot (nodes and edges both empty arrays)', async () => {
+    const text = await readBlob(
+      exportAsJson({ nodes: [], edges: [], propertyMetas: [] }).blob,
+    )
+    const parsed = JSON.parse(text)
+    expect(parsed).toEqual({ version: '1', nodes: [], edges: [] })
+  })
 })

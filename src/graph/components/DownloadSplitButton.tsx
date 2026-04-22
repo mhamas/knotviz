@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import {
@@ -36,6 +36,10 @@ export function DownloadSplitButton({ onDownload, disabled = false }: Props): Re
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pendingLossy, setPendingLossy] = useState<ExportFormat | null>(null)
   const [activeFormat, setActiveFormat] = useState<ExportFormat>(lastUsedFormat)
+  // Keyboard users lose their place when the lossy-export dialog closes
+  // (via Cancel, Escape, or the backdrop) — restoring focus to the picker
+  // chevron is the closest "you are here" signal we can give.
+  const pickerTriggerRef = useRef<HTMLButtonElement>(null)
 
   const performExport = useCallback(
     async (format: ExportFormat) => {
@@ -85,6 +89,7 @@ export function DownloadSplitButton({ onDownload, disabled = false }: Props): Re
         </button>
         <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
           <PopoverTrigger
+            ref={pickerTriggerRef}
             data-testid="download-format-picker"
             className="inline-flex w-7 cursor-pointer items-center justify-center rounded-l-none rounded-r-md border border-slate-300 bg-slate-50 text-slate-700 hover:bg-slate-100"
             aria-label="Pick a download format"
@@ -123,16 +128,19 @@ export function DownloadSplitButton({ onDownload, disabled = false }: Props): Re
       <AlertDialog
         open={pendingLossy !== null}
         onOpenChange={(isOpen): void => {
-          if (!isOpen) setPendingLossy(null)
+          if (!isOpen) {
+            setPendingLossy(null)
+            // Hand keyboard focus back to the chevron so users know where
+            // they are in the UI after dismissing the dialog.
+            requestAnimationFrame(() => pickerTriggerRef.current?.focus())
+          }
         }}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle data-testid="lossy-export-dialog-title">Lossy export — {lossyMeta?.label}</AlertDialogTitle>
             <AlertDialogDescription>
-              {lossyMeta?.format === 'csv-edge-list'
-                ? 'CSV edge list only carries connections (source, target, weight). Per-node properties — labels, ages, tags, dates, positions — will not be in the exported file. Continue?'
-                : 'GraphML has no native list type. String[] properties will be flattened to pipe-delimited strings (e.g. "engineer|founder"). On re-import they come back as plain strings, not arrays. Continue?'}
+              {lossyMeta?.lossyExplanation ?? lossyMeta?.description ?? ''}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

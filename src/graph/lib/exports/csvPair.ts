@@ -39,16 +39,29 @@ export async function exportAsCsvPair(snapshot: ExportSnapshot): Promise<ExportR
   }
 }
 
+/**
+ * Property keys that collide with CSV pair's structural columns. If a
+ * snapshot carries a property literally named one of these (e.g. a JSON
+ * input with `properties.label` from the parser's intentional label
+ * mirroring, or a weird `properties.x` from user data), emitting it as a
+ * typed property column AND as a structural column would produce a CSV
+ * with duplicate headers — unreadable on re-import. Skip the property
+ * column; the structural column already carries the value.
+ */
+const STRUCTURAL_COLUMN_KEYS = new Set(['id', 'label', 'x', 'y'])
+
 function buildNodesCsv(snapshot: ExportSnapshot): string {
   const hasLabel = snapshot.nodes.some((n) => n.label !== undefined)
   const hasPosition = snapshot.nodes.some((n) => n.x !== 0 || n.y !== 0)
+
+  const emittedMetas = snapshot.propertyMetas.filter((m) => !STRUCTURAL_COLUMN_KEYS.has(m.key))
 
   const header: string[] = ['id']
   if (hasLabel) header.push('label')
   if (hasPosition) {
     header.push('x', 'y')
   }
-  for (const meta of snapshot.propertyMetas) {
+  for (const meta of emittedMetas) {
     header.push(`${meta.key}:${meta.type}`)
   }
 
@@ -59,7 +72,7 @@ function buildNodesCsv(snapshot: ExportSnapshot): string {
     if (hasPosition) {
       cells.push(String(node.x), String(node.y))
     }
-    for (const meta of snapshot.propertyMetas) {
+    for (const meta of emittedMetas) {
       cells.push(csvCell(formatCell(node, meta.key, meta.type)))
     }
     lines.push(csvRow(cells))

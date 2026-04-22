@@ -42,4 +42,11 @@ describe('exportAsCsvEdgeList', () => {
     const result = exportAsCsvEdgeList(sampleSnapshot())
     expect(result.extension).toBe('csv')
   })
+
+  it('handles an empty-graph snapshot (header row only)', async () => {
+    const text = await readBlob(
+      exportAsCsvEdgeList({ nodes: [], edges: [], propertyMetas: [] }).blob,
+    )
+    expect(text.trim()).toBe('source,target')
+  })
 })

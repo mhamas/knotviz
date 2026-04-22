@@ -72,7 +72,7 @@ The re-opened graph **will still start simulation** if you press Space (it has p
 
 ## File size
 
-Compact output (no indentation / minimal whitespace) keeps file size down. Rough estimates for the JSON path:
+Output is packed tight (no pretty-printing for JSON; RFC-4180 CRLF rows for CSV; single-space indent for XML) so files stay compact. Rough estimates for the JSON path:
 
 | Graph size | File size |
 |---|---|

@@ -26,6 +26,14 @@ export function exportAsGraphML(snapshot: ExportSnapshot): ExportResult {
   const hasPosition = snapshot.nodes.some((n) => n.x !== 0 || n.y !== 0)
   const hasAnyWeight = snapshot.edges.some((e) => e.weight !== undefined)
 
+  // GraphML <key> `id` attributes must be valid XML NCNames (no spaces, no
+  // `:` prefix, no leading digit). The user's property keys could be
+  // anything — `first name`, `user:id`, `42things` — so we assign
+  // sequential p0/p1/p2 ids and carry the human-friendly key only in the
+  // attr.name attribute (which GraphML parsers accept as an arbitrary
+  // string). Nodes below reference these ids by the same index.
+  const propertyKeyIds = snapshot.propertyMetas.map((_, i) => `p${i}`)
+
   const parts: string[] = []
   parts.push('<?xml version="1.0" encoding="UTF-8"?>\n')
   parts.push('<graphml xmlns="http://graphml.graphdrawing.org/xmlns">\n')
@@ -40,12 +48,12 @@ export function exportAsGraphML(snapshot: ExportSnapshot): ExportResult {
   }
   // One key per declared property. GraphML has no list type — string[] is
   // declared as string and values are pipe-encoded.
-  for (const meta of snapshot.propertyMetas) {
+  snapshot.propertyMetas.forEach((meta, i) => {
     const attrType = graphmlAttrType(meta.type)
     parts.push(
-      `  <key id="p_${xmlAttr(meta.key)}" for="node" attr.name="${xmlAttr(meta.key)}" attr.type="${attrType}"/>\n`,
+      `  <key id="${propertyKeyIds[i]}" for="node" attr.name="${xmlAttr(meta.key)}" attr.type="${attrType}"/>\n`,
     )
-  }
+  })
   if (hasAnyWeight) {
     parts.push('  <key id="weight" for="edge" attr.name="weight" attr.type="double"/>\n')
   }
@@ -61,11 +69,11 @@ export function exportAsGraphML(snapshot: ExportSnapshot): ExportResult {
       parts.push(`      <data key="x">${node.x}</data>\n`)
       parts.push(`      <data key="y">${node.y}</data>\n`)
     }
-    for (const meta of snapshot.propertyMetas) {
+    snapshot.propertyMetas.forEach((meta, i) => {
       const raw = formatValue(node, meta)
-      if (raw === null) continue
-      parts.push(`      <data key="p_${xmlAttr(meta.key)}">${xmlText(raw)}</data>\n`)
-    }
+      if (raw === null) return
+      parts.push(`      <data key="${propertyKeyIds[i]}">${xmlText(raw)}</data>\n`)
+    })
     parts.push('    </node>\n')
   }
 

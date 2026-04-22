@@ -27,7 +27,7 @@ Headers are case-insensitive. Only the four columns below are read; any others a
 | `source` | yes | Node id (any non-empty string). |
 | `target` | yes | Node id. |
 | `weight` | no | Parsed as a number. Non-numeric values are dropped with a warning; the edge still loads without a weight. |
-| `label` | no | Display text shown on hover. |
+| `label` | no | Read and preserved on export, but **not currently rendered in the canvas**. Safe to include; harmless if you omit. |
 
 ## Coming from another tool
 

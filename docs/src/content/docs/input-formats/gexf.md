@@ -66,7 +66,7 @@ If even one value doesn't match ISO 8601, the column stays `string`.
 | `<viz:position x="…" y="…"/>` | `NodeInput.x` / `.y` | `z` is ignored. [Positions rules](/docs/input-formats#positions) apply. |
 | `<attvalues>` on node | Node properties | Typed per the matching `<attribute>` declaration. |
 | `<edge weight="…">` | `EdgeInput.weight` | Numeric. Read from the element attribute; if missing, falls back to an `<attvalue>` on the edge titled `weight`. |
-| `<edge label="…">` | `EdgeInput.label` | Same fallback as weight. |
+| `<edge label="…">` | `EdgeInput.label` | Read and preserved on export, but **not currently rendered in the canvas**. Same attribute-then-attvalue fallback as weight. |
 | Any other edge `<attvalue>` | **Dropped** | Knotviz edges only carry `label` + `weight`. |
 
 ## Coming from another tool

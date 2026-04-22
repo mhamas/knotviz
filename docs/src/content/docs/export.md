@@ -15,7 +15,7 @@ Click **↓ Download graph** in the left sidebar. You get a single `.json` file 
 - **Every visible edge** (both endpoints visible, edge not dropped by the edges-to-keep slider).
 - Current `x` / `y` positions for each node — whatever the last simulation / rotation / manual drag left.
 - All original properties, unchanged from input. Including any you didn't visualise.
-- `label` and `weight` for edges (when present).
+- `label` (round-tripped; not rendered in the canvas) and `weight` for edges, when present.
 - `nodePropertiesMetadata` re-written from the current state — fresh descriptions, not a copy of input.
 
 The shape is standard Knotviz JSON — see the [JSON format reference](/docs/input-formats/json). Any tool that speaks that format can read the file, including Knotviz itself for round-tripping.

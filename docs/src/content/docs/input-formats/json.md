@@ -45,10 +45,10 @@ description: Native Knotviz format. Versioned schema. Full fidelity for every fe
 | Field | Required | Notes |
 |---|---|---|
 | `source`, `target` | yes | Must reference existing node `id` values. Unknown ids skip the edge with a console warning. |
-| `label` | no | Display text. |
+| `label` | no | Read and preserved on export, but **not currently rendered in the canvas**. |
 | `weight` | no | Number. Drives edge filtering and edge-size rendering. |
 
-Edge-level `properties` are NOT read. If your domain needs edge metadata, encode it in `label` (short string) or preprocess into node attributes.
+Edge-level `properties` are NOT read. If your domain needs edge metadata, move it onto the source or target node instead — edge-level data has no visual affordance in the current UI.
 
 ## Property types
 
@@ -136,7 +136,7 @@ jq '{ version: "1",
   out.json > graph.json
 ```
 
-Edge properties (including weight) are dropped by this snippet — Knotviz edges carry only `label` and `weight`. Add `weight: .properties.weight` to the edge projection if you need it.
+Edge properties (including weight) are dropped by this snippet — Knotviz edges carry only `label` (preserved on export; not rendered) and `weight` (used for edge filtering and size). Add `weight: .properties.weight` to the edge projection if you need it.
 
 ### Plain Python (no graph library)
 
@@ -161,5 +161,5 @@ json.dump({ "version": "1", "nodes": nodes, "edges": edges }, open("graph.json",
 - **`edges`, not `links`.** Rename if you're porting from `node_link_data`.
 - **Numeric ids are silently dropped.** `{ "id": 42 }` doesn't throw — the node is skipped with a `console.warn` and the graph loads without it. If a node count looks low, check devtools.
 - **Unknown edge endpoints are skipped** too, also with a `console.warn`. Same story.
-- **Edge properties beyond `label` and `weight` are dropped.** No way to attach arbitrary data to edges today.
+- **Edge properties beyond `label` and `weight` are dropped.** And even `label` isn't rendered in the canvas today — it only round-trips through export. Move edge metadata onto a source/target node property if you need it visible.
 - **Silent failures land in the browser console.** Nothing in the UI flags them. If a load "worked" but the graph looks wrong, open devtools first.

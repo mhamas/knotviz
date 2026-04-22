@@ -1,11 +1,11 @@
 ---
 title: Explore
-description: Pan, zoom, rotate, hover for labels, click for properties. Keyboard shortcuts. No tool modes.
+description: Pan, zoom, rotate, hover for labels, click for properties. No tool modes.
 ---
 
-*Direct canvas manipulation. Pan with drag, zoom with scroll, rotate with Shift+scroll. Every action is always available — no tool modes to switch between.*
+*Direct canvas manipulation. Pan with drag, zoom with scroll, rotate with Shift + scroll. Every action is always available — no tool modes to switch between.*
 
-The canvas is always live. You're never in a "tool" that you need to exit; every input is interpreted in context. That's the single most-important thing to internalise — the rest of this page is details.
+The canvas is always live. You're never in a mode you need to exit; every input is interpreted in context. Internalise that and the rest of this page is details.
 
 ## Mouse & keyboard
 
@@ -15,50 +15,46 @@ The canvas is always live. You're never in a "tool" that you need to exit; every
 | Zoom | Scroll wheel (or trackpad pinch) |
 | Rotate canvas | Shift + scroll, or the ↺ / ↻ buttons (15° per click) |
 | Fit to view | Fit button (the frame icon), or hit Run then Stop on the simulation |
-| Start/stop simulation | `Space` |
+| Start / stop simulation | `Space` |
 | See a node's label | Hover |
 | See a node's full properties | Click the node |
 | Close the tooltip | `Escape`, or click outside the node |
 | Shortcuts cheatsheet | Click the `?` button in the bottom-right of the canvas |
 
-Mouse interactions disable themselves while the force simulation is running (rotation, click-to-inspect) — press **Space** to pause, interact, then **Space** to resume. Pan and zoom stay live during the sim so you can follow the layout as it settles.
+While the simulation is running, rotation and click-to-inspect are disabled — press **Space** to pause, interact, then **Space** to resume. Pan and zoom stay live during the sim so you can follow the layout as it settles.
 
 ## Labels
 
-Labels render as HTML overlays on top of the GPU canvas, not as part of the WebGL scene. That matters because:
+- **Up to 300 labels are shown at once.** Above that, Knotviz samples a representative spread from what's on screen; zoom in to see more.
+- **Labels auto-hide during simulation on graphs above 50k nodes.** They'd be illegible while nodes are moving, and drawing thousands of them every frame would jank the browser. Toggle them under **Show node labels** in the left sidebar.
+- **Labels follow node positions** once the sim stops — zoom, pan, and rotate keep them pinned.
 
-- **They cap at 300 visible at once.** Above that, positions are stride-sampled from what's currently on screen — you get a representative scatter rather than a solid wall of text. Zoom in to see more.
-- **They auto-disable during simulation on graphs above 50k nodes.** Updating 50,000 DOM nodes every frame would tank the browser; and labels would be illegible while nodes are in motion anyway. The toggle is in the left sidebar (**Show node labels**).
-- **The text follows node positions one-to-one** once the sim stops. Zoom, pan, rotate all keep labels pinned.
-
-If you have a small graph (<300 nodes) and want labels always on: leave **Show node labels** ticked; everything stays visible throughout.
+If you have a small graph (under 300 nodes) and want labels always on: leave **Show node labels** ticked.
 
 ## Neighbour highlight
 
-Hover a node with **Highlight neighbours on hover** enabled (left sidebar, Display section). The hovered node's direct neighbours stay at full opacity; everything else — non-neighbour nodes *and* edges that don't touch a neighbour — dims to alpha 0.1. Clearest way to see a node's local structure without zooming in.
+Enable **Highlight neighbours on hover** in the left sidebar (Display section), then hover a node. Its direct neighbours stay at full opacity; everything else dims. Clearest way to see a node's local structure without zooming.
 
-Two nuances worth knowing:
-
-- **Neighbours here means *direct* neighbours only** — one hop. We don't compute n-hop reachability on hover; that would stutter on dense graphs.
-- **Dimming respects the filter set.** If you've filtered out a node it stays filtered, not dimmed — highlight only operates on the visible subset.
+- Only *direct* neighbours — one hop away — are highlighted.
+- Filtered-out nodes stay hidden; highlight only operates on what's currently visible.
 
 ## Inspecting a node
 
-Click a node (not during simulation) and a tooltip opens showing **every property** the node carries, in the order they were parsed from the source file. For nodes loaded with `nodePropertiesMetadata` (JSON format only — see [Input formats](/docs/input-formats)), each property shows its description as a popover when you hover the `?`.
+Click a node (while the simulation is paused) and a tooltip opens showing every property on that node, in the order they appeared in the source file. If the file had `nodePropertiesMetadata` descriptions (JSON-only), each property gets a `?` popover with the description.
 
-The tooltip is mouse-aware: it closes when you click outside, press Escape, or click another node.
+Close the tooltip with `Escape`, by clicking outside the node, or by clicking another node.
 
 ## Rotation
 
-Rotation applies a 2D rotation matrix to the actual node positions around their centre of mass — it isn't a CSS transform on the canvas. Three implications:
+Rotating moves the actual node positions — not just the view. A few practical implications:
 
-- Edges and labels stay correct relative to the rotated positions.
-- Exported JSON preserves the rotation (the `x`/`y` values you download are the rotated ones).
-- Rotating with the mouse or buttons is disabled during simulation, because the force sim overwrites positions every tick; rotating would race.
+- Edges and labels stay correctly placed relative to the rotated positions.
+- Exported JSON preserves the rotation: the `x` / `y` values you download are post-rotation.
+- Rotation is disabled while the simulation is running (the sim would immediately overwrite the rotated positions).
 
 ## Gotchas
 
-- Scroll-zoom can conflict with OS-level trackpad gestures (macOS Mission Control swipe, Windows touch zoom). Use the `+` / `−` buttons as a fallback.
-- The **Show node labels** toggle respects the 50k auto-disable — turning it on for a 1M-node graph during simulation still hides them until the sim stops.
-- The right-click menu is the browser's native menu. We don't override it; that means dragging doesn't trigger a selection rectangle or custom context.
+- Scroll-zoom can conflict with OS trackpad gestures (macOS Mission Control swipe, Windows touch zoom). Use the `+` / `−` buttons as a fallback.
+- **Show node labels** respects the 50k auto-disable — turning it on for a 1M-node graph during simulation still hides them until the sim stops.
+- Right-click opens the browser's native menu. Knotviz doesn't intercept it, so there's no lasso-select or custom context menu on drag.
 - Touch devices (iPad Safari) support pan and pinch-zoom but not rotation — Shift doesn't exist on touch.

@@ -67,7 +67,7 @@ export function DownloadSplitButton({ onDownload, disabled = false }: Props): Re
     }
   }, [pendingLossy, performExport])
 
-  const activeLabel = EXPORT_FORMATS.find((f) => f.format === activeFormat)?.label ?? 'JSON'
+  const activeLabel = EXPORT_FORMATS.find((f) => f.format === activeFormat)?.shortLabel ?? 'JSON'
   const lossyMeta = pendingLossy ? EXPORT_FORMATS.find((f) => f.format === pendingLossy) : null
 
   return (

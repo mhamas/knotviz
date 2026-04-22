@@ -20,6 +20,8 @@ import {
 } from '@/components/sidebar'
 import { Histogram } from './Histogram'
 import { SearchBox } from './filters/SearchBox'
+import { DownloadSplitButton } from './DownloadSplitButton'
+import type { ExportFormat } from '../lib/exports/types'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useGraphStore } from '@/stores/useGraphStore'
 import {
@@ -33,7 +35,7 @@ interface Props {
   onRun?: () => void
   onStop?: () => void
   onRestart?: () => void
-  onDownload?: () => void
+  onDownload?: (format: ExportFormat) => Promise<void> | void
   onReset?: () => void
   isOpen?: boolean
   onToggle?: () => void
@@ -385,9 +387,12 @@ export function LeftSidebar({
           </button>
         </div>
 
-        <SidebarButton onClick={onDownload} disabled={isDisabled}>
-          ↓ Download graph
-        </SidebarButton>
+        <DownloadSplitButton
+          onDownload={async (format): Promise<void> => {
+            await onDownload(format)
+          }}
+          disabled={isDisabled}
+        />
 
       <AlertDialog>
         <AlertDialogTrigger

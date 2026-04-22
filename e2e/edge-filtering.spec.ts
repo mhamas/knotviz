@@ -48,7 +48,7 @@ test.describe('Edge Filtering — Download Export', () => {
     await loadGraph(page, 'weighted-edges-graph.json')
 
     const downloadPromise = page.waitForEvent('download')
-    await page.getByRole('button', { name: '↓ Download graph' }).click()
+    await page.getByTestId('download-button').click()
     const download = await downloadPromise
 
     const content = await download.path().then(p => fs.readFileSync(p!, 'utf-8'))
@@ -66,7 +66,7 @@ test.describe('Edge Filtering — Download Export', () => {
     // Knotviz doesn't render edge labels anywhere in the UI, and the docs are
     // explicit that edges only carry weight, so export drops the label field.
     const downloadPromise = page.waitForEvent('download')
-    await page.getByRole('button', { name: '↓ Download graph' }).click()
+    await page.getByTestId('download-button').click()
     const download = await downloadPromise
 
     const content = await download.path().then(p => fs.readFileSync(p!, 'utf-8'))

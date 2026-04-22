@@ -26,7 +26,7 @@ description: Native Knotviz format. Versioned schema. Full fidelity for every fe
 
 | Field | Required | Notes |
 |---|---|---|
-| `version` | yes | The string `"1"` (not the number `1`). |
+| `version` | yes | The string `"1"`. Validated strictly on the streaming path (files ≥ 200 MB); the small-file path is lenient and accepts anything — but stay compliant or your file will break on the streaming threshold. |
 | `nodes[]` | yes | See below. |
 | `edges[]` | yes | See below. |
 | `nodePropertiesMetadata` | no | `{ [key]: { description } }` — description-only; not a type declaration (see below). |
@@ -35,7 +35,7 @@ description: Native Knotviz format. Versioned schema. Full fidelity for every fe
 
 | Field | Required | Notes |
 |---|---|---|
-| `id` | yes | Unique string. Numeric ids must be stringified — `1` doesn't work, `"1"` does. |
+| `id` | yes | Unique string. Numeric ids are **silently skipped** — a node with `"id": 1` doesn't error, it just disappears from the graph with a `console.warn`. Stringify to `"1"`. |
 | `label` | no | Display text (shown on hover and in the tooltip header). |
 | `x`, `y` | no | Preserved only if *all* nodes have them ([positions](/docs/input-formats#positions)). |
 | `properties` | no | `{ [key]: number \| string \| boolean \| string[] \| null }` |
@@ -157,8 +157,9 @@ json.dump({ "version": "1", "nodes": nodes, "edges": edges }, open("graph.json",
 
 ## Gotchas
 
-- **`version` is a string, not a number.** `"1"` works; `1` fails validation.
+- **`version` is a string, not a number.** Under 200 MB, non-compliant values are accepted silently; at or above 200 MB the streaming parser strictly requires `"1"` and throws on anything else. Stay compliant to avoid a surprise at the threshold.
 - **`edges`, not `links`.** Rename if you're porting from `node_link_data`.
-- **Numeric ids must be stringified.** `{ "id": 42 }` fails; `{ "id": "42" }` works.
-- **Unknown edge endpoints are skipped** with a `console.warn` — check devtools if an edge count looks off.
+- **Numeric ids are silently dropped.** `{ "id": 42 }` doesn't throw — the node is skipped with a `console.warn` and the graph loads without it. If a node count looks low, check devtools.
+- **Unknown edge endpoints are skipped** too, also with a `console.warn`. Same story.
 - **Edge properties beyond `label` and `weight` are dropped.** No way to attach arbitrary data to edges today.
+- **Silent failures land in the browser console.** Nothing in the UI flags them. If a load "worked" but the graph looks wrong, open devtools first.

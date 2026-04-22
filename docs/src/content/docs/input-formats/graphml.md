@@ -98,5 +98,8 @@ write_graph(g, "graph.graphml", format = "graphml")
 - **Edges can't carry arbitrary data.** Only `label` and `weight` transfer. Edge-level properties in your source are dropped on load.
 - **No array type.** Pipe-delimited strings stay as strings — no auto-detection. Use JSON or GEXF (`liststring`) if you need real arrays.
 - **yEd visual styling is ignored.** `<y:Geometry>`, `<y:Fill>`, etc. parse cleanly but don't render.
-- **Hyperedges and nested `<graph>` elements are not supported.** The first `<graph>` child is used and a warning is logged if more exist.
+- **Hyperedges are not supported.** A `<hyperedge>` element will parse but no edge is created.
+- **Multiple `<graph>` elements** — only the first is read. A warning is logged if more exist.
+- **Silent skips land in the console.** Nodes without a valid `id`, `<data>` with an unknown `key`, edges referencing unknown nodes — all are dropped with a `console.warn`. Open devtools if a count looks off.
 - **No streaming parser.** Files above ~500k nodes may OOM a 4 GB browser tab — see [limits](/docs/limits) for the hard ceiling.
+- **UTF-8 recommended.** Knotviz doesn't strip a leading BOM before handing the document to the XML parser. If you hit a "Malformed GraphML XML" error on a file that looks fine, check the first bytes and save without BOM.

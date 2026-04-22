@@ -3,7 +3,7 @@ title: GEXF
 description: Gephi's native XML format. Supports viz:position for preserved layouts.
 ---
 
-*GEXF 1.2 / 1.3 static graphs. Advantage over GraphML: a native `<viz:position>` element for node x/y, and a real `liststring` type for arrays.*
+*GEXF static graphs. Advantage over GraphML: a native `<viz:position>` element for node x/y, and a real `liststring` type for arrays. Knotviz doesn't validate the `version` attribute, so any GEXF 1.x file that matches the structure below will load.*
 
 ## Minimum viable example
 
@@ -82,7 +82,7 @@ import networkx as nx
 nx.write_gexf(G, "graph.gexf")
 ```
 
-NetworkX defaults to GEXF 1.2; Knotviz accepts both 1.2 and 1.3.
+NetworkX defaults to GEXF 1.2. Knotviz was written against the 1.3 spec but doesn't check the version declaration, so 1.2 files load fine in practice — the element names and attribute shapes Knotviz reads are the same in both.
 
 ### ForceAtlas2 / Gephi round-trip
 
@@ -100,4 +100,7 @@ If you've run Gephi's ForceAtlas2 layout and want to preserve it, export as `.ge
 - **Dynamic mode / `<spells>` elements are ignored.** Knotviz reads GEXF as static only.
 - **Visual styling is ignored.** `viz:color`, `viz:size`, `viz:shape` parse cleanly but don't render. Use Knotviz's [Analyze](/docs/analyze) panel for colour and size.
 - **Edges can't carry arbitrary data.** Only `label` and `weight` transfer; other `<attvalue>` entries on edges are dropped.
+- **Namespaces are stripped.** The parser normalises prefixed elements (`<gexf:node>` → `<node>`) before matching. In practice every standard writer uses the default namespace, so this rarely matters — but if a hand-authored file uses a non-standard prefix and that somehow affects the element name after stripping, parsing may skip those elements silently.
+- **Silent skips land in the console.** Unknown `<attvalue for="…">` references, edges to unknown node ids, and nodes without an id all fall through with a `console.warn`. Open devtools if a count looks off.
 - **No streaming parser.** Files above ~1M nodes may OOM a 4 GB browser tab — see [limits](/docs/limits) for the hard ceiling.
+- **UTF-8 recommended.** No explicit BOM handling. If a file that looks fine errors with "Malformed GEXF XML", save without the BOM.

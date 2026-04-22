@@ -45,9 +45,9 @@ Inference order (JSON + CSV pair): all booleans → `boolean`; else all numbers 
 
 **Gotchas**:
 
-- Leading-zero strings (`0012`, phone numbers) stay as `string`. Use `:number` to force numeric.
-- An all-empty column defaults to `number`. The column is preserved and still appears in filters.
-- Mixed values in one column (e.g. half numbers, half strings) fall back to `string`.
+- **Leading-zero strings during inference** (`0012`, phone numbers) stay as `string` — the numeric-type test won't cross the leading-zero guard. This only applies to inference; if you explicitly declare the column as `:number` in CSV pair, the parser coerces and `"0012"` becomes `12`.
+- **All-empty columns** default to `number`. The column is preserved and still appears in filters (back-fills with `0`).
+- **Mixed values in one column** (e.g. half numbers, half strings) fall back to `string`.
 
 ### String arrays are pipe-delimited
 

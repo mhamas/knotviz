@@ -79,5 +79,5 @@ Cancel if the numbers look wrong, fix the source, re-drop. Load anyway if you're
 - **Edge endpoints must match ids in the nodes file.** Unknown ids are skipped with a console warning.
 - **Pipe cells in non-array columns.** A column with pipes only in *some* cells infers as `string` (pipes treated literally). A column with pipes in *every* non-empty cell infers as `string[]`. When in doubt, declare with `:string` or `:string[]`.
 - **Leading-zero strings stay strings.** `0012` as an id or property value is kept as `"0012"` (zip codes, phone numbers). Force numeric with `:number` if you want `12`.
-- **Declared-but-empty columns survive.** A column whose every cell is empty is still registered — it defaults to `number` and back-fills with `0`. You'll see it in the filter panel.
+- **Declared-but-empty columns survive.** A column whose every cell is empty is still registered — it defaults to `number` and back-fills with `0`. Example: `id,label,notes` with every `notes` cell blank will still produce a `notes` number filter in the UI. You'll see a pre-load modal reporting the replacement count.
 - **A column called `label` isn't lost.** It shows up as both the display label *and* a filterable property.

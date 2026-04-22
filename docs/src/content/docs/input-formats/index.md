@@ -75,9 +75,13 @@ A literal `|` inside a value escapes as `\|`; a literal `\` escapes as `\\`. JSO
 
 When a property is declared but some nodes don't carry a value for it, Knotviz backfills with the type default so filters and gradients still work:
 
-:::note
-`number` → `0` · `string` → `""` · `boolean` → `false` · `string[]` → `[]` · `date` → `"1970-01-01"`
-:::
+```
+number    → 0
+string    → ""
+boolean   → false
+string[]  → []
+date      → "1970-01-01"
+```
 
 A modal before the graph loads reports the replacement count — cancel and fix the source if that count looks wrong.
 

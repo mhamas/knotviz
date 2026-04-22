@@ -3,7 +3,7 @@ title: GEXF
 description: Gephi's native XML format. Supports viz:position for preserved layouts.
 ---
 
-*GEXF static graphs. Advantage over GraphML: a native `<viz:position>` element for node x/y, and a real `liststring` type for arrays. Knotviz doesn't validate the `version` attribute, so any GEXF 1.x file that matches the structure below will load.*
+*GEXF static graphs. Advantage over GraphML: a native `<viz:position>` element for node x/y, and a real `liststring` type for arrays. Knotviz doesn't validate the `version` attribute, so any GEXF file that matches the structure below will load.*
 
 ## Minimum viable example
 
@@ -48,9 +48,9 @@ description: Gephi's native XML format. Supports viz:position for preserved layo
 GEXF has no native date type. Declare the column as `type="string"` with ISO-8601 values and Knotviz will re-classify it to `date` after parse — you get a date picker in filters and a timeline gradient in Analyze.
 
 ```xml
-<attribute id="joined" title="joined" type="string"/>
+<attribute id="2" title="joined" type="string"/>
 ...
-<attvalue for="joined" value="2021-03-15"/>
+<attvalue for="2" value="2021-03-15"/>
 ```
 
 If even one value doesn't match ISO 8601, the column stays `string`.
@@ -99,7 +99,7 @@ If you've run Gephi's ForceAtlas2 layout and want to preserve it, export as `.ge
 - **Dynamic mode / `<spells>` elements are ignored.** Knotviz reads GEXF as static only.
 - **Visual styling is ignored.** `viz:color`, `viz:size`, `viz:shape` parse cleanly but don't render. Use Knotviz's [Analyze](/docs/analyze) panel for colour and size.
 - **Edges can't carry arbitrary data.** Only `weight` transfers; other `<attvalue>` entries on edges are dropped.
-- **Namespaces are stripped.** The parser normalises prefixed elements (`<gexf:node>` → `<node>`) before matching. In practice every standard writer uses the default namespace, so this rarely matters — but if a hand-authored file uses a non-standard prefix and that somehow affects the element name after stripping, parsing may skip those elements silently.
+- **Namespaces are stripped.** The parser normalises prefixed elements (`<gexf:node>` → `<node>`) before matching, so you can use any namespace prefix without affecting the load.
 - **Silent skips land in the console.** Unknown `<attvalue for="…">` references, edges to unknown node ids, and nodes without an id all fall through with a `console.warn`. Open devtools if a count looks off.
 - **No streaming parser.** Files above ~1M nodes may OOM a 4 GB browser tab — see [limits](/docs/limits) for the hard ceiling.
 - **UTF-8 recommended.** No explicit BOM handling. If a file that looks fine errors with "Malformed GEXF XML", save without the BOM.

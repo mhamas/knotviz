@@ -112,10 +112,12 @@ Filter-hidden nodes don't dim — they disappear. That's deliberate: filters car
 
 You've spent real time on the layout, the filter set, and maybe a custom palette. Save the state.
 
-Click **↓ Download graph** in the left sidebar. You get a JSON file with every visible node's current `x`/`y` position, every visible edge, every original property, and the `nodePropertiesMetadata` needed to re-open it without losing information.
+Click **↓ Download as JSON** in the left sidebar (the body of the split-button). You get a single JSON file with every visible node's current `x`/`y` position, every visible edge, every original property, and the `nodePropertiesMetadata` needed to re-open without losing information.
+
+The chevron next to the button opens a format picker — JSON, CSV edge list, CSV nodes + edges (ZIP), GraphML, or GEXF — for round-tripping into other tools. Lossy formats (CSV edge list, GraphML) ask for confirmation first.
 
 <Aside type="tip" title="Round-trip clean">
-Drop that JSON back into Knotviz anytime and the graph renders exactly where you left it — positions preserved, no re-simulation needed. That's how you save a layout. The file is standard [Knotviz JSON](/docs/input-formats/json), so other tools can read it too.
+Drop the exported file back into Knotviz anytime and the graph renders exactly where you left it — positions preserved, no re-simulation needed. JSON, CSV pair, and GEXF all round-trip losslessly. The file is standard [Knotviz JSON](/docs/input-formats/json) (or whatever format you picked), so other tools can read it too.
 </Aside>
 
 What's **not** saved: filter state, colour / size encoding, palette choice. Those are view-only — re-apply them after re-opening. That keeps the export file small and interop-friendly.

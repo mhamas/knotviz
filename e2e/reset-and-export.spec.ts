@@ -55,7 +55,7 @@ test.describe('Graph Export', () => {
     await loadGraph(page, 'all-positions-graph.json')
 
     const downloadPromise = page.waitForEvent('download')
-    await page.getByRole('button', { name: '↓ Download graph' }).click()
+    await page.getByTestId('download-button').click()
     const download = await downloadPromise
 
     expect(download.suggestedFilename()).toBe('all-positions-graph.json')
@@ -65,7 +65,7 @@ test.describe('Graph Export', () => {
     await loadGraph(page, 'all-positions-graph.json')
 
     const downloadPromise = page.waitForEvent('download')
-    await page.getByRole('button', { name: '↓ Download graph' }).click()
+    await page.getByTestId('download-button').click()
     const download = await downloadPromise
 
     const content = await download.path().then(p => fs.readFileSync(p!, 'utf-8'))
@@ -92,7 +92,7 @@ test.describe('Graph Export', () => {
 
     // Download
     const downloadPromise = page.waitForEvent('download')
-    await page.getByRole('button', { name: '↓ Download graph' }).click()
+    await page.getByTestId('download-button').click()
     const download = await downloadPromise
     const downloadPath = await download.path()
 

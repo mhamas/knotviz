@@ -48,7 +48,7 @@ test.describe('Edge Filtering — Download Export', () => {
     await loadGraph(page, 'weighted-edges-graph.json')
 
     const downloadPromise = page.waitForEvent('download')
-    await page.getByRole('button', { name: '↓ Download graph' }).click()
+    await page.getByTestId('download-button').click()
     const download = await downloadPromise
 
     const content = await download.path().then(p => fs.readFileSync(p!, 'utf-8'))
@@ -59,22 +59,23 @@ test.describe('Edge Filtering — Download Export', () => {
     expect(data.edges).toHaveLength(3)
   })
 
-  test('exported edges preserve labels and weights', async ({ page }) => {
+  test('exported edges preserve weights; edge labels are intentionally dropped', async ({ page }) => {
     await loadGraph(page, 'weighted-edges-graph.json')
 
-    // Download with no filtering — all edges should have metadata
+    // Download with no filtering — weights should round-trip; labels should NOT.
+    // Knotviz doesn't render edge labels anywhere in the UI, and the docs are
+    // explicit that edges only carry weight, so export drops the label field.
     const downloadPromise = page.waitForEvent('download')
-    await page.getByRole('button', { name: '↓ Download graph' }).click()
+    await page.getByTestId('download-button').click()
     const download = await downloadPromise
 
     const content = await download.path().then(p => fs.readFileSync(p!, 'utf-8'))
     const data = JSON.parse(content)
 
     expect(data.edges).toHaveLength(3)
-    // Original fixture has weights on all edges and labels on some
     const edgesWithWeight = data.edges.filter((e: Record<string, unknown>) => typeof e.weight === 'number')
     expect(edgesWithWeight.length).toBe(3)
     const edgesWithLabel = data.edges.filter((e: Record<string, unknown>) => typeof e.label === 'string')
-    expect(edgesWithLabel.length).toBeGreaterThanOrEqual(1)
+    expect(edgesWithLabel.length).toBe(0)
   })
 })

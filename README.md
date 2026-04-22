@@ -1,6 +1,6 @@
 # Knotviz
 
-Graph visualization in the browser. GPU-accelerated via WebGL, private by default (your data never leaves the page). Drop a file, explore, filter, colour, export.
+Graph visualization in the browser. GPU-accelerated via WebGL, private by default (your data never leaves the page). Drop a file, explore, filter, colour, export — in any of five interchangeable formats (JSON, CSV edge list, CSV pair, GraphML, GEXF).
 
 ![Knotviz screenshot](public/screenshots/hero.png)
 

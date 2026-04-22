@@ -24,13 +24,6 @@ description: How Knotviz differs from Gephi, Cosmograph, and Graphistry.
 - **Your data must stay on the machine.** Regulated data, sensitive investigations, air-gapped environments — both Knotviz and Cosmograph keep data in the browser, but Knotviz is open-source and has no account gate.
 - **Your graph is ≤ 1M nodes.** Past that, the competitors with bigger scale envelopes handle more — see [limits](/docs/limits).
 
-## Pick something else if
-
-- **You need graph algorithms** — community detection, centrality, shortest path, modularity. Gephi has a deep plugin ecosystem for these; Knotviz has none today.
-- **You need publication-exact layouts from Gephi.** Knotviz reads GEXF round-trip but doesn't reproduce Gephi's layout algorithms identically.
-- **You want richer built-in query on very large graphs.** Cosmograph has visual histograms, timebars, and multi-dimensional filters over a DuckDB engine — more analytical than Knotviz's filter panel, and they push further on interactive scale.
-- **You're doing enterprise security analytics with server-side GPUs.** Graphistry is purpose-built for that workflow: Python SDK, GPU server, enterprise support.
-
 ## Migration
 
 - **Gephi** → File → Export → `.gexf`. Drop the `.gexf` into Knotviz; positions ride in `<viz:position>`.

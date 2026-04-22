@@ -175,6 +175,22 @@ describe('applyGradient — custom size range', () => {
     expect(pointSizes[0]).toBeCloseTo(SIZE_MIN, 3)
     expect(pointSizes[1]).toBeCloseTo(SIZE_MAX, 3)
   })
+
+  it('reverses the size encoding when sizeRange is passed as [max, min]', () => {
+    // The reverse toggle in the UI flips the sizeRange tuple at the worker call
+    // site. Smallest data value should now render as the LARGEST node, largest
+    // value as the smallest node. Sqrt area-proportional math still applies.
+    const { pointColors, pointSizes, visible } = setup(3)
+    const col = [0, 50, 100]
+    applyGradient(pointColors, pointSizes, visible, col, 'number', viridisStops, 3, 'size', { sizeRange: [18, 2] })
+
+    // t=0 (smallest data) → 18 + sqrt(0) * (2 - 18) = 18 (biggest node)
+    expect(pointSizes[0]).toBeCloseTo(18, 3)
+    // t=1 (largest data) → 18 + sqrt(1) * (2 - 18) = 2 (smallest node)
+    expect(pointSizes[2]).toBeCloseTo(2, 3)
+    // Midpoint: 18 + sqrt(0.5) * -16 ≈ 6.686
+    expect(pointSizes[1]).toBeCloseTo(18 + Math.sqrt(0.5) * -16, 3)
+  })
 })
 
 describe('applyGradient — log scale', () => {

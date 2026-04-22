@@ -19,7 +19,7 @@ The canvas is always live. You're never in a "tool" that you need to exit; every
 | See a node's label | Hover |
 | See a node's full properties | Click the node |
 | Close the tooltip | `Escape`, or click outside the node |
-| Keyboard shortcuts overlay | `?` |
+| Shortcuts cheatsheet | Click the `?` button in the bottom-right of the canvas |
 
 Mouse interactions disable themselves while the force simulation is running (rotation, click-to-inspect) — press **Space** to pause, interact, then **Space** to resume. Pan and zoom stay live during the sim so you can follow the layout as it settles.
 

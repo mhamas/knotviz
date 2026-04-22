@@ -685,6 +685,12 @@ export function useCosmos(
     }
 
     const propType = gradientState.propertyKey ? (propertyTypeMap.get(gradientState.propertyKey) ?? null) : null
+    // Reverse applies to both visual modes: flipping sizeRange from [min,max] to
+    // [max,min] inverts the size encoding (big values → small nodes) without
+    // touching the sqrt area-proportional math downstream.
+    const effectiveSizeRange: [number, number] = gradientState.isReversed
+      ? [gradientState.sizeRange[1], gradientState.sizeRange[0]]
+      : gradientState.sizeRange
 
     worker.postMessage({
       type: 'update',
@@ -695,7 +701,7 @@ export function useCosmos(
         paletteStops,
         propType,
         visualMode: gradientState.visualMode,
-        sizeRange: gradientState.sizeRange,
+        sizeRange: effectiveSizeRange,
         isLogScale: gradientState.isLogScale,
       },
       statsConfig: {

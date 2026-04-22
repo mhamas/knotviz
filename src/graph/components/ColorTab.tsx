@@ -222,6 +222,15 @@ export function ColorTab({
               isRight
             />
           </div>
+          <button
+            type="button"
+            className="mt-1.5 flex cursor-pointer items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700"
+            onClick={(): void => onChange({ ...state, isReversed: !state.isReversed })}
+            data-testid="reverse-size-btn"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Reverse sizes
+          </button>
         </div>
       )}
 
@@ -405,7 +414,7 @@ function ColorLegend({ state, selectedType, propertyColumns, filters, stops }: L
     }
     if (values.length === 0) return <p className="text-xs italic text-slate-400">No data for selected property.</p>
     const range = filterContinuousRange(values, selectedType, filters.get(state.propertyKey))
-    if (state.visualMode === 'size') return <SizeLegend range={range} />
+    if (state.visualMode === 'size') return <SizeLegend range={range} isReversed={state.isReversed} />
     return <ContinuousLegend range={range} stops={stops} />
   }
 
@@ -470,21 +479,27 @@ function ContinuousLegend({
 /** Size legend: small and large circles with min/max labels. */
 function SizeLegend({
   range,
+  isReversed,
 }: {
   range: { minLabel: string; maxLabel: string; isUniform: boolean }
+  isReversed: boolean
 }): React.JSX.Element {
   if (range.isUniform) {
     return <p className="text-xs italic text-slate-400" data-testid="color-legend-uniform">All nodes have the same value — uniform size applied.</p>
   }
+  // When reversed, the smallest data value maps to the LARGEST dot — swap the
+  // dot sizes so the legend matches the rendered encoding.
+  const smallDotClass = isReversed ? 'h-5 w-5' : 'h-2 w-2'
+  const largeDotClass = isReversed ? 'h-2 w-2' : 'h-5 w-5'
   return (
     <div data-testid="size-legend">
       <div className="flex items-end justify-between">
         <div className="flex flex-col items-center gap-1">
-          <span className="inline-block h-2 w-2 rounded-full bg-slate-400" />
+          <span className={`inline-block ${smallDotClass} rounded-full bg-slate-400`} />
           <span className="text-[10px] text-slate-500">{range.minLabel}</span>
         </div>
         <div className="flex flex-col items-center gap-1">
-          <span className="inline-block h-5 w-5 rounded-full bg-slate-400" />
+          <span className={`inline-block ${largeDotClass} rounded-full bg-slate-400`} />
           <span className="text-[10px] text-slate-500">{range.maxLabel}</span>
         </div>
       </div>

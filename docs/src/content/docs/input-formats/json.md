@@ -26,7 +26,7 @@ description: Native Knotviz format. Versioned schema. Full fidelity for every fe
 
 | Field | Required | Notes |
 |---|---|---|
-| `version` | yes | The string `"1"`. Validated strictly on the streaming path (files ≥ 200 MB); the small-file path is lenient and accepts anything — but stay compliant or your file will break on the streaming threshold. |
+| `version` | yes | The string `"1"`. |
 | `nodes[]` | yes | See below. |
 | `edges[]` | yes | See below. |
 | `nodePropertiesMetadata` | no | `{ [key]: { description } }` — description-only; not a type declaration (see below). |
@@ -75,10 +75,6 @@ Mixed-type columns (e.g. half numbers, half strings) fall back to `string`. Full
 ```
 
 Descriptions surface as `?` popovers in filter panels and the node tooltip. **They do not declare types** — Knotviz still infers from the values regardless. Entries without a matching property on any node are ignored.
-
-## Loading at scale
-
-JSON under 200 MB uses `JSON.parse` end-to-end. Files ≥ 200 MB switch to a streaming parser automatically — no configuration, but the load takes longer because it's bounded by disk-read speed. See [limits](/docs/limits) for the hard ceiling (~5 M nodes, ~1 GB file).
 
 ## Coming from another tool
 
@@ -157,7 +153,7 @@ json.dump({ "version": "1", "nodes": nodes, "edges": edges }, open("graph.json",
 
 ## Gotchas
 
-- **`version` is a string, not a number.** Under 200 MB, non-compliant values are accepted silently; at or above 200 MB the streaming parser strictly requires `"1"` and throws on anything else. Stay compliant to avoid a surprise at the threshold.
+- **`version` is a string, not a number.** Use `"1"`, not `1`.
 - **`edges`, not `links`.** Rename if you're porting from `node_link_data`.
 - **Numeric ids are silently dropped.** `{ "id": 42 }` doesn't throw — the node is skipped with a `console.warn` and the graph loads without it. If a node count looks low, check devtools.
 - **Unknown edge endpoints are skipped** too, also with a `console.warn`. Same story.

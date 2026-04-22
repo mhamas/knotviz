@@ -25,7 +25,7 @@ The shape is standard Knotviz JSON — see the [JSON format reference](/docs/inp
 Intentional omissions, to keep exports interop-friendly and small:
 
 - **Hidden nodes and their edges.** If you want them back, clear the filter and export again.
-- **Simulation state** — not resumable. The export is a snapshot of positions, not the physics simulator's velocity/force state.
+- **Mid-simulation state** — the export is a snapshot of where nodes *are*, not of the simulation in motion. Re-opening gives you those positions; hitting Space runs a fresh simulation that may reshape them.
 - **Colour / size gradient settings** — the palette you picked, the property you encoded, the mode (colour vs size). Re-apply after re-opening.
 - **Filter state** — the filters you configured are *applied* to the export, not *saved* with it. Re-importing gives you the filtered subset as the full graph; you can't un-filter back to the original.
 - **Custom palettes** you created live in browser state only.
@@ -48,7 +48,7 @@ The re-opened graph **will still start simulation** if you press Space (it has p
 
 ## File size expectations
 
-Compact JSON, no pretty-printing — we prioritise file size over human readability for exports. Rough estimates:
+Exports are written as compact JSON (no indentation) to keep the file small. Rough estimates:
 
 | Graph size | File size (compact JSON) |
 |---|---|
@@ -73,6 +73,6 @@ Property values dominate for large files. A graph with 10 string properties per 
 
 - Filter state is *applied* to the export, not saved with it. Re-import doesn't restore your filter — the filtered subset becomes the whole graph.
 - Colour / size gradient configuration is not saved. Re-apply after re-importing.
-- Large exports (>1M nodes) produce large JSON files. Knotviz writes compact JSON (no whitespace) to keep size down — the file is not human-readable without reformatting.
+- Large exports (>1M nodes) produce large JSON files. The file is compact (no indentation) — run it through `jq` or your editor's JSON formatter if you want to read it by eye.
 - `nodePropertiesMetadata` is re-written from *current* state, not copied from input. If you loaded a file without metadata, the export will have none either.
 - Edges hidden by the **edges-to-keep** slider during simulation are dropped from the export — we export the visible edge set, not the original.

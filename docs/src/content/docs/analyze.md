@@ -36,11 +36,11 @@ Numeric and date properties with `min > 0` expose a **log scale** toggle. Use it
 
 ## Size
 
-Pick a numeric property; node radius scales by value.
+Pick a numeric property; node size scales by value.
 
-- **Area-proportional (sqrt) scaling.** Doubling the value doubles the *area*, not the radius. That's what visual perception actually does — if radius scaled linearly, a 2× value would look 4× bigger because area is what you see.
-- **Configurable min/max radius range.** Avoid 0-radius "invisible" nodes on the bottom end; cap the top so one outlier doesn't eat the screen.
-- **Colour and size are mutually exclusive.** The Analyze panel has one active encoding mode. Switching modes keeps your property selection but re-renders through the new encoding. If you need both at once, use [filter](/docs/filter) to narrow the visible set, then one encoding at a time on the smaller view.
+- **Scaling is area-proportional.** Doubling the value makes a node look twice as big — which is what your eye naturally reads, rather than 4× bigger as a naive scaling would produce.
+- **Configurable min and max size.** Set the floor so small values stay visible, and cap the ceiling so one outlier doesn't eat the screen. A **Reverse sizes** button flips the direction (big values → small nodes) for when inverted encoding reads better.
+- **Colour and size are mutually exclusive.** Only one encoding is active at a time. Switching keeps your property selection but re-renders through the new mode. If you need both at once, [filter](/docs/filter) to a smaller subset first, then apply one encoding at a time.
 
 ### When to pick size vs colour
 
@@ -57,9 +57,9 @@ Pick a property; the stats panel shows what the distribution actually looks like
 | `number`, `date` | count, mean, p25 / p50 / p75 / p90, sum, histogram (11 bins) |
 | `string`, `boolean` | count, number of distinct values, frequency table (sorted descending) |
 
-Everything computes in the **appearance worker**, off the main thread, so a 1M-node stats recompute doesn't block the UI. Updates live when filters change — the numbers reflect the *visible* set, not the whole graph. That's what you want: if you've filtered to "active users only" the stats tell you about active users, not the original population.
+The stats update live when filters change — the numbers reflect what's currently visible, not the whole graph. Filter to "active users only" and the stats tell you about active users, not the original population.
 
-Worth knowing: the histogram uses 11 fixed bins from min to max, equal width. For power-law data the rightmost bins will be tall and the rest flat — that's a signal to switch to log scale on the colour encoding, not a bug in the histogram.
+Power-law data (follower counts, file sizes, incomes) pushes almost every value into one tall bar at the left of the histogram. That's a signal to switch to log scale on the colour encoding, not a bug in the chart.
 
 ## Gotchas
 
@@ -67,4 +67,4 @@ Worth knowing: the histogram uses 11 fixed bins from min to max, equal width. Fo
 - `string[]` colours by **first tag alphabetically** when encoded as colour. If your nodes carry `[designer, engineer]` and you want to colour by the "interesting" tag, move it to first alphabetically via a pre-process, or switch to filtering.
 - **Size doesn't respect log scale** — only colour does. For power-law numeric properties you'll want colour, not size, unless you've log-transformed the values upstream.
 - The Statistics panel's frequency table is sorted by count, not by value. For alphabetical listing, export the JSON and sort externally.
-- Switching modes (colour ↔ size) takes ~100ms on 1M-node graphs — the appearance worker has to rebuild the palette / size mapping from scratch.
+- Switching between colour and size modes on a 1M-node graph takes a beat — the new encoding is computed from scratch.

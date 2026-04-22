@@ -17,7 +17,7 @@ The mental split: [Filter](/docs/filter) carves (hidden means gone), search high
 - **Edges between two non-matches** are hidden completely. Otherwise you'd see a tangle of edges around dimmed nothing.
 - **Zero-match query** shows the banner "No matches" and does *not* dim the rest. A typo shouldn't make your graph disappear.
 
-The match runs in the appearance worker (off the main thread). A 1M-node graph re-highlights in well under 100 ms — fast enough that the debounce, not the compute, is what you feel.
+Search is fast even on 1M nodes — the highlight updates in under a tenth of a second, which is well below perception.
 
 ## Autocomplete dropdown
 
@@ -43,12 +43,6 @@ Filter visibility **always wins** over search. Concretely: if a node is hidden b
 That means a workflow like "filter to the cluster I care about, then find specific nodes inside it" works naturally. The match count `N/M` you see in the search result reflects matches *within the filtered subset*, not the full graph.
 
 If your search seems to find nothing and you know the node exists, check the filter state first (top of the Filter panel shows `N/total nodes match` — if `N < total` something is filtered out).
-
-## Performance
-
-- **150 ms debounce on input.** The search box is locally controlled so keystrokes feel instant; only the committed query reaches the worker. You can type "alice@..." without firing a search on every character.
-- **Dropdown samples** the *first* 25 matches it encounters while scanning — stable-but-arbitrary order, not ranked. Use a narrower query to refine; the dropdown doesn't paginate.
-- **Node labels are pre-lowercased** once at load time so every search is a single lowercase-substring check per node. That's how 1M nodes scan in <100 ms.
 
 ## Gotchas
 

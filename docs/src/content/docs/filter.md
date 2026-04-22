@@ -34,11 +34,11 @@ There's no OR / NOT / XOR. Keep filters simple; combine with [Search](/docs/sear
 
 ## Hide, don't dim
 
-Filtered-out nodes render at **alpha 0, size 0** — effectively gone from the GPU's draw call, not just visually dimmed. Every edge attached to a hidden endpoint is also hidden; you never see "floating" edges with a missing end.
+Filtered-out nodes are gone, not dimmed. Every edge attached to a hidden node is also hidden; you never see "floating" edges with a missing endpoint.
 
-That's deliberate: filters are the carving tool. If you want something softer (keep context, emphasise a subset) use [Search](/docs/search) instead, which dims non-matches to alpha 0.1 and keeps the full layout visible.
+That's the deliberate split from search: filters carve the view, search dims within what's visible. If you want to keep context and just emphasise a subset, use [Search](/docs/search) instead.
 
-The cost of carving is you lose context: a neighbour of a filtered-in node might be hidden, making the visible node look less connected than it is. Toggle the filter off to zoom out, toggle on to zoom in. Cheap in both directions.
+The cost of carving is you lose context: a neighbour of a visible node might be hidden, making that node look less connected than it is. Toggling the filter off and back on is cheap — use that to flip between zoomed-in and zoomed-out views of the same data.
 
 ## The productive loop: filter + colour
 
@@ -59,6 +59,6 @@ Stats update live with the filter set, so the distribution you see in the Statis
 ## Gotchas
 
 - Edges to hidden nodes disappear even if the edge itself has nothing filtered. Intentional; the alternative (orphan edges) looks broken.
-- Log-scale toggle only appears when the property's min value is `> 0` (log of zero is undefined, of negative is complex). If you have non-positive values, use linear scale or pre-filter to strictly positive.
+- Log-scale toggle only appears when the property's min value is above zero — logs only work on positive numbers. If you have zeros or negatives, stick with linear scale or pre-filter to strictly positive values.
 - `string[]` filtering uses **any-match** semantics — a node with tags `[a, b, c]` passes a filter that selects `a` alone. For must-match-all-tags, add one filter per required tag.
 - The filter panel computes distinct values live from visible nodes, so disabling one filter may change the options available in another (the multi-select updates to reflect the now-visible set).

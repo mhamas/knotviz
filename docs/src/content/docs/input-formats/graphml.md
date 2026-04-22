@@ -3,9 +3,9 @@ title: GraphML
 description: W3C-ish XML standard. Round-trips Gephi, NetworkX, yEd exports.
 ---
 
-*Standard GraphML with typed `<key>` declarations and `<data>` values.*
+*Standard GraphML with typed `<key>` declarations and `<data>` values. Best-supported format for interop — most graph tools export it natively.*
 
-## Example
+## Minimum viable example
 
 ```xml title="graph.graphml"
 <?xml version="1.0" encoding="UTF-8"?>
@@ -28,34 +28,44 @@ description: W3C-ish XML standard. Round-trips Gephi, NetworkX, yEd exports.
 
 ## Supported attribute types
 
-| `attr.type` | Maps to |
-|---|---|
-| `int`, `long`, `float`, `double` | `number` |
-| `boolean` | `boolean` |
-| `string` | `string`, or `date` if every value matches ISO 8601 (see below) |
+| `attr.type` | Maps to | Note |
+|---|---|---|
+| `int`, `long`, `float`, `double` | `number` | Range/precision not checked — all become JS numbers. |
+| `boolean` | `boolean` | `"true"` / `"false"` (case-insensitive) and `"1"` / `"0"`. |
+| `string` | `string` | Promoted to `date` if every value is ISO 8601 (see below). |
+
+GraphML's schema has no `list` type that Knotviz reads — represent arrays as pipe-delimited strings inside an `attr.type="string"` column and Knotviz will NOT auto-detect them (unlike CSV pair). If you need real arrays, the safer path is GEXF's `liststring` or JSON.
 
 ### Dates in GraphML
 
-The GraphML subset Knotviz reads has no native `date` type, so the idiomatic approach is to declare the column as `attr.type="string"` and store ISO-8601 values (`2021-03-15`, `2021-03-15T12:00:00Z`). Knotviz re-inspects the column after parse: if every value parses as ISO-8601, the column becomes `date` and you get a date picker in filters and a timeline gradient in the Analyze panel. If even one value isn't ISO, the column stays `string`.
+GraphML has no native `date` type, so the convention is: declare the column as `attr.type="string"` and store ISO-8601 values.
 
-If you need an ISO-8601-looking string to stay a string (e.g. a version identifier), re-shape the value so it doesn't match — add a prefix, drop the dashes, etc.
+```xml
+<key id="joined" for="node" attr.name="joined" attr.type="string"/>
+...
+<data key="joined">2021-03-15</data>
+<data key="joined">2021-03-15T12:00:00Z</data>
+```
+
+Knotviz re-inspects the column after parse. If every value matches ISO 8601, it re-classifies to `date`, and you get a date picker in filters + a timeline gradient in Analyze. If even one value isn't ISO, it stays `string`.
+
+**Opting out.** If you have an ISO-looking value that isn't actually a date — a version tag like `2021-03-15`, say — stop it from matching the regex. Prefix with `v`, drop the dashes, or wrap it: `v2021-03-15`, `20210315`, or `ver:2021-03-15` all stay as `string`.
 
 ## Structural mappings
 
-| GraphML | Knotviz |
-|---|---|
-| Node `<key>` named `label` | `NodeInput.label` |
-| Node `<key>` named `x`, `y` (numeric) | `NodeInput.x/y` |
-| Edge `<key>` named `label` | `EdgeInput.label` |
-| Edge `<key>` named `weight` (numeric) | `EdgeInput.weight` |
-| Any other `<data>` on nodes | `properties` |
-| Any other `<data>` on edges | Ignored (edges carry only `label` + `weight`) |
+| GraphML element | Becomes | Note |
+|---|---|---|
+| `<node id="…">` | `NodeInput.id` | Required. |
+| Node `<key attr.name="label">` | `NodeInput.label` | Display text. |
+| Node `<key attr.name="x">`, `<key attr.name="y">` | `NodeInput.x` / `.y` | Numeric. [Positions rules](/docs/input-formats#positions) apply. |
+| Any other node `<data>` | Node property | Typed per the `<key>` declaration. |
+| Edge `<key attr.name="label">` | `EdgeInput.label` | Display text. |
+| Edge `<key attr.name="weight">` | `EdgeInput.weight` | Numeric. Drives edge filtering + size. |
+| Any other edge `<data>` | **Dropped** | Knotviz edges only carry `label` + `weight`. |
 
-`<default>` inside a `<key>` is honoured when a node omits that `<data>`.
+`<default>` inside a `<key>` is honoured when a node omits that `<data>` element.
 
 ## Coming from another tool
-
-GraphML is the interop format, so most tools export it natively.
 
 ### NetworkX
 
@@ -66,15 +76,15 @@ nx.write_graphml(G, "graph.graphml")
 
 ### Gephi
 
-File → Export → Graph File → select **.graphml**. Positions are preserved if you've run a layout. Uncheck "Normalize values" to keep the original attribute precision.
+File → Export → Graph File → **.graphml**. Uncheck "Normalize values" to keep original attribute precision. Positions are preserved if you've run a layout.
 
 ### yEd
 
-File → Export → **GraphML** (`.graphml`). yEd adds visual styling (`<y:Geometry>`, `<y:Fill>`) that Knotviz ignores cleanly — structure loads; appearance does not transfer.
+File → Export → **GraphML** (`.graphml`). yEd adds visual styling (`<y:Geometry>`, `<y:Fill>`) — Knotviz ignores it cleanly. Structure loads; appearance does not transfer.
 
 ### Cytoscape
 
-File → Export → Network to File → GraphML. Node `id` will be the network internal id, not the name — make sure your node `name` column is present, and Knotviz will pick it up as the label automatically if the attribute is named `label`.
+File → Export → Network to File → GraphML. The node `id` will be Cytoscape's internal id, not the display name — make sure a `name` attribute is also present. If you rename `name` → `label`, Knotviz picks it up as the display label automatically.
 
 ### igraph (R)
 
@@ -85,7 +95,8 @@ write_graph(g, "graph.graphml", format = "graphml")
 
 ## Gotchas
 
-- yEd-specific extensions (`<y:Geometry>`, `<y:Fill>`, visual styling) are ignored. Structure parses fine; appearance does not transfer.
-- Hyperedges and nested `<graph>` elements are not supported.
-- Files above ~500k nodes may OOM a 4 GB browser tab — GraphML has no streaming parser. See [limits](/docs/limits).
-
+- **Edges can't carry arbitrary data.** Only `label` and `weight` transfer. Edge-level properties in your source are dropped on load.
+- **No array type.** Pipe-delimited strings stay as strings — no auto-detection. Use JSON or GEXF (`liststring`) if you need real arrays.
+- **yEd visual styling is ignored.** `<y:Geometry>`, `<y:Fill>`, etc. parse cleanly but don't render.
+- **Hyperedges and nested `<graph>` elements are not supported.** The first `<graph>` child is used and a warning is logged if more exist.
+- **No streaming parser.** Files above ~500k nodes may OOM a 4 GB browser tab — see [limits](/docs/limits) for the hard ceiling.

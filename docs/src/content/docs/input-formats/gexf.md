@@ -3,21 +3,25 @@ title: GEXF
 description: Gephi's native XML format. Supports viz:position for preserved layouts.
 ---
 
-*GEXF 1.3 static graphs. Advantage over GraphML: native `<viz:position>` element for node x/y.*
+*GEXF 1.2 / 1.3 static graphs. Advantage over GraphML: a native `<viz:position>` element for node x/y, and a real `liststring` type for arrays.*
 
-## Example
+## Minimum viable example
 
 ```xml title="graph.gexf"
 <?xml version="1.0" encoding="UTF-8"?>
-<gexf xmlns="http://gexf.net/1.3" version="1.3">
+<gexf xmlns="http://gexf.net/1.3" xmlns:viz="http://gexf.net/1.3/viz" version="1.3">
   <graph mode="static" defaultedgetype="directed">
     <attributes class="node">
       <attribute id="0" title="age" type="integer"/>
+      <attribute id="1" title="tags" type="liststring"/>
     </attributes>
     <nodes>
       <node id="n1" label="Alice">
-        <attvalues><attvalue for="0" value="34"/></attvalues>
-        <viz:position x="10" y="20" xmlns:viz="http://gexf.net/1.3/viz"/>
+        <attvalues>
+          <attvalue for="0" value="34"/>
+          <attvalue for="1" value="engineer|founder"/>
+        </attvalues>
+        <viz:position x="10" y="20"/>
       </node>
       <node id="n2" label="Bob"/>
     </nodes>
@@ -32,31 +36,44 @@ description: Gephi's native XML format. Supports viz:position for preserved layo
 
 ## Supported attribute types
 
-| `type` | Maps to |
-|---|---|
-| `integer`, `long`, `float`, `double` | `number` |
-| `boolean` | `boolean` |
-| `string`, `anyURI` | `string`, or `date` if every value matches ISO 8601 |
-| `liststring` | `string[]` (pipe-decoded) |
+| `type` | Maps to | Note |
+|---|---|---|
+| `integer`, `long`, `float`, `double` | `number` | Range/precision not checked — all become JS numbers. |
+| `boolean` | `boolean` | `"true"` / `"false"` (case-insensitive) and `"1"` / `"0"`. |
+| `string`, `anyURI` | `string` | Promoted to `date` if every value is ISO 8601 (see below). |
+| `liststring` | `string[]` | Pipe-delimited. `\|` escapes a literal pipe; `\\` escapes a literal backslash. |
 
-GEXF has no native date type; the convention is to use `type="string"` with ISO-8601 values (`2021-03-15`, `2021-03-15T12:00:00Z`). Knotviz re-inspects the column after parse and promotes it to `date` when every value matches — you get a date picker in filters and a timeline gradient in Analyze. If even one value isn't ISO, the column stays `string`.
+### Dates in GEXF
+
+GEXF has no native date type. Declare the column as `type="string"` with ISO-8601 values and Knotviz will re-classify it to `date` after parse — you get a date picker in filters and a timeline gradient in Analyze.
+
+```xml
+<attribute id="joined" title="joined" type="string"/>
+...
+<attvalue for="joined" value="2021-03-15"/>
+```
+
+If even one value doesn't match ISO 8601, the column stays `string`.
+
+**Opting out.** To keep an ISO-looking value as a plain string (e.g. a version tag), re-shape it so it doesn't match the regex: `v2021-03-15`, `20210315`, `ver:2021-03-15`.
 
 ## Structural mappings
 
-| GEXF | Knotviz |
-|---|---|
-| `<node label="…">` element attribute | `NodeInput.label` |
-| `<viz:position x="…" y="…"/>` (z ignored) | `NodeInput.x/y` |
-| `<edge weight="…" label="…">` element attributes | `EdgeInput.weight/label` |
-| `<attvalues>` on node | `properties` |
-
-Element attributes on `<edge>` win over `attvalues` with matching titles.
+| GEXF element / attribute | Becomes | Note |
+|---|---|---|
+| `<node id="…">` | `NodeInput.id` | Required. |
+| `<node label="…">` | `NodeInput.label` | Display text, read from the element attribute. |
+| `<viz:position x="…" y="…"/>` | `NodeInput.x` / `.y` | `z` is ignored. [Positions rules](/docs/input-formats#positions) apply. |
+| `<attvalues>` on node | Node properties | Typed per the matching `<attribute>` declaration. |
+| `<edge weight="…">` | `EdgeInput.weight` | Numeric. Read from the element attribute; if missing, falls back to an `<attvalue>` on the edge titled `weight`. |
+| `<edge label="…">` | `EdgeInput.label` | Same fallback as weight. |
+| Any other edge `<attvalue>` | **Dropped** | Knotviz edges only carry `label` + `weight`. |
 
 ## Coming from another tool
 
 ### Gephi
 
-File → Export → Graph File → select **.gexf**. Tick **Export positions** if you want the layout preserved (Knotviz reads `viz:position` automatically). Untick **Export visual config** — those are ignored on our side and bloat the file.
+File → Export → Graph File → **.gexf**. Tick **Export positions** if you want the layout preserved (Knotviz reads `viz:position` automatically). Untick **Export visual config** — `viz:color` / `viz:size` / `viz:shape` are ignored on our side and just bloat the file.
 
 ### NetworkX
 
@@ -65,19 +82,22 @@ import networkx as nx
 nx.write_gexf(G, "graph.gexf")
 ```
 
-NetworkX writes GEXF 1.2 by default; Knotviz accepts both 1.2 and 1.3.
+NetworkX defaults to GEXF 1.2; Knotviz accepts both 1.2 and 1.3.
 
 ### ForceAtlas2 / Gephi round-trip
 
-If you've run Gephi's ForceAtlas2 layout and want to preserve it exactly, export as `.gexf` (positions ride in `viz:position`). Knotviz will use them as the initial layout; press Space only if you want to re-simulate.
+If you've run Gephi's ForceAtlas2 layout and want to preserve it, export as `.gexf` — positions ride inside `<viz:position>`. Knotviz uses them as the initial layout; press Space only if you want to re-simulate.
 
-### Why GEXF over GraphML?
+## GEXF or GraphML?
 
-Use GEXF if you're specifically round-tripping with Gephi and want positions preserved end-to-end. Otherwise GraphML is more widely supported by other tools.
+- **Positions.** If you need to preserve x/y end-to-end, use GEXF. GraphML has no standard position element.
+- **Arrays.** If you need real `string[]` properties, use GEXF (`liststring`). GraphML can only carry them as pipe-delimited strings that stay `string`.
+- **Portability.** More graph tools read and write GraphML than GEXF. If interop matters more than positions/arrays, use GraphML.
+- **File size.** GEXF's XML is slightly more verbose; 10–20% bigger at comparable fidelity.
 
 ## Gotchas
 
-- Dynamic mode / `<spells>` elements are ignored — GEXF 1.3 static only.
-- `viz:color`, `viz:size`, `viz:shape` styling is ignored. Use Knotviz's [Analyze](/docs/analyze) panel instead.
-- Files above ~1M nodes may OOM a 4 GB browser tab — GEXF has no streaming parser. See [limits](/docs/limits).
-
+- **Dynamic mode / `<spells>` elements are ignored.** Knotviz reads GEXF as static only.
+- **Visual styling is ignored.** `viz:color`, `viz:size`, `viz:shape` parse cleanly but don't render. Use Knotviz's [Analyze](/docs/analyze) panel for colour and size.
+- **Edges can't carry arbitrary data.** Only `label` and `weight` transfer; other `<attvalue>` entries on edges are dropped.
+- **No streaming parser.** Files above ~1M nodes may OOM a 4 GB browser tab — see [limits](/docs/limits) for the hard ceiling.

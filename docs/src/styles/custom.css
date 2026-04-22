@@ -429,16 +429,20 @@
   color: var(--sl-color-accent-high);
 }
 
-/* Compare-page table — gently emphasise the Knotviz column (second column).
- * A neutral slate tint and bold text signal "this is ours" without making
- * the cells look clickable. Two thin accent-blue rules bracket the column
- * left-right so the eye lands on it without a loud fill.
+/* Compare-page table — Stripe/Vercel-style "featured column" treatment for
+ * the Knotviz column (second column). A neutral slate tint runs down the
+ * whole column; bold text stays in the default body colour; the single
+ * accent affordance is a crisp 3px bar at the top of the header cell,
+ * which reads as a "featured" tab indicator rather than a coloured fill.
  * Starlight wraps H2s in div.sl-heading-wrapper, so we :has() the wrapper
  * and target the immediately-following table. */
 .sl-heading-wrapper:has(> h2#at-a-glance) + table th:nth-child(2),
 .sl-heading-wrapper:has(> h2#at-a-glance) + table td:nth-child(2) {
-  background: color-mix(in oklab, var(--sl-color-bg-sidebar) 55%, transparent) !important;
+  background: color-mix(in oklab, var(--sl-color-bg-sidebar) 40%, transparent) !important;
   font-weight: 600;
-  border-left: 2px solid var(--sl-color-accent);
-  border-right: 2px solid var(--sl-color-accent);
+}
+.sl-heading-wrapper:has(> h2#at-a-glance) + table thead th:nth-child(2) {
+  background: color-mix(in oklab, var(--sl-color-bg-sidebar) 75%, transparent) !important;
+  box-shadow: inset 0 3px 0 0 var(--sl-color-accent);
+  color: var(--sl-color-text);
 }

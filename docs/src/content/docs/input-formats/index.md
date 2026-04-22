@@ -91,8 +91,4 @@ A modal before the graph loads reports the replacement count — cancel and fix 
 
 If a declared column has cells that don't match the type (e.g. `"thirty-four"` under `age:number`, or `"March 15 2021"` under `joined:date`), Knotviz **drops the offending cell** and records a warning. The pre-load modal lists the per-column failure counts with an example value so you can fix the source. Format affected: CSV pair.
 
-### Node property descriptions
-
-Optional `nodePropertiesMetadata` (**JSON only**) maps property keys to `{ description }`. Descriptions surface as `?` popovers in filter panels and the node tooltip.
-
-**This is description-only.** It does not declare types — Knotviz still infers them from the values. Entries in `nodePropertiesMetadata` with no matching property in any node are ignored silently.
+JSON-only: `nodePropertiesMetadata` attaches a human-readable description to each property key, surfaced as `?` popovers in filter panels and the node tooltip. See [JSON → `nodePropertiesMetadata` is description-only](/docs/input-formats/json#nodepropertiesmetadata-is-description-only).

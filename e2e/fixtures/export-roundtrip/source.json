@@ -1,0 +1,27 @@
+{
+  "version": "1",
+  "nodes": [
+    { "id": "n1", "label": "Alice",   "x": 10,  "y": 10,  "properties": { "age": 34, "active": true,  "joined": "2021-03-15", "community": "Tech",     "tags": ["engineer", "founder"] } },
+    { "id": "n2", "label": "Bob",     "x": 20,  "y": 10,  "properties": { "age": 28, "active": false, "joined": "2022-06-20", "community": "Arts",     "tags": ["designer"] } },
+    { "id": "n3", "label": "Carol",   "x": 30,  "y": 10,  "properties": { "age": 45, "active": true,  "joined": "2019-07-20", "community": "Tech",     "tags": ["engineer", "manager", "founder"] } },
+    { "id": "n4", "label": "Dave",    "x": 10,  "y": 20,  "properties": { "age": 52, "active": false, "joined": "2010-01-05", "community": "Finance",  "tags": ["analyst"] } },
+    { "id": "n5", "label": "Eve",     "x": 20,  "y": 20,  "properties": { "age": 31, "active": true,  "joined": "2024-02-14", "community": "Sports",   "tags": ["athlete", "coach"] } },
+    { "id": "n6", "label": "Frank",   "x": 30,  "y": 20,  "properties": { "age": 67, "active": false, "joined": "2005-11-30", "community": "Science",  "tags": ["researcher"] } },
+    { "id": "n7", "label": "Grace",   "x": 10,  "y": 30,  "properties": { "age": 22, "active": true,  "joined": "2023-08-08", "community": "Arts",     "tags": ["designer", "illustrator"] } },
+    { "id": "n8", "label": "Heidi",   "x": 20,  "y": 30,  "properties": { "age": 39, "active": true,  "joined": "2018-09-12", "community": "Tech",     "tags": ["engineer"] } },
+    { "id": "n9", "label": "Ivan",    "x": 30,  "y": 30,  "properties": { "age": 41, "active": false, "joined": "2017-04-22", "community": "Finance",  "tags": ["analyst", "manager"] } },
+    { "id": "n10","label": "Judy",    "x": 20,  "y": 0,   "properties": { "age": 29, "active": true,  "joined": "2025-01-01", "community": "Science",  "tags": ["researcher", "engineer"] } }
+  ],
+  "edges": [
+    { "source": "n1",  "target": "n2",  "weight": 0.8 },
+    { "source": "n2",  "target": "n3",  "weight": 1.2 },
+    { "source": "n1",  "target": "n3",  "weight": 0.5 },
+    { "source": "n4",  "target": "n5",  "weight": 0.9 },
+    { "source": "n5",  "target": "n6",  "weight": 1.1 },
+    { "source": "n7",  "target": "n8",  "weight": 0.7 },
+    { "source": "n8",  "target": "n9",  "weight": 1.0 },
+    { "source": "n1",  "target": "n10", "weight": 0.3 },
+    { "source": "n3",  "target": "n5"  },
+    { "source": "n6",  "target": "n9",  "weight": 0.4 }
+  ]
+}

@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { CosmosGraphData, ColorGradientState, HistogramBucket, NodePropertiesMetadata, PropertyMeta, PropertyType, PropertyValue } from '../types'
+import type { CosmosGraphData, ColorGradientState, HistogramBucket, NodePropertiesMetadata, PropertyMeta, PropertyType } from '../types'
 import { computeHistogram } from '../lib/computeHistogram'
+import { buildExportSnapshot } from '../lib/exports/buildSnapshot'
+import { exportSnapshot } from '../lib/exports'
+import { filenameFor, triggerDownload } from '../lib/exports/download'
+import type { ExportFormat } from '../lib/exports/types'
 import { useGraphStore } from '../stores/useGraphStore'
 import type { PropertyColumns } from '../hooks/useFilterState'
 import { useCosmos } from '../hooks/useCosmos'
@@ -189,57 +193,24 @@ export function GraphView({
 
   useSpacebarToggle(isSimulationRunning, startSimulation, stopSimulation)
 
-  const handleDownload = useCallback((): void => {
-    const cosmos = cosmosRef.current
-    if (!cosmos) return
-    const positions = cosmos.getPointPositions()
-
-    // Only export visible nodes (pass property filters)
-    const isNodeVisible = visibleNodes
-    const nodes = []
-    for (let i = 0; i < cosmosData.nodeCount; i++) {
-      if (isNodeVisible && !isNodeVisible[i]) continue
-      const node: Record<string, unknown> = {
-        id: cosmosData.nodeIds[i],
-        x: positions[i * 2] ?? 0,
-        y: positions[i * 2 + 1] ?? 0,
-      }
-      if (cosmosData.nodeLabels[i]) node.label = cosmosData.nodeLabels[i]
-      const props: Record<string, PropertyValue> = {}
-      for (const meta of propertyMetas) {
-        const v = propertyColumns[meta.key]?.[i]
-        if (v !== undefined) props[meta.key] = v
-      }
-      if (Object.keys(props).length > 0) node.properties = props
-      nodes.push(node)
-    }
-
-    // Only export edges that survive simulation filtering AND have both endpoints visible
-    const visibleNodeSet = isNodeVisible
-    const edges = []
-    for (let k = 0; k < keptEdgeIndices.length; k++) {
-      const i = keptEdgeIndices[k]
-      const srcIdx = cosmosData.edgeSources[i]
-      const tgtIdx = cosmosData.edgeTargets[i]
-      if (visibleNodeSet && (!visibleNodeSet[srcIdx] || !visibleNodeSet[tgtIdx])) continue
-      const edge: Record<string, unknown> = {
-        source: cosmosData.nodeIds[srcIdx],
-        target: cosmosData.nodeIds[tgtIdx],
-      }
-      if (cosmosData.edgeLabels[i]) edge.label = cosmosData.edgeLabels[i]
-      if (cosmosData.edgeWeights?.[i]) edge.weight = cosmosData.edgeWeights[i]
-      edges.push(edge)
-    }
-
-    const exported = { version: '1', nodes, edges }
-    const blob = new Blob([JSON.stringify(exported)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = filename
-    a.click()
-    URL.revokeObjectURL(url)
-  }, [cosmosRef, cosmosData, propertyMetas, propertyColumns, filename, visibleNodes, keptEdgeIndices])
+  const handleDownload = useCallback(
+    async (format: ExportFormat = 'json'): Promise<void> => {
+      const cosmos = cosmosRef.current
+      if (!cosmos) return
+      const positions = cosmos.getPointPositions()
+      const snapshot = buildExportSnapshot(
+        positions,
+        cosmosData,
+        visibleNodes,
+        keptEdgeIndices,
+        propertyMetas,
+        propertyColumns,
+      )
+      const result = await exportSnapshot(snapshot, format)
+      triggerDownload(result.blob, filenameFor(filename, result.extension))
+    },
+    [cosmosRef, cosmosData, propertyMetas, propertyColumns, filename, visibleNodes, keptEdgeIndices],
+  )
 
   return (
     <div className="flex h-screen w-screen">

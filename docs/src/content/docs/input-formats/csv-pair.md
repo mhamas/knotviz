@@ -74,6 +74,64 @@ If a typed column has cells that don't match the declared type, Knotviz **drops 
 
 Cancel if the numbers look wrong, fix the source, re-drop. Load anyway if you're comfortable treating the failed cells as missing — they'll back-fill with the type default.
 
+## Coming from another tool
+
+### Pandas
+
+Two DataFrames — `nodes_df` with an `id` column, `edges_df` with `source` and `target`.
+
+```python title="pandas_to_csv_pair.py"
+# Keep only the columns you want as properties; drop anything else first.
+nodes_df.to_csv("nodes.csv", index=False)
+edges_df[["source", "target", "weight"]].to_csv("edges.csv", index=False)
+```
+
+Add `:type` suffixes to column headers if inference won't pick the type you want:
+
+```python
+nodes_df.rename(columns={"age": "age:number", "joined": "joined:date", "tags": "tags:string[]"}) \
+    .to_csv("nodes.csv", index=False)
+```
+
+### PostgreSQL
+
+Two `\copy` statements — one per file. Put the type suffix in the query alias.
+
+```sh title="pg_to_csv_pair.sh"
+psql -d mydb -c "\copy (
+  SELECT id, name AS label, age AS \"age:number\", joined AS \"joined:date\"
+  FROM people
+) TO 'nodes.csv' CSV HEADER"
+
+psql -d mydb -c "\copy (
+  SELECT source_id AS source, target_id AS target, weight
+  FROM edges
+) TO 'edges.csv' CSV HEADER"
+```
+
+### NetworkX
+
+Walk nodes and edges separately.
+
+```python title="nx_to_csv_pair.py"
+import csv, networkx as nx
+
+# Decide up front which node attributes become property columns.
+prop_keys = ["age", "community", "joined"]
+
+with open("nodes.csv", "w", newline="") as f:
+    w = csv.writer(f)
+    w.writerow(["id", "label", *prop_keys])
+    for node_id, data in G.nodes(data=True):
+        w.writerow([node_id, data.get("label", node_id), *(data.get(k) for k in prop_keys)])
+
+with open("edges.csv", "w", newline="") as f:
+    w = csv.writer(f)
+    w.writerow(["source", "target", "weight"])
+    for u, v, data in G.edges(data=True):
+        w.writerow([u, v, data.get("weight", 1)])
+```
+
 ## Gotchas
 
 - **Edge endpoints must match ids in the nodes file.** Unknown ids are skipped with a console warning.

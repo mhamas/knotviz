@@ -32,7 +32,7 @@ description: Gephi's native XML format. Supports viz:position for preserved layo
 </gexf>
 ```
 
-[Download example](/samples/gexf/1k.gexf) · [Try it in Knotviz ↗](/graph?example=gexf/1k)
+[Download example](/samples/gexf/1k.gexf)
 
 ## Supported attribute types
 

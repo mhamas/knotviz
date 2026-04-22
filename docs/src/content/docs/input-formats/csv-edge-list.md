@@ -14,7 +14,7 @@ bob,carol,1.2
 alice,carol,0.5
 ```
 
-[Download example](/samples/csv-edge-list/1k.csv) · [Try it in Knotviz ↗](/graph?example=csv-edge-list/1k)
+[Download example](/samples/csv-edge-list/1k.csv)
 
 TSV works identically — save with tab separators and rename to `.tsv`.
 

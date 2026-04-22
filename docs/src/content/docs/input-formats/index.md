@@ -12,10 +12,10 @@ Match the shape of the data you already have, not the format you'd like to gener
 | Format | When to use |
 |---|---|
 | [CSV edge list](/docs/input-formats/csv-edge-list) | A list of connections in a spreadsheet, no per-node data. One row per edge; nodes auto-derived from `source`/`target`. |
-| [CSV nodes + edges pair](/docs/input-formats/csv-pair) | Nodes with properties (age, category, tags, …) plus connections. Two files; typed columns like `age:number`, `tags:string[]`. |
-| [JSON](/docs/input-formats/json) | A JSON export from NetworkX, Neo4j, d3, or a custom pipeline. Knotviz's native format — full fidelity, round-trips every feature. |
-| [GraphML](/docs/input-formats/graphml) | An XML export from Gephi / yEd / Cytoscape / NetworkX. Most portable XML graph format. |
-| [GEXF](/docs/input-formats/gexf) | A Gephi export where you want to preserve positions. Native `<viz:position>` round-trips layouts end-to-end. |
+| [CSV nodes + edges pair](/docs/input-formats/csv-pair) | Nodes with properties (age, category, tags, …) plus connections. Two files — one for nodes, one for edges. |
+| [JSON](/docs/input-formats/json) | You're generating the file yourself and want full fidelity. Knotviz's own schema — no tool exports it natively, but the page has drop-in snippets for NetworkX, Neo4j, pandas, and plain Python. |
+| [GraphML](/docs/input-formats/graphml) | You have a `.graphml` file from Gephi, yEd, Cytoscape, or `nx.write_graphml`. Most portable XML graph format. |
+| [GEXF](/docs/input-formats/gexf) | You have a `.gexf` file (typically from Gephi or `nx.write_gexf`) and want to preserve positions. Native `<viz:position>` round-trips layouts end-to-end. |
 
 Still unsure? If you're producing the file yourself from scratch, use **JSON**. It has zero ambiguity, supports every property type natively, and rendering features map one-to-one.
 

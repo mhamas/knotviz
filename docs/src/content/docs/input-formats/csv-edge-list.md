@@ -8,10 +8,10 @@ description: Single CSV or TSV file, one edge per row. Nodes auto-derived.
 ## Minimum viable example
 
 ```csv title="edges.csv"
-source,target,weight,label
-alice,bob,0.8,knows
-bob,carol,1.2,follows
-alice,carol,0.5,knows
+source,target,weight
+alice,bob,0.8
+bob,carol,1.2
+alice,carol,0.5
 ```
 
 [Download example](/samples/csv-edge-list/1k.csv) · [Try it in Knotviz ↗](/graph?example=csv-edge-list/1k)
@@ -27,7 +27,6 @@ Headers are case-insensitive. Only the four columns below are read; any others a
 | `source` | yes | Node id (any non-empty string). |
 | `target` | yes | Node id. |
 | `weight` | no | Parsed as a number. Non-numeric values are dropped with a warning; the edge still loads without a weight. |
-| `label` | no | Read and preserved on export, but **not currently rendered in the canvas**. Safe to include; harmless if you omit. |
 
 ## Coming from another tool
 
@@ -79,12 +78,12 @@ git log --name-only --pretty=format:'=== %an' \
 
 ### Excel / Google Sheets
 
-Save As → CSV (UTF-8). Headers must include `source` and `target`. Optional `weight` and `label` work as-is.
+Save As → CSV (UTF-8). Headers must include `source` and `target`. An optional `weight` column works as-is.
 
 ## Gotchas
 
 - **No per-node properties.** The edge list can't attach `age`, `community`, tags, etc. to nodes. If you need that, switch to [CSV pair](/docs/input-formats/csv-pair).
-- **Typed headers don't apply here.** Writing `weight:number` or `age:number` won't parse the way it does in CSV pair — the column name is checked literally, and anything that isn't one of `source`/`target`/`weight`/`label` is ignored.
+- **Typed headers don't apply here.** Writing `weight:number` or `age:number` won't parse the way it does in CSV pair — the column name is checked literally, and anything that isn't one of `source`/`target`/`weight` is ignored.
 - **Nodes are auto-created** from every id appearing in `source` or `target`. You can't "pre-declare" a node — if you want isolated nodes (with no edges), use CSV pair or JSON.
 - Quoted cells follow RFC 4180 — commas and newlines inside `"..."` are preserved.
 - UTF-8 only. A BOM (Excel's default when exporting UTF-8) is handled automatically.

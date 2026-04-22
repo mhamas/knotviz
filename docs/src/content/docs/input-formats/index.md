@@ -43,7 +43,7 @@ Each format picks types differently. Same five types land in the UI either way.
 |---|---|---|
 | **JSON** | Inferred from native values | Booleans, numbers, arrays are native; ISO-8601 strings become `date`. No declaration needed. |
 | **CSV pair / TSV** | Declared via `:type` suffix **or** inferred | `string[]` is auto-detected when every non-empty cell contains a pipe. `:string` overrides. |
-| **CSV edge list** | — | No custom properties (only `source`, `target`, `weight`, `label`). |
+| **CSV edge list** | — | No custom properties (only `source`, `target`, and optional `weight`). |
 | **GraphML** | Declared via `attr.type` | `int/long/float/double → number`. `string` columns whose values are all ISO-8601 get re-classified as `date`. |
 | **GEXF** | Declared via `<attribute type>` | Same as GraphML plus `liststring → string[]`. ISO-8601 strings also re-classified. |
 

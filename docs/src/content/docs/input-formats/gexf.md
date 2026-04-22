@@ -66,8 +66,7 @@ If even one value doesn't match ISO 8601, the column stays `string`.
 | `<viz:position x="…" y="…"/>` | `NodeInput.x` / `.y` | `z` is ignored. [Positions rules](/docs/input-formats#positions) apply. |
 | `<attvalues>` on node | Node properties | Typed per the matching `<attribute>` declaration. |
 | `<edge weight="…">` | `EdgeInput.weight` | Numeric. Read from the element attribute; if missing, falls back to an `<attvalue>` on the edge titled `weight`. |
-| `<edge label="…">` | `EdgeInput.label` | Read and preserved on export, but **not currently rendered in the canvas**. Same attribute-then-attvalue fallback as weight. |
-| Any other edge `<attvalue>` | **Dropped** | Knotviz edges only carry `label` + `weight`. |
+| Any other edge `<attvalue>` | **Dropped** | Knotviz edges only carry `weight`. |
 
 ## Coming from another tool
 
@@ -99,7 +98,7 @@ If you've run Gephi's ForceAtlas2 layout and want to preserve it, export as `.ge
 
 - **Dynamic mode / `<spells>` elements are ignored.** Knotviz reads GEXF as static only.
 - **Visual styling is ignored.** `viz:color`, `viz:size`, `viz:shape` parse cleanly but don't render. Use Knotviz's [Analyze](/docs/analyze) panel for colour and size.
-- **Edges can't carry arbitrary data.** Only `label` and `weight` transfer; other `<attvalue>` entries on edges are dropped.
+- **Edges can't carry arbitrary data.** Only `weight` transfers; other `<attvalue>` entries on edges are dropped.
 - **Namespaces are stripped.** The parser normalises prefixed elements (`<gexf:node>` → `<node>`) before matching. In practice every standard writer uses the default namespace, so this rarely matters — but if a hand-authored file uses a non-standard prefix and that somehow affects the element name after stripping, parsing may skip those elements silently.
 - **Silent skips land in the console.** Unknown `<attvalue for="…">` references, edges to unknown node ids, and nodes without an id all fall through with a `console.warn`. Open devtools if a count looks off.
 - **No streaming parser.** Files above ~1M nodes may OOM a 4 GB browser tab — see [limits](/docs/limits) for the hard ceiling.

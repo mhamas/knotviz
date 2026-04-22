@@ -15,9 +15,9 @@ n3,Carol,100,-30,45,2019-07-20,true,
 ```
 
 ```csv title="edges.csv"
-source,target,weight,label
-n1,n2,0.8,knows
-n2,n3,1.2,follows
+source,target,weight
+n1,n2,0.8
+n2,n3,1.2
 ```
 
 [Download nodes.csv](/samples/csv-pair/1k-nodes.csv) · [Download edges.csv](/samples/csv-pair/1k-edges.csv) · [Try it in Knotviz ↗](/graph?example=csv-pair/1k)

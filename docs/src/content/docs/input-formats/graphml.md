@@ -59,9 +59,8 @@ Knotviz re-inspects the column after parse. If every value matches ISO 8601, it 
 | Node `<key attr.name="label">` | `NodeInput.label` | Display text. |
 | Node `<key attr.name="x">`, `<key attr.name="y">` | `NodeInput.x` / `.y` | Numeric. [Positions rules](/docs/input-formats#positions) apply. |
 | Any other node `<data>` | Node property | Typed per the `<key>` declaration. |
-| Edge `<key attr.name="label">` | `EdgeInput.label` | Read and preserved on export, but **not currently rendered in the canvas**. |
 | Edge `<key attr.name="weight">` | `EdgeInput.weight` | Numeric. Drives edge filtering + size. |
-| Any other edge `<data>` | **Dropped** | Knotviz edges only carry `label` + `weight`. |
+| Any other edge `<data>` | **Dropped** | Knotviz edges only carry `weight`. |
 
 `<default>` inside a `<key>` is honoured when a node omits that `<data>` element.
 
@@ -95,7 +94,7 @@ write_graph(g, "graph.graphml", format = "graphml")
 
 ## Gotchas
 
-- **Edges can't carry arbitrary data.** Only `label` and `weight` transfer. Edge-level properties in your source are dropped on load.
+- **Edges can't carry arbitrary data.** Only `weight` transfers. Any other `<data>` on edges is dropped on load.
 - **No array type.** Pipe-delimited strings stay as strings — no auto-detection. Use JSON or GEXF (`liststring`) if you need real arrays.
 - **yEd visual styling is ignored.** `<y:Geometry>`, `<y:Fill>`, etc. parse cleanly but don't render.
 - **Hyperedges are not supported.** A `<hyperedge>` element will parse but no edge is created.

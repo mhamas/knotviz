@@ -3,76 +3,47 @@ title: Troubleshooting
 description: Concrete failure modes and fixes. Find your symptom, apply the fix.
 ---
 
-*Find the symptom that matches what you're seeing. Fixes are one or two lines.*
+*Find the symptom that matches what you're seeing. Fixes are one or two lines. For anything format-specific not listed here, check the gotchas on the relevant [input-format](/docs/input-formats) page.*
 
-## My file won't load
+## File won't load
 
-**"Invalid JSON file"** — run it through `jq .` or `python -m json.tool`. Usually a trailing comma or unquoted key.
+**"Invalid JSON file"** — run it through `jq .` or `python -m json.tool`. Almost always a trailing comma or unquoted key.
 
-**"File must contain `nodes` and `edges` arrays"** — top-level object needs both keys, both arrays. See [JSON](/docs/input-formats/json).
+**"File must contain `nodes` and `edges` arrays"** — the top-level object needs both keys, both as arrays. See [JSON](/docs/input-formats/json).
 
-**"Graph has no nodes to display"** — your `nodes` array is empty, or every node was skipped for missing `id`.
+**"Graph has no nodes to display"** — your `nodes` array is empty, or every node was skipped for missing `id`. Numeric ids count as "missing" — stringify them.
 
-**"Unsupported format"** — extension must be `.json`, `.csv`, `.tsv`, `.graphml`, or `.gexf`. Rename if your file is correctly shaped but wrongly named.
+**"Unsupported format"** — extension must be `.json`, `.csv`, `.tsv`, `.graphml`, or `.gexf`. Rename if the file is correctly shaped but wrongly named.
 
-**Tab crashes with "Aw, Snap!"** — renderer ran out of memory. You're above the per-format load limit. See [limits](/docs/limits).
+**Tab crashes with "Aw, Snap!"** — the renderer ran out of memory. You're past the per-format load ceiling. See [limits](/docs/limits).
 
-**Drop does nothing** — try clicking the drop zone instead. Some browsers block drag events from certain sources (terminal, archive viewers).
+**Drop does nothing** — some browsers block drag events from certain sources (terminal, archive viewers, remote-desktop clients). Click the drop zone instead and pick the file through the native dialog.
 
-## My graph looks wrong
+## Graph looks wrong
 
-**All nodes in one blob at centre** — simulation hasn't run yet. Press **Space** or click **Run**. Or your graph has no edges, so there's nothing to push nodes apart.
+**All nodes in a single blob at the centre** — the simulation hasn't run. Press **Space** or click **Run**. If the graph has no edges, there's nothing to push nodes apart — that's the only expected blob.
 
-**Nodes fly off-screen then snap back** — normal for the first few seconds. `fitView(0)` re-centres every tick. Let it settle.
+**Nodes fly off-screen briefly at the start** — normal for the first few seconds of a fresh simulation. The camera re-centres automatically; let it settle.
 
-**Nodes clump at the boundary** — you're near or past the ~1M useful ceiling. The 8192×8192 simulation grid is saturating. See [limits](/docs/limits).
+**Nodes compress into a ring at the boundary** — you're near the ~1M useful ceiling. See [Limits](/docs/limits).
 
-**Disconnected components drift apart forever** — expected with default gravity. Turn up **Gravity** in the simulation panel until components hold together.
+**Edges go to the wrong nodes** — check your `source` / `target` values reference existing node ids exactly. Unknown ids are skipped with a `console.warn` — open devtools if an edge count looks off.
 
-**Edges look wrong / go to wrong nodes** — check your `source` / `target` columns are named correctly and point to existing node ids. Unknown ids are skipped with a console warning.
+**No labels visible** — labels cap at 300 on screen at once. Zoom in until fewer nodes are in view. The toggle is **Show node labels** in the left sidebar.
 
-**No labels visible** — labels cap at 300 on screen. Zoom in until fewer nodes are in view, or disable via the right sidebar.
+## CSV pair
 
-## My properties don't look right
+**Nodes file loaded into the Edges slot (or vice-versa)** — the drop zones are labelled. Click the `×` on the wrong-slot file to remove it, then drop into the correct slot.
 
-**"N values were defaulted" modal on load** — some nodes were missing property values. Number → `0`, string → `""`, boolean → `false`, date → `1970-01-01`, string[] → `[]`. Cancel and fix the source, or confirm to proceed.
+**"Edge references unknown node id"** — every `source` / `target` in the edges file must also appear as an `id` in the nodes file. Whitespace and case differences are common culprits.
 
-**Property shows as string when it should be number** — type inference checks every value. One non-numeric row demotes the column to string. Clean the data or declare the type in a typed CSV header (`age:number`). See [conventions](/docs/input-formats#shared-conventions).
+## Browser / GPU
 
-**Date property sorts alphabetically not chronologically** — ISO 8601 strings (`2024-01-15`) sort correctly; `15/01/2024` or `Jan 15 2024` do not. Re-format.
+**"WebGL2 not supported"** — update your browser, or enable hardware acceleration in its settings. On Chromebooks with integrated GPUs, try `chrome://flags` → "Override software rendering list".
 
-**Array property shows a single concatenated string** — use `|` as the delimiter in CSV, not `,` or `;`. See [CSV conventions](/docs/input-formats#shared-conventions).
-
-## My filters / search aren't behaving
-
-**Filter hides nothing / everything** — multi-filter uses AND. Check no two filters contradict (e.g. `age < 10` AND `age > 50`).
-
-**Search highlights nothing for a term I can see on screen** — substring, case-insensitive, matches `id` and `label` only — not other properties. Use a filter for non-label text.
-
-**A filter-hidden node doesn't reappear when I search for it** — by design. Clear the filter first. See [search](/docs/search#search--filters).
-
-**Statistics numbers look wrong** — stats reflect the **visible** set, not the whole graph. Clear filters to see totals.
-
-**Gradient colours all look the same** — the scale normalises to visible min/max. If your filter leaves near-identical values, the gradient compresses. Try log scale or clear the filter.
-
-## CSV pair specifically
-
-**Nodes file loaded into Edges slot or vice-versa** — drop zones are labelled. Click the wrong-slot file's `×` to remove and re-drop into the correct slot.
-
-**"Edge references unknown node id"** — every `source` / `target` in the edges file must appear as `id` in the nodes file. Check for whitespace or case differences.
-
-**"Duplicate node id"** — ids must be unique across the nodes file. De-dupe at the source.
-
-## GPU / browser
-
-**"WebGL2 not supported"** — update your browser, or enable hardware acceleration in settings. Chromebooks with integrated GPUs sometimes need `chrome://flags` → "Override software rendering list".
-
-**Simulation runs but feels sluggish** — check `chrome://gpu` that "WebGL2: Hardware accelerated" is green. Software rendering is 10–100× slower.
-
-**"The spaceSize has been reduced to N due to WebGL limits"** (console) — your GPU's `MAX_TEXTURE_SIZE` is below 8192. Simulation still works, just in a smaller grid. See [limits](/docs/limits#gpu-note).
+**Simulation runs but feels sluggish** — your browser may be rendering via software, which is 10–100× slower than a GPU. On Chrome, check `chrome://gpu` and look for "WebGL2: Hardware accelerated". On Firefox, `about:support` → Graphics.
 
 ## Still stuck?
 
-- Check the browser console (`Cmd+Opt+J` / `Ctrl+Shift+J`) — most failures log a specific reason
-- File an issue with the console output at [github.com/apify/knotviz/issues](https://github.com/apify/knotviz/issues)
-
+- Open the browser console (`Cmd+Opt+J` on Mac / `Ctrl+Shift+J` on Windows / Linux). Silent failures (skipped nodes, coerced properties, unknown edge endpoints) all log a specific reason there.
+- File an issue with the console output at [github.com/mhamas/knotviz/issues](https://github.com/mhamas/knotviz/issues).

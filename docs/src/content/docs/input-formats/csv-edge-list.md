@@ -61,21 +61,6 @@ with open("edges.csv", "w", newline="") as f:
         w.writerow([u, v, data.get("weight", 1)])
 ```
 
-### Git commit co-author network
-
-Who's collaborated with whom on the same files, counted.
-
-```sh title="git_coauthors.sh"
-git log --name-only --pretty=format:'=== %an' \
-  | awk '/^=== /{a=substr($0,5); next} NF{print a"\t"$0}' \
-  | sort -u -k2 \
-  | awk '{by[$2]=by[$2]"\t"$1} END{for (f in by) print by[f]}' \
-  | awk -F'\t' '{for(i=2;i<=NF;i++) for(j=i+1;j<=NF;j++) if ($i<$j) print $i","$j; else print $j","$i}' \
-  | sort | uniq -c \
-  | awk '{print $2","$1}' \
-  | (echo "source,target,weight"; cat) > authors.csv
-```
-
 ### Excel / Google Sheets
 
 Save As → CSV (UTF-8). Headers must include `source` and `target`. An optional `weight` column works as-is.

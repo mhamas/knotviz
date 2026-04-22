@@ -7,17 +7,17 @@ description: Five formats, one internal model. Choose the one that matches your 
 
 ## Pick a format
 
-Start with the left column — match the shape of the data you already have, not a format you'd like to generate.
+Match the shape of the data you already have, not the format you'd like to generate.
 
-| You have… | Use | Because |
-|---|---|---|
-| A list of connections in a spreadsheet, and no per-node data | [CSV edge list](/docs/input-formats/csv-edge-list) | Simplest format. One row per edge; nodes auto-derived from `source`/`target`. |
-| Nodes with properties (age, category, tags, …) plus connections | [CSV nodes + edges pair](/docs/input-formats/csv-pair) | Two files. Typed columns like `age:number`, `tags:string[]`. |
-| A JSON export from NetworkX, Neo4j, d3, a custom pipeline | [JSON](/docs/input-formats/json) | Knotviz's native format. Full fidelity — round-trips every feature. |
-| A Gephi / yEd / Cytoscape / NetworkX **XML** export | [GraphML](/docs/input-formats/graphml) | Most portable XML graph format. |
-| A Gephi export **with positions** you want preserved | [GEXF](/docs/input-formats/gexf) | Native `<viz:position>` round-trips layouts end-to-end. |
+| Format | When to use |
+|---|---|
+| [CSV edge list](/docs/input-formats/csv-edge-list) | A list of connections in a spreadsheet, no per-node data. One row per edge; nodes auto-derived from `source`/`target`. |
+| [CSV nodes + edges pair](/docs/input-formats/csv-pair) | Nodes with properties (age, category, tags, …) plus connections. Two files; typed columns like `age:number`, `tags:string[]`. |
+| [JSON](/docs/input-formats/json) | A JSON export from NetworkX, Neo4j, d3, or a custom pipeline. Knotviz's native format — full fidelity, round-trips every feature. |
+| [GraphML](/docs/input-formats/graphml) | An XML export from Gephi / yEd / Cytoscape / NetworkX. Most portable XML graph format. |
+| [GEXF](/docs/input-formats/gexf) | A Gephi export where you want to preserve positions. Native `<viz:position>` round-trips layouts end-to-end. |
 
-Still unsure? If you're going to produce the file yourself from scratch, use **JSON**. It has zero ambiguity, supports every property type natively, and rendering features map one-to-one.
+Still unsure? If you're producing the file yourself from scratch, use **JSON**. It has zero ambiguity, supports every property type natively, and rendering features map one-to-one.
 
 ## Shared conventions
 
@@ -25,9 +25,15 @@ These rules apply across every format. Each format page has the details; this is
 
 ### Property types
 
-Five types total. Four are self-explanatory; `string[]` is the multi-valued one.
+Five types total — the same set across every format.
 
-`number` · `string` · `boolean` · `date` (ISO 8601 `YYYY-MM-DD` or full timestamp) · `string[]`
+| Type | What it holds | Example |
+|---|---|---|
+| `number` | Integers or floats. | `34`, `-3.14`, `1.5e3` |
+| `string` | Any text. | `"Alice"`, `"engineering"` |
+| `boolean` | `true` / `false`. | `true` |
+| `date` | ISO 8601 `YYYY-MM-DD` or a full timestamp. | `"2021-03-15"`, `"2021-03-15T12:00:00Z"` |
+| `string[]` | Multi-valued strings. | `["engineer", "founder"]` (JSON), `engineer\|founder` (CSV/XML) |
 
 ### Type inference vs. declaration
 

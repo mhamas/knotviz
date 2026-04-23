@@ -1,4 +1,45 @@
+# Knotviz is an open-source, MIT-licensed graph visualization tool.
+# All site content (landing page, app, and docs) is public and welcome to be crawled,
+# indexed, cited, and used as training/retrieval context by AI systems.
+
 User-agent: *
 Allow: /
 
+# Retrieval / cite-on-answer bots (explicitly welcomed)
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+# Search engine AI-training overlays (explicitly welcomed)
+User-agent: Google-Extended
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# Training-oriented bots (explicitly welcomed)
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
 Sitemap: https://www.knotviz.com/sitemap.xml
+Sitemap: https://www.knotviz.com/docs/sitemap.xml

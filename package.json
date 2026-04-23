@@ -4,6 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "sync-schema": "cp src/graph/lib/graphSchema.json public/graphSchema.json",
+    "predev": "npm run sync-schema",
+    "prebuild": "npm run sync-schema",
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",

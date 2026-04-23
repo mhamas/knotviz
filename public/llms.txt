@@ -1,0 +1,58 @@
+# Knotviz
+
+> Browser-based graph visualization. Drop a JSON, CSV, TSV, GraphML, or GEXF file and explore graphs up to ~1M nodes with GPU-accelerated WebGL rendering and force-directed layout. Runs 100% client-side — data never leaves the browser. Free and open source (MIT).
+
+## Core
+
+- [Homepage](https://www.knotviz.com/): landing page, feature overview, FAQ
+- [Graph app](https://www.knotviz.com/graph): the viewer — drag and drop a graph file to start
+- [Input format JSON Schema](https://www.knotviz.com/graphSchema.json): machine-readable schema for the native JSON format
+- [GitHub repo](https://github.com/mhamas/knotviz): source, issues, MIT license
+
+## Documentation
+
+- [Docs home](https://www.knotviz.com/docs): quickstart and navigation
+- [Input formats overview](https://www.knotviz.com/docs/input-formats): all five supported formats at a glance
+- [JSON format](https://www.knotviz.com/docs/input-formats/json): native format with typed properties
+- [CSV edge list](https://www.knotviz.com/docs/input-formats/csv-edge-list): single-file `source,target,...` format
+- [CSV pair](https://www.knotviz.com/docs/input-formats/csv-pair): two files — nodes + edges
+- [GraphML](https://www.knotviz.com/docs/input-formats/graphml): XML format from Gephi, yEd, etc.
+- [GEXF](https://www.knotviz.com/docs/input-formats/gexf): Gephi's native XML format
+- [Explore](https://www.knotviz.com/docs/explore): pan, zoom, hover, click, tooltips
+- [Simulation](https://www.knotviz.com/docs/simulation): GPU force-directed layout controls
+- [Filter](https://www.knotviz.com/docs/filter): number, string, date, boolean, tag-list filters with AND logic
+- [Search](https://www.knotviz.com/docs/search): autocomplete by id or label
+- [Analyze](https://www.knotviz.com/docs/analyze): stats and distributions
+- [Export](https://www.knotviz.com/docs/export): multi-format export with node positions preserved
+- [Limits](https://www.knotviz.com/docs/limits): per-format capacity ceilings (when the tab OOMs)
+- [Compare](https://www.knotviz.com/docs/compare): versus Gephi, Cosmograph, Graphistry
+- [Troubleshooting](https://www.knotviz.com/docs/troubleshooting): common errors and fixes
+
+## Deep links (agents can hand these to users)
+
+Auto-load a built-in sample so the user lands on a working graph:
+
+- `https://www.knotviz.com/graph?example=json/1k` — 1k-node JSON sample
+- `https://www.knotviz.com/graph?example=csv-edge-list/1k` — CSV edge-list sample
+- `https://www.knotviz.com/graph?example=csv-pair/1k` — CSV-pair sample
+- `https://www.knotviz.com/graph?example=graphml/1k` — GraphML sample
+- `https://www.knotviz.com/graph?example=gexf/1k` — GEXF sample
+
+Query-string pattern: `/graph?example=<format>/<size>` where format is one of `json`, `csv-edge-list`, `csv-pair`, `graphml`, `gexf` and size is currently `1k`.
+
+## Using Knotviz with user data
+
+There is no upload API — Knotviz is a client-only tool. To help a user visualize their own graph: point them to the graph app URL, tell them which format to save as (JSON is most expressive), and link to the relevant format doc. The homepage FAQ and the Input-formats overview have the fastest onboarding paths.
+
+## Machine-readable
+
+- [Docs llms.txt](https://www.knotviz.com/docs/llms.txt): docs-scoped curated index
+- [Docs llms-full.txt](https://www.knotviz.com/docs/llms-full.txt): every docs page concatenated as plain text — single-fetch full coverage
+- Any docs page as raw markdown: append `.md` to the URL (e.g. `https://www.knotviz.com/docs/filter.md`, `https://www.knotviz.com/docs/input-formats/json.md`)
+
+## Optional
+
+- [README](https://github.com/mhamas/knotviz/blob/main/README.md): repo-level setup, scripts, tech stack
+- [CONTRIBUTING](https://github.com/mhamas/knotviz/blob/main/CONTRIBUTING.md): authoritative engineering reference (stack, testing, scope, performance rules)
+- [License](https://github.com/mhamas/knotviz/blob/main/LICENSE): MIT
+- [Trademarks](https://github.com/mhamas/knotviz/blob/main/TRADEMARKS.md): the name "Knotviz" and logos are not MIT-covered; forks must rename

@@ -40,14 +40,6 @@ View settings live in the tab, not the file:
 
 The idea: the file is the *graph*; the tab is the *view*. Exports are portable because they don't carry anything tab-specific.
 
-## Round-trip
-
-```
-Load → simulate → filter → colour → download → (open later) → same layout, same filters off, same colours off
-```
-
-JSON, CSV pair, and GEXF round-trip cleanly. GraphML is close — arrays come back as pipe-joined strings (no list type in the format itself). CSV edge list is one-way for per-node data.
-
 ## Gotchas
 
 - **Filters don't come back.** If you exported a filtered subset, re-importing gives you *that subset as the whole graph* — there's no "show hidden nodes again" button.

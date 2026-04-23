@@ -20,7 +20,6 @@ interface FormatEntry {
   docsPath: string
   /** Optional second link (e.g. the JSON Schema anchor for the JSON row). */
   extraLink?: { label: string; path: string }
-  language: 'json' | 'csv' | 'xml'
 }
 
 const FORMATS: FormatEntry[] = [
@@ -29,7 +28,6 @@ const FORMATS: FormatEntry[] = [
     blurb: 'Native format. Full fidelity — every feature round-trips.',
     docsPath: '/docs/input-formats/json',
     extraLink: { label: 'Full JSON Schema', path: '/docs/input-formats/json#full-json-schema' },
-    language: 'json',
     example: `{
   "version": "1",
   "nodes": [
@@ -65,7 +63,6 @@ const FORMATS: FormatEntry[] = [
     name: 'CSV edge list',
     blurb: 'One file, one row per edge. Nodes auto-derived from source/target.',
     docsPath: '/docs/input-formats/csv-edge-list',
-    language: 'csv',
     example: `source,target,weight
 alice,bob,0.8
 bob,carol,1.2
@@ -75,7 +72,6 @@ alice,carol,0.3`,
     name: 'CSV pair',
     blurb: 'Two files: a nodes CSV with typed properties plus an edges CSV.',
     docsPath: '/docs/input-formats/csv-pair',
-    language: 'csv',
     example: `# nodes.csv
 id,label,age:number,role,active:boolean,joined:date,tags
 alice,Alice,34,engineer,true,2021-03-15,founder|alumna
@@ -89,9 +85,8 @@ bob,carol,1.2`,
   },
   {
     name: 'GraphML',
-    blurb: 'XML standard exported by Gephi, yEd, Cytoscape, and NetworkX.',
+    blurb: 'XML format used by Gephi, yEd, Cytoscape, and NetworkX.',
     docsPath: '/docs/input-formats/graphml',
-    language: 'xml',
     example: `<graphml>
   <key id="age"    for="node" attr.name="age"    attr.type="int"/>
   <key id="role"   for="node" attr.name="role"   attr.type="string"/>
@@ -116,7 +111,6 @@ bob,carol,1.2`,
     name: 'GEXF',
     blurb: "Gephi's native XML. Round-trips node positions via <viz:position>.",
     docsPath: '/docs/input-formats/gexf',
-    language: 'xml',
     example: `<gexf>
   <graph defaultedgetype="undirected">
     <attributes class="node">

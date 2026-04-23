@@ -87,7 +87,7 @@
           },
           "weight": {
             "type": "number",
-            "description": "Edge weight used by the ForceAtlas2 layout simulation."
+            "description": "Edge weight used by the force-directed layout simulation."
           }
         }
       }

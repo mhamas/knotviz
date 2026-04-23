@@ -152,7 +152,7 @@ json.dump({ "version": "1", "nodes": nodes, "edges": edges }, open("graph.json",
 
 ## Full JSON Schema
 
-Draft-07. Canonical copy lives at [`/docs/schema.json`](/docs/schema.json) — fetch it in a validator, a code generator, or an LLM tool call. The schema is versioned alongside the parser; the hosted copy is always in sync with the production build.
+Every field the parser accepts, as a JSON Schema (draft-07) document — drop it into a validator, a code generator, or an LLM tool call. The canonical copy is served at [`/docs/schema.json`](/docs/schema.json) and regenerated from the parser source on every build, so it can't drift from what the app actually reads.
 
 ```json title="graphSchema.json"
 {

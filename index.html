@@ -26,6 +26,66 @@
     <!-- Favicon -->
     <link rel="icon" href="/favicon.ico" />
 
+    <!-- Structured data: SoftwareApplication -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "Knotviz",
+      "applicationCategory": "DataVisualizationApplication",
+      "operatingSystem": "Any (modern web browser)",
+      "url": "https://www.knotviz.com",
+      "description": "Browser-based graph visualization that runs entirely on your machine. GPU-accelerated, up to ~1M nodes, no uploads, no signup, free and open source.",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "featureList": [
+        "GPU-accelerated WebGL rendering",
+        "GPU force-directed layout",
+        "Handles up to ~1M nodes on a laptop",
+        "JSON, CSV, TSV, GraphML, and GEXF input",
+        "Multi-format export with positions preserved",
+        "Filter by number, string, date, boolean, and tag list",
+        "Autocomplete search by id or label",
+        "24 built-in color palettes with log-scale option",
+        "100% client-side — data never leaves the browser"
+      ]
+    }
+    </script>
+
+    <!-- Structured data: FAQPage -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What file formats does Knotviz accept?",
+          "acceptedAnswer": { "@type": "Answer", "text": "JSON, CSV and TSV edge lists, CSV and TSV nodes + edges pairs, GraphML, and GEXF. Type inference fills in property types automatically." }
+        },
+        {
+          "@type": "Question",
+          "name": "How large a graph can Knotviz handle?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Up to around a million nodes on a regular laptop, with GPU-accelerated rendering and force-directed layout. A streaming parser engages at 200 MB+ so files up to a gigabyte of JSON load without freezing the tab." }
+        },
+        {
+          "@type": "Question",
+          "name": "Does Knotviz upload my data?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. Everything runs in your browser via WebGL and Web Workers. There are no accounts, no telemetry, and no server — the tool works offline." }
+        },
+        {
+          "@type": "Question",
+          "name": "Is Knotviz free?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Yes. Knotviz is free and open source under the MIT license." }
+        },
+        {
+          "@type": "Question",
+          "name": "Do I need a dedicated GPU?",
+          "acceptedAnswer": { "@type": "Answer", "text": "No. Any machine with a WebGL-capable browser works, including integrated graphics. A dedicated GPU helps with graphs in the hundreds of thousands to millions of nodes." }
+        }
+      ]
+    }
+    </script>
+
   </head>
   <body class="bg-white text-gray-900 antialiased" style="opacity: 0">
 
@@ -39,9 +99,15 @@
         <p class="mx-auto mt-6 max-w-2xl text-lg text-gray-600 sm:text-xl">
           Drop a graph and explore it directly in your browser. Filter, search, colour, and size by any property to find what matters. Your data never leaves your machine.
         </p>
-        <a href="/graph" class="mt-8 inline-block rounded-lg bg-blue-600 px-8 py-3 text-lg font-medium text-white transition-colors hover:bg-blue-700">
-          Open Knotviz
-        </a>
+        <div class="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4">
+          <a href="/graph" class="inline-block rounded-lg bg-blue-600 px-8 py-3 text-lg font-medium text-white transition-colors hover:bg-blue-700">
+            Start exploring
+          </a>
+          <a href="/graph?example=json/1k" class="inline-flex items-center gap-1 text-sm font-medium text-blue-700 hover:text-blue-900 hover:underline">
+            or try a sample graph
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </a>
+        </div>
         <!-- Trust strip -->
         <div class="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium text-gray-500">
           <span class="flex items-center gap-1.5">
@@ -247,7 +313,7 @@
 
           <!-- Video demo -->
           <div class="overflow-hidden rounded-xl border border-gray-200 shadow-lg">
-            <video autoplay loop muted playsinline poster="/screenshots/hero.webp" class="w-full" loading="lazy">
+            <video autoplay loop muted playsinline preload="metadata" poster="/screenshots/hero.webp" class="w-full">
               <source src="/screenshots/hero-video.mp4" type="video/mp4" />
               <picture>
                 <source srcset="/screenshots/hero.webp" type="image/webp" />
@@ -371,13 +437,57 @@
       </div>
     </section>
 
+    <!-- FAQ -->
+    <section class="px-6 py-20">
+      <div class="mx-auto max-w-3xl">
+        <h2 class="text-center text-3xl font-bold">Frequently asked questions</h2>
+        <div class="mt-12 space-y-6">
+          <details class="group rounded-lg border border-gray-200 p-5 open:bg-gray-50">
+            <summary class="flex cursor-pointer items-center justify-between text-lg font-semibold">
+              What file formats does Knotviz accept?
+              <svg class="h-5 w-5 text-gray-400 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <p class="mt-3 text-gray-600">JSON, CSV and TSV edge lists, CSV and TSV nodes&nbsp;+&nbsp;edges pairs, GraphML, and GEXF. Type inference fills in property types automatically — or declare them explicitly with CSV header suffixes like <code class="rounded bg-gray-100 px-1 py-0.5 text-sm">age:number</code> or <code class="rounded bg-gray-100 px-1 py-0.5 text-sm">joined:date</code>.</p>
+          </details>
+          <details class="group rounded-lg border border-gray-200 p-5 open:bg-gray-50">
+            <summary class="flex cursor-pointer items-center justify-between text-lg font-semibold">
+              How large a graph can Knotviz handle?
+              <svg class="h-5 w-5 text-gray-400 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <p class="mt-3 text-gray-600">Up to around a million nodes on a regular laptop, with GPU-accelerated rendering and force-directed layout. Below 500k nodes everything is instant; past ~1M the simulation grid saturates and pan/zoom framerate drops. A streaming parser engages at 200&nbsp;MB&nbsp;+ so even a gigabyte of JSON loads without freezing the tab.</p>
+          </details>
+          <details class="group rounded-lg border border-gray-200 p-5 open:bg-gray-50">
+            <summary class="flex cursor-pointer items-center justify-between text-lg font-semibold">
+              Does Knotviz upload my data?
+              <svg class="h-5 w-5 text-gray-400 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <p class="mt-3 text-gray-600">No. Everything runs in your browser via WebGL and Web Workers. There are no accounts, no telemetry, and no server — the tool works offline, on a plane, or inside a firewall. Safe for sensitive data by architecture.</p>
+          </details>
+          <details class="group rounded-lg border border-gray-200 p-5 open:bg-gray-50">
+            <summary class="flex cursor-pointer items-center justify-between text-lg font-semibold">
+              Is Knotviz free?
+              <svg class="h-5 w-5 text-gray-400 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <p class="mt-3 text-gray-600">Yes. Knotviz is free and open source under the MIT license. Source is on <a href="https://github.com/mhamas/knotviz" class="text-blue-600 hover:underline">GitHub</a>.</p>
+          </details>
+          <details class="group rounded-lg border border-gray-200 p-5 open:bg-gray-50">
+            <summary class="flex cursor-pointer items-center justify-between text-lg font-semibold">
+              Do I need a dedicated GPU?
+              <svg class="h-5 w-5 text-gray-400 transition-transform group-open:rotate-180" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </summary>
+            <p class="mt-3 text-gray-600">No. Any machine with a WebGL-capable browser works, including integrated graphics. A dedicated GPU helps most with graphs in the hundreds of thousands to millions of nodes.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
     <!-- CTA -->
     <section class="bg-blue-600 px-6 py-16 text-center text-white">
       <div class="mx-auto max-w-4xl">
         <h2 class="text-3xl font-bold">Your graph, your browser, your data.</h2>
         <p class="mt-4 text-lg text-blue-100">Open Knotviz, drop a file, start exploring. Nothing is uploaded — not now, not ever.</p>
         <a href="/graph" class="mt-8 inline-block rounded-lg bg-white px-8 py-3 text-lg font-medium text-blue-600 transition-colors hover:bg-blue-50">
-          Open Knotviz
+          Start exploring
         </a>
       </div>
     </section>

@@ -1,0 +1,16 @@
+{
+  "version": "1",
+  "nodes": [
+    { "id": "n1", "label": "Åsa Lindström",             "x": 10, "y": 10, "properties": { "community": "日本語",         "note": "line1\nline2",           "tags": ["π", "Ω"] } },
+    { "id": "n2", "label": "🎉 Party Person",            "x": 20, "y": 10, "properties": { "community": "עברית",          "note": "Smith, Jane",            "tags": ["🔥", "💧"] } },
+    { "id": "n3", "label": "<script>alert('x')</script>", "x": 30, "y": 10, "properties": { "community": "a & b < c > d",   "note": "he said \"hi\"",          "tags": ["α", "β", "γ"] } },
+    { "id": "n4", "label": "Żółty ruski кирилица",        "x": 10, "y": 20, "properties": { "community": "commas, and \"quotes\"", "note": "plain",              "tags": ["aeiou"] } },
+    { "id": "n5", "label": "regular",                      "x": 20, "y": 20, "properties": { "community": "Tech",            "note": "pipe|in|string",          "tags": ["a|b", "c"] } }
+  ],
+  "edges": [
+    { "source": "n1", "target": "n2", "weight": 0.8 },
+    { "source": "n2", "target": "n3", "weight": 1.2 },
+    { "source": "n3", "target": "n4" },
+    { "source": "n4", "target": "n5", "weight": 0.5 }
+  ]
+}

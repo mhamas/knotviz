@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useCallback, useRef, useState, type KeyboardEvent } from 'react'
 import type { CustomPalette, PaletteName } from '@/types'
 import { PALETTE_NAMES, samplePalette, interpolatePalette } from '@/lib/colorScales'
 import { formatNumber } from '@/lib/formatNumber'
@@ -18,8 +18,10 @@ import {
   SelectTrigger,
 } from '@/components/ui/select'
 
-const LOG_MIN = Math.log(2)
-const LOG_MAX = Math.log(10000)
+const MIN_COUNT = 2
+const MAX_COUNT = 10000
+const LOG_MIN = Math.log(MIN_COUNT)
+const LOG_MAX = Math.log(MAX_COUNT)
 
 /** Convert a linear slider value [0, 1] to a logarithmic count [2, 10000]. */
 function sliderToCount(t: number): number {
@@ -53,11 +55,27 @@ let nextId = 1
 export function CreatePaletteModal({ isOpen, onClose, onSave }: Props): React.JSX.Element {
   const [baseScheme, setBaseScheme] = useState<PaletteName>('Viridis')
   const [sliderValue, setSliderValue] = useState(countToSlider(6))
+  const [editingCount, setEditingCount] = useState<string | null>(null)
   const [name, setName] = useState('')
   const idRef = useRef(0)
+  const countInputRef = useRef<HTMLInputElement>(null)
+  // Prevent blur handler from committing when the user pressed Escape —
+  // setEditingCount(null) hasn't flushed by the time onBlur reads the state.
+  const isEscapingRef = useRef(false)
 
   const count = sliderToCount(sliderValue)
   const previewColors = samplePalette(baseScheme, count)
+
+  const commitCount = useCallback((raw: string): void => {
+    const parsed = parseInt(raw, 10)
+    if (!Number.isFinite(parsed)) {
+      setEditingCount(null)
+      return
+    }
+    const clamped = Math.min(MAX_COUNT, Math.max(MIN_COUNT, parsed))
+    setSliderValue(countToSlider(clamped))
+    setEditingCount(null)
+  }, [])
 
   const handleSave = (): void => {
     idRef.current = nextId++
@@ -70,6 +88,7 @@ export function CreatePaletteModal({ isOpen, onClose, onSave }: Props): React.JS
     // Reset for next use
     setName('')
     setSliderValue(countToSlider(6))
+    setEditingCount(null)
     setBaseScheme('Viridis')
     onClose()
   }
@@ -129,24 +148,66 @@ export function CreatePaletteModal({ isOpen, onClose, onSave }: Props): React.JS
             </Select>
           </div>
 
-          {/* Number of colors */}
+          {/* Number of colors — slider for coarse adjust, input for exact value */}
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">
-              Number of colors: {formatCount(count)}
-            </label>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <label
+                htmlFor="palette-count-input"
+                className="text-xs font-medium text-slate-600"
+              >
+                Number of colors
+              </label>
+              <input
+                ref={countInputRef}
+                id="palette-count-input"
+                type="text"
+                inputMode="numeric"
+                value={editingCount ?? formatCount(count)}
+                onFocus={(e): void => {
+                  setEditingCount(String(count))
+                  e.target.select()
+                }}
+                onChange={(e): void => setEditingCount(e.target.value)}
+                onBlur={(): void => {
+                  if (isEscapingRef.current) {
+                    isEscapingRef.current = false
+                    return
+                  }
+                  if (editingCount !== null) commitCount(editingCount)
+                }}
+                onKeyDown={(e: KeyboardEvent<HTMLInputElement>): void => {
+                  if (e.key === 'Enter') {
+                    if (editingCount !== null) commitCount(editingCount)
+                    countInputRef.current?.blur()
+                  } else if (e.key === 'Escape') {
+                    isEscapingRef.current = true
+                    setEditingCount(null)
+                    countInputRef.current?.blur()
+                  }
+                }}
+                className="h-7 w-24 rounded-md border border-input bg-transparent px-2 text-right text-xs tabular-nums outline-none focus:border-ring focus:ring-2 focus:ring-ring/50"
+                data-testid="palette-count-input"
+                aria-label="Number of colors"
+              />
+            </div>
             <input
               type="range"
               min={0}
               max={1}
               step={0.001}
               value={sliderValue}
-              onChange={(e): void => setSliderValue(Number(e.target.value))}
+              onChange={(e): void => {
+                setSliderValue(Number(e.target.value))
+                // Slider wins while the user drags — drop any in-flight edit
+                setEditingCount(null)
+              }}
               className="w-full accent-blue-500"
               data-testid="palette-count-slider"
+              aria-label="Number of colors slider"
             />
             <div className="mt-0.5 flex justify-between text-[10px] text-slate-400">
-              <span>2</span>
-              <span>10,000</span>
+              <span>{formatCount(MIN_COUNT)}</span>
+              <span>{formatCount(MAX_COUNT)}</span>
             </div>
           </div>
 

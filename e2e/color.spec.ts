@@ -138,4 +138,40 @@ test.describe('Color Tab', () => {
     await page.getByTestId('color-palette-select').click()
     await expect(page.getByRole('option', { name: 'Grays' })).toBeVisible()
   })
+
+  test('create custom palette: count input lets user type an explicit value', async ({ page }) => {
+    await switchToColorMode(page)
+    await page.getByTestId('color-palette-select').click()
+    await page.getByRole('option', { name: '+ Create custom palette' }).click()
+    const modal = page.getByTestId('create-palette-modal')
+    await expect(modal).toBeVisible()
+
+    const countInput = modal.getByTestId('palette-count-input')
+    // Default slider position maps to 6, rendered with formatNumber.
+    await expect(countInput).toHaveValue('6')
+
+    // Type an explicit count and confirm with Enter.
+    await countInput.click()
+    await countInput.fill('1234')
+    await countInput.press('Enter')
+    await expect(countInput).toHaveValue('1,234')
+
+    // Above-max clamps to 10,000.
+    await countInput.click()
+    await countInput.fill('99999')
+    await countInput.press('Enter')
+    await expect(countInput).toHaveValue('10,000')
+
+    // Below-min clamps to 2.
+    await countInput.click()
+    await countInput.fill('0')
+    await countInput.press('Enter')
+    await expect(countInput).toHaveValue('2')
+
+    // Escape reverts the in-progress edit.
+    await countInput.click()
+    await countInput.fill('42')
+    await countInput.press('Escape')
+    await expect(countInput).toHaveValue('2')
+  })
 })

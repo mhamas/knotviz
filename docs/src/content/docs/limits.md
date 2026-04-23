@@ -111,5 +111,5 @@ Even a pre-filtered 1M-node graph is dense. Use Knotviz's [filter](/docs/filter)
 
 ### When you really need all 10M
 
-Knotviz isn't the tool. See [Compare](/docs/compare) — Cosmograph and Graphistry handle billions because they have cloud backends that you upload to. The trade-off is your data leaves your machine.
+Knotviz isn't the tool. See [Compare](/docs/compare) — Graphistry handles billion-node graphs via a server-side GPU (your data is uploaded to their server in exchange). Cosmograph also runs in the browser but their paid tiers are tuned for larger datasets than Knotviz targets.
 

@@ -23,3 +23,7 @@ description: How Knotviz differs from Gephi, Cosmograph, and Graphistry.
 - **You want zero setup, for free.** Open a tab, drop a file. No install, no sign-in, no upload — and no paid tier to bump into.
 - **Your data must stay on the machine.** Regulated data, sensitive investigations, air-gapped environments — both Knotviz and Cosmograph keep data in the browser, but Knotviz is open-source and has no account gate.
 - **Your graph is ≤ 1M nodes.** Past that, the competitors with bigger scale envelopes handle more — see [limits](/docs/limits).
+
+---
+
+*Gephi, Cosmograph, and Graphistry are trademarks of their respective owners. Comparisons reflect publicly available information at the time of writing and may change — check each vendor's site for current pricing and capabilities.*

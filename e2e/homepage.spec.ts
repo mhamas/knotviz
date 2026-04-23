@@ -15,7 +15,7 @@ test.describe('Homepage', () => {
     await expect(page.locator('img[alt*="Knotviz"]').first()).toBeVisible()
     const cta = page.locator('a[href="/graph"]').first()
     await expect(cta).toBeVisible()
-    await expect(cta).toContainText(/Open Knotviz/i)
+    await expect(cta).toContainText(/Start exploring/i)
   })
 
   test('renders all major sections', async ({ page }) => {

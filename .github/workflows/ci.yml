@@ -52,3 +52,17 @@ jobs:
           name: playwright-report
           path: test-results/
           retention-days: 7
+
+  audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Audit root package
+        run: npm audit --audit-level=moderate
+      - name: Audit docs package
+        run: cd docs && npm audit --audit-level=moderate

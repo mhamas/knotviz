@@ -8,11 +8,18 @@ import {
 import { CopyableCode } from '@/components/sidebar'
 import { ExternalLink } from 'lucide-react'
 
+// Docs live under /docs in production (same origin) and on :4321 in dev
+// (separate Astro server). Prefix accordingly so every "Docs" link resolves.
+const DOCS_ORIGIN = import.meta.env.DEV ? 'http://localhost:4321' : ''
+const docsUrl = (path: string): string => `${DOCS_ORIGIN}${path}`
+
 interface FormatEntry {
   name: string
   blurb: string
   example: string
   docsPath: string
+  /** Optional second link (e.g. the JSON Schema anchor for the JSON row). */
+  extraLink?: { label: string; path: string }
   language: 'json' | 'csv' | 'xml'
 }
 
@@ -21,11 +28,27 @@ const FORMATS: FormatEntry[] = [
     name: 'JSON',
     blurb: 'Native format. Full fidelity — every feature round-trips.',
     docsPath: '/docs/input-formats/json',
+    extraLink: { label: 'Full JSON Schema', path: '/docs/input-formats/json#full-json-schema' },
     language: 'json',
     example: `{
   "version": "1",
-  "nodes": [{ "id": "a" }, { "id": "b" }],
-  "edges": [{ "source": "a", "target": "b" }]
+  "nodes": [
+    {
+      "id": "alice",
+      "label": "Alice",
+      "properties": {
+        "age": 34,
+        "role": "engineer",
+        "active": true,
+        "joined": "2021-03-15",
+        "tags": ["founder", "alumna"]
+      }
+    },
+    { "id": "bob", "label": "Bob", "properties": { "age": 28, "role": "designer" } }
+  ],
+  "edges": [
+    { "source": "alice", "target": "bob", "label": "mentors", "weight": 0.8 }
+  ]
 }`,
   },
   {
@@ -34,22 +57,25 @@ const FORMATS: FormatEntry[] = [
     docsPath: '/docs/input-formats/csv-edge-list',
     language: 'csv',
     example: `source,target,weight
-a,b,0.8
-b,c,1.2`,
+alice,bob,0.8
+bob,carol,1.2
+alice,carol,0.3`,
   },
   {
     name: 'CSV pair',
-    blurb: 'Two files: a nodes CSV with properties plus an edges CSV.',
+    blurb: 'Two files: a nodes CSV with typed properties plus an edges CSV.',
     docsPath: '/docs/input-formats/csv-pair',
     language: 'csv',
     example: `# nodes.csv
-id,label,age:number
-a,Alice,34
-b,Bob,28
+id,label,age:number,role,active:boolean,joined:date,tags
+alice,Alice,34,engineer,true,2021-03-15,founder|alumna
+bob,Bob,28,designer,true,2023-11-02,
+carol,Carol,41,engineer,false,2019-06-01,alumna
 
 # edges.csv
-source,target
-a,b`,
+source,target,weight
+alice,bob,0.8
+bob,carol,1.2`,
   },
   {
     name: 'GraphML',
@@ -57,10 +83,21 @@ a,b`,
     docsPath: '/docs/input-formats/graphml',
     language: 'xml',
     example: `<graphml>
+  <key id="age"    for="node" attr.name="age"    attr.type="int"/>
+  <key id="role"   for="node" attr.name="role"   attr.type="string"/>
+  <key id="joined" for="node" attr.name="joined" attr.type="string"/>
+  <key id="weight" for="edge" attr.name="weight" attr.type="double"/>
   <graph edgedefault="undirected">
-    <node id="a"/>
-    <node id="b"/>
-    <edge source="a" target="b"/>
+    <node id="alice">
+      <data key="age">34</data>
+      <data key="role">engineer</data>
+      <data key="joined">2021-03-15</data>
+    </node>
+    <node id="bob">
+      <data key="age">28</data>
+      <data key="role">designer</data>
+    </node>
+    <edge source="alice" target="bob"><data key="weight">0.8</data></edge>
   </graph>
 </graphml>`,
   },
@@ -70,9 +107,31 @@ a,b`,
     docsPath: '/docs/input-formats/gexf',
     language: 'xml',
     example: `<gexf>
-  <graph>
-    <nodes><node id="a"/><node id="b"/></nodes>
-    <edges><edge source="a" target="b"/></edges>
+  <graph defaultedgetype="undirected">
+    <attributes class="node">
+      <attribute id="0" title="age"    type="integer"/>
+      <attribute id="1" title="role"   type="string"/>
+      <attribute id="2" title="joined" type="string"/>
+    </attributes>
+    <nodes>
+      <node id="alice" label="Alice">
+        <attvalues>
+          <attvalue for="0" value="34"/>
+          <attvalue for="1" value="engineer"/>
+          <attvalue for="2" value="2021-03-15"/>
+        </attvalues>
+        <viz:position x="120" y="45"/>
+      </node>
+      <node id="bob" label="Bob">
+        <attvalues>
+          <attvalue for="0" value="28"/>
+          <attvalue for="1" value="designer"/>
+        </attvalues>
+      </node>
+    </nodes>
+    <edges>
+      <edge source="alice" target="bob" weight="0.8"/>
+    </edges>
   </graph>
 </gexf>`,
   },
@@ -86,15 +145,28 @@ function FormatRow({ entry }: { entry: FormatEntry }): React.JSX.Element {
           <h3 className="text-sm font-semibold text-slate-900">{entry.name}</h3>
           <p className="text-xs text-slate-500">{entry.blurb}</p>
         </div>
-        <a
-          href={entry.docsPath}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 hover:border-slate-300 hover:text-slate-900"
-        >
-          Docs
-          <ExternalLink className="h-3 w-3" />
-        </a>
+        <div className="flex shrink-0 items-center gap-2">
+          {entry.extraLink && (
+            <a
+              href={docsUrl(entry.extraLink.path)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 hover:border-slate-300 hover:text-slate-900"
+            >
+              {entry.extraLink.label}
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          )}
+          <a
+            href={docsUrl(entry.docsPath)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 hover:border-slate-300 hover:text-slate-900"
+          >
+            Docs
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
       </div>
       <CopyableCode code={entry.example} label={`${entry.name} example`} />
     </section>
@@ -137,22 +209,12 @@ export function SchemaDialog({ isOpen, onOpenChange }: Props): React.JSX.Element
 
         <div className="border-t border-slate-200 pt-3 text-center text-xs text-slate-500">
           <a
-            href="/docs/input-formats"
+            href={docsUrl('/docs/input-formats')}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 font-medium text-blue-700 hover:text-blue-900 hover:underline"
           >
             Full reference for all formats
-            <ExternalLink className="h-3 w-3" />
-          </a>
-          <span className="mx-2 text-slate-300">·</span>
-          <a
-            href="/docs/input-formats/json#full-json-schema"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 font-medium text-blue-700 hover:text-blue-900 hover:underline"
-          >
-            Full JSON Schema
             <ExternalLink className="h-3 w-3" />
           </a>
         </div>

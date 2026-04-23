@@ -3,6 +3,7 @@ import type { NumberFilterState } from '../../types'
 import { useDebounce } from '@/hooks/useDebounce'
 import { Slider } from '@/components/ui/slider'
 import { Histogram } from '@/components/Histogram'
+import { formatNumber } from '../../lib/formatNumber'
 
 interface Props {
   state: NumberFilterState
@@ -21,13 +22,25 @@ function fromLog(s: number): number {
 }
 
 /**
- * Formats a number for display in the range label.
- * Uses toFixed(2) for values >= 0.01, toPrecision(3) for smaller values.
+ * Raw value shown inside the input while the user is actively editing.
+ * `parseFloat` must round-trip this string back to a number, so no
+ * thousands separator here.
  */
-function formatValue(v: number): string {
+function editValue(v: number): string {
   if (v === 0) return '0'
   if (Math.abs(v) >= 0.01) return v.toFixed(2)
   return v.toPrecision(3)
+}
+
+/**
+ * Pretty value shown inside the input when it is *not* focused — uses
+ * `formatNumber` so large bounds read with commas (e.g. `1,234.56`).
+ * On focus we swap this for `editValue` to keep parseFloat happy.
+ */
+function displayValue(v: number): string {
+  if (v === 0) return '0'
+  if (Math.abs(v) >= 0.01) return formatNumber(v, { decimals: 2 })
+  return formatNumber(v)
 }
 
 /**
@@ -118,9 +131,9 @@ export function NumberFilter({ state, onChange, isHistogramVisible }: Props): Re
           type="text"
           data-testid="number-filter-min"
           className="w-16 border-b border-transparent bg-transparent text-left text-[11px] text-slate-500 outline-none focus:border-slate-400"
-          value={editingMin ?? formatValue(localRange[0])}
+          value={editingMin ?? displayValue(localRange[0])}
           onFocus={(e): void => {
-            setEditingMin(formatValue(localRange[0]))
+            setEditingMin(editValue(localRange[0]))
             e.target.select()
           }}
           onChange={(e): void => setEditingMin(e.target.value)}
@@ -147,9 +160,9 @@ export function NumberFilter({ state, onChange, isHistogramVisible }: Props): Re
           type="text"
           data-testid="number-filter-max"
           className="w-16 border-b border-transparent bg-transparent text-right text-[11px] text-slate-500 outline-none focus:border-slate-400"
-          value={editingMax ?? formatValue(localRange[1])}
+          value={editingMax ?? displayValue(localRange[1])}
           onFocus={(e): void => {
-            setEditingMax(formatValue(localRange[1]))
+            setEditingMax(editValue(localRange[1]))
             e.target.select()
           }}
           onChange={(e): void => setEditingMax(e.target.value)}

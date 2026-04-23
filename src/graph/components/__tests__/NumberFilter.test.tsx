@@ -46,7 +46,7 @@ describe('rendering', () => {
     expect(screen.container.querySelector('[data-slot="slider"]')).not.toBeNull()
   })
 
-  test('renders with small values using toPrecision', async () => {
+  test('renders small values (< 0.01) with raw precision, no forced commas', async () => {
     const state: NumberFilterState = {
       ...baseState,
       min: 0.001,
@@ -57,8 +57,45 @@ describe('rendering', () => {
     const screen = await render(
       <NumberFilter state={state} onChange={vi.fn()} isHistogramVisible={false} />,
     )
-    await expect.element(screen.getByTestId('number-filter-min')).toHaveValue('0.00100')
-    await expect.element(screen.getByTestId('number-filter-max')).toHaveValue('0.00900')
+    await expect.element(screen.getByTestId('number-filter-min')).toHaveValue('0.001')
+    await expect.element(screen.getByTestId('number-filter-max')).toHaveValue('0.009')
+  })
+
+  test('formats large bounds with thousands separators when not focused', async () => {
+    const state: NumberFilterState = {
+      ...baseState,
+      min: 1234.56,
+      max: 7890123.45,
+      domainMin: 0,
+      domainMax: 10000000,
+    }
+    const screen = await render(
+      <NumberFilter state={state} onChange={vi.fn()} isHistogramVisible={false} />,
+    )
+    await expect.element(screen.getByTestId('number-filter-min')).toHaveValue('1,234.56')
+    await expect.element(screen.getByTestId('number-filter-max')).toHaveValue('7,890,123.45')
+  })
+
+  test('swaps to raw (parseFloat-friendly) form on focus, back to formatted on blur', async () => {
+    const state: NumberFilterState = {
+      ...baseState,
+      min: 0,
+      max: 7890,
+      domainMin: 0,
+      domainMax: 10000,
+    }
+    const screen = await render(
+      <NumberFilter state={state} onChange={vi.fn()} isHistogramVisible={false} />,
+    )
+    const maxInput = screen.getByTestId('number-filter-max')
+    // Initial: formatted
+    await expect.element(maxInput).toHaveValue('7,890.00')
+    // Focus: raw (no comma) so parseFloat round-trips on commit
+    await maxInput.click()
+    await expect.element(maxInput).toHaveValue('7890.00')
+    // Commit same value and blur → back to formatted
+    await userEvent.keyboard('{Enter}')
+    await expect.element(maxInput).toHaveValue('7,890.00')
   })
 
   test('renders without crashing when domainMin === domainMax', async () => {
@@ -282,6 +319,6 @@ describe('editable min/max text inputs', () => {
     await userEvent.clear(maxInput.element())
     await userEvent.type(maxInput.element(), '1e3')
     await userEvent.keyboard('{Enter}')
-    await expect.element(maxInput).toHaveValue('1000.00')
+    await expect.element(maxInput).toHaveValue('1,000.00')
   })
 })

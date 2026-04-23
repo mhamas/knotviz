@@ -1,6 +1,7 @@
 import type { PropertyStatsResult, NumericStats, DateStats, SerializableCategoricalStats, HistogramBucket, DateHistogramBucket } from '../types'
 import { StatRow } from '@/components/sidebar'
 import { Histogram } from './Histogram'
+import { formatNumber } from '../lib/formatNumber'
 
 interface Props {
   stats: PropertyStatsResult | null
@@ -9,7 +10,7 @@ interface Props {
 
 /** Format a number for display: up to 2 decimal places, with locale separators. */
 function fmt(v: number): string {
-  return Number.isInteger(v) ? v.toLocaleString() : v.toLocaleString(undefined, { maximumFractionDigits: 2 })
+  return Number.isInteger(v) ? formatNumber(v) : formatNumber(v, { decimals: 2 })
 }
 
 /** Numeric stats table (number property). */
@@ -54,7 +55,7 @@ function CategoricalStatsTable({ stats }: { stats: SerializableCategoricalStats 
       <div className="my-1 border-t border-slate-100" />
       <div className="max-h-[60vh] space-y-0.5 overflow-y-auto">
         {stats.map(([value, count]) => {
-          const pct = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0'
+          const pct = total > 0 ? formatNumber((count / total) * 100, { decimals: 1 }) : '0.0'
           return (
             <StatRow
               key={String(value)}

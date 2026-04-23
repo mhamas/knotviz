@@ -5,6 +5,7 @@ import type { FileFormat } from '../lib/detectFileFormat'
 import LoadingWorker from '@/workers/loadingWorker?worker'
 import { detectFileFormat } from '../lib/detectFileFormat'
 import { SchemaDialog } from './SchemaDialog'
+import { formatNumber } from '../lib/formatNumber'
 import {
   AlertDialog,
   AlertDialogContent,
@@ -346,7 +347,7 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
             <AlertDialogDescription>
               {pendingLoad && pendingLoad.replacementCount > 0 && (
                 <>
-                  <strong>{pendingLoad.replacementCount.toLocaleString()}</strong> missing values
+                  <strong>{formatNumber(pendingLoad.replacementCount)}</strong> missing values
                   will be replaced with type defaults (number → 0, string → &quot;&quot;, boolean → false,
                   date → 1970-01-01).
                 </>
@@ -364,7 +365,7 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
                   <li key={`${w.scope}:${w.propertyKey}`} className="list-disc">
                     <code className="text-xs">{w.propertyKey}</code>
                     {' — '}
-                    <strong>{w.failedCount.toLocaleString()}</strong> {w.scope === 'nodes' ? 'node' : 'edge'}
+                    <strong>{formatNumber(w.failedCount)}</strong> {w.scope === 'nodes' ? 'node' : 'edge'}
                     {w.failedCount === 1 ? '' : 's'} failed
                     {w.exampleValue !== undefined && (
                       <>

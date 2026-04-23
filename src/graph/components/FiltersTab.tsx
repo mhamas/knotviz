@@ -1,6 +1,7 @@
 import type { NodePropertiesMetadata, PropertyMeta } from '../types'
 import type { FilterStateHandle } from '../hooks/useFilterState'
 import { PropertyFilterPanel } from './filters/PropertyFilterPanel'
+import { formatNumber } from '../lib/formatNumber'
 
 interface Props {
   propertyMetas: PropertyMeta[]
@@ -44,7 +45,7 @@ export function FiltersTab({ propertyMetas, nodePropertiesMetadata, filterHandle
       {/* Header */}
       <div>
         <p className="text-xs font-medium text-slate-700" aria-live="polite" data-testid="filter-match-count">
-          {matchCount.toLocaleString()}/{totalNodeCount.toLocaleString()} nodes match
+          {formatNumber(matchCount)}/{formatNumber(totalNodeCount)} nodes match
           {matchCount === 0 && hasActiveFilters && (
             <span className="ml-1.5 font-normal text-amber-600">— no match</span>
           )}

@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import type { CustomPalette, PaletteName } from '@/types'
 import { PALETTE_NAMES, samplePalette, interpolatePalette } from '@/lib/colorScales'
+import { formatNumber } from '@/lib/formatNumber'
 import {
   Dialog,
   DialogContent,
@@ -32,7 +33,7 @@ function countToSlider(n: number): number {
 
 /** Format a number with locale separators (e.g. 1,000). */
 function formatCount(n: number): string {
-  return n.toLocaleString()
+  return formatNumber(n)
 }
 
 interface Props {

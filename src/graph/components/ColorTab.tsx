@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select'
 import { Slider } from '@/components/ui/slider'
 import { CreatePaletteModal } from './CreatePaletteModal'
+import { formatNumber } from '@/lib/formatNumber'
 
 interface Props {
   propertyMetas: PropertyMeta[]
@@ -539,8 +540,8 @@ export function filterContinuousRange(
       max = Math.min(max, filter.max)
     }
     isUniform = min === max
-    minLabel = Number.isInteger(min) ? String(min) : min.toFixed(2)
-    maxLabel = Number.isInteger(max) ? String(max) : max.toFixed(2)
+    minLabel = Number.isInteger(min) ? formatNumber(min) : formatNumber(min, { decimals: 2 })
+    maxLabel = Number.isInteger(max) ? formatNumber(max) : formatNumber(max, { decimals: 2 })
   } else {
     const sorted = (values as string[]).sort()
     let min = sorted[0]

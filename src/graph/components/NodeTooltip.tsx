@@ -3,6 +3,7 @@ import { Copy, Check, X } from 'lucide-react'
 import type { NodePropertiesMetadata, PropertyMeta, PropertyValue } from '../types'
 import { HelpPopover } from '@/components/sidebar'
 import type { PropertyColumns } from '../hooks/useFilterState'
+import { formatNumber } from '../lib/formatNumber'
 
 interface Props {
   nodeId: string
@@ -30,7 +31,7 @@ const PROP_NAME_MAX = 36
  */
 function formatValue(value: PropertyValue, propertyType: string): string {
   if (propertyType === 'number' && typeof value === 'number') {
-    return value.toFixed(2)
+    return formatNumber(value)
   }
   if (propertyType === 'date' && typeof value === 'string') {
     return value

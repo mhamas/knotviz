@@ -1,3 +1,5 @@
+import { formatNumber } from './formatNumber'
+
 export type FileFormat = 'json' | 'csv-edge-list' | 'csv-pair' | 'graphml' | 'gexf'
 
 export interface NamedFile {
@@ -35,7 +37,7 @@ export function detectFileFormat<T extends NamedFile>(files: T[]): FileFormatRes
   if (files.length === 1) return detectSingleFile(files[0])
   if (files.length === 2) return detectPair(files)
   throw new Error(
-    `Dropped ${files.length} files; supported drops are a single graph file or a pair of nodes/edges CSV files.`,
+    `Dropped ${formatNumber(files.length)} files; supported drops are a single graph file or a pair of nodes/edges CSV files.`,
   )
 }
 

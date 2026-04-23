@@ -7,6 +7,7 @@ import { getPaletteColors, isBuiltinPalette } from '@/lib/colorScales'
 import { useGraphStore } from '@/stores/useGraphStore'
 import { COLOR_DEFAULT, COLOR_EDGE_DEFAULT } from '@/lib/colors'
 import { filterEdges } from '@/lib/filterEdges'
+import { formatNumber } from '../lib/formatNumber'
 import { useCosmosCamera } from './useCosmosCamera'
 import { useCosmosSimulation } from './useCosmosSimulation'
 import { useCosmosRotation } from './useCosmosRotation'
@@ -407,7 +408,7 @@ export function useCosmos(
             if (val !== undefined && val !== null) {
               const propType = propertyTypeMapRef.current.get(propKey)
               let formatted: string
-              if (propType === 'number' && typeof val === 'number') formatted = Number.isInteger(val) ? String(val) : val.toFixed(2)
+              if (propType === 'number' && typeof val === 'number') formatted = formatNumber(val)
               else if (propType === 'string[]' && Array.isArray(val)) formatted = val.join(', ')
               else formatted = String(val)
               hoverPropDiv.textContent = `${propKey}: ${formatted}`

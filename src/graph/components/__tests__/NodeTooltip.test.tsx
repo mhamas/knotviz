@@ -93,8 +93,8 @@ test('shows formatted properties', async () => {
       onClose={vi.fn()}
     />,
   )
-  // number formatted with toFixed(2)
-  await expect.element(screen.getByText('30.00')).toBeVisible()
+  // numbers render via formatNumber (preserves decimals as-is, no forced .00)
+  await expect.element(screen.getByText('30')).toBeVisible()
   await expect.element(screen.getByText('admin')).toBeVisible()
   await expect.element(screen.getByText('true')).toBeVisible()
 })
@@ -156,7 +156,7 @@ test('bolds the analysis property row when analysisPropertyKey is set', async ()
   const ageLabel = screen.getByText('age')
   await expect.element(ageLabel).toHaveClass('font-bold')
   // The "age" value should also be bold
-  const ageValue = screen.getByText('30.00')
+  const ageValue = screen.getByText('30')
   await expect.element(ageValue).toHaveClass('font-bold')
   // The "role" label should NOT be bold
   const roleLabel = screen.getByText('role')

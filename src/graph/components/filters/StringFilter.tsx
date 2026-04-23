@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import type { StringFilterState } from '../../types'
+import { formatNumber } from '../../lib/formatNumber'
 
 interface Props {
   state: StringFilterState
@@ -147,8 +148,8 @@ export function StringFilter({ state, onChange }: Props): React.JSX.Element {
         </button>
         <span className="text-[11px] text-slate-400" data-testid="string-filter-count">
           {state.selectedValues.size === 0
-            ? `${state.allValues.length}/${state.allValues.length}`
-            : `${state.selectedValues.size}/${state.allValues.length}`}
+            ? `${formatNumber(state.allValues.length)}/${formatNumber(state.allValues.length)}`
+            : `${formatNumber(state.selectedValues.size)}/${formatNumber(state.allValues.length)}`}
         </span>
       </div>
 
@@ -164,7 +165,7 @@ export function StringFilter({ state, onChange }: Props): React.JSX.Element {
               className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500"
               data-testid="string-filter-overflow"
             >
-              +{overflowCount} more
+              +{formatNumber(overflowCount)} more
             </span>
           )}
 

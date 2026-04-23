@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Search, X } from 'lucide-react'
+import { formatNumber } from '../../lib/formatNumber'
 
 interface Props {
   /** Seed value for the input (e.g. the current store value on mount). */
@@ -72,7 +73,7 @@ export function SearchBox({ initialValue = '', onChange, matchCount, matches = [
     ? 'No matches'
     : matchCount === 1
       ? '1 match'
-      : `${matchCount?.toLocaleString()} matches`
+      : `${matchCount !== null ? formatNumber(matchCount) : ''} matches`
 
   const isDropdownOpen = !disabled && isFocused && !isForceClosed && value.length > 0 && matches.length > 0
 
@@ -165,7 +166,7 @@ export function SearchBox({ initialValue = '', onChange, matchCount, matches = [
                 data-testid="search-box-dropdown-footer"
                 className="border-t border-slate-100 px-2 py-1 text-[10px] text-slate-400"
               >
-                Showing {matches.length} of {matchCount.toLocaleString()} matches
+                Showing {formatNumber(matches.length)} of {formatNumber(matchCount)} matches
               </p>
             )}
           </div>

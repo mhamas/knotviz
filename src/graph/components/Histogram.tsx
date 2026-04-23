@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { HistogramBucket, DateHistogramBucket } from '../types'
+import { formatNumber } from '../lib/formatNumber'
 
 interface NumericProps {
   buckets: HistogramBucket[]
@@ -13,7 +14,7 @@ type Props = NumericProps | DateProps
 
 /** Format a numeric boundary for display: up to 1 decimal place. */
 function fmtNum(v: number): string {
-  return Number.isInteger(v) ? v.toLocaleString() : v.toLocaleString(undefined, { maximumFractionDigits: 1 })
+  return Number.isInteger(v) ? formatNumber(v) : formatNumber(v, { decimals: 1 })
 }
 
 /** Build tooltip text for a bucket. */
@@ -21,7 +22,7 @@ function tooltipText(bucket: HistogramBucket | DateHistogramBucket): string {
   const from = typeof bucket.from === 'number' ? fmtNum(bucket.from) : bucket.from
   const to = typeof bucket.to === 'number' ? fmtNum(bucket.to) : bucket.to
   const noun = bucket.count === 1 ? 'node' : 'nodes'
-  return `${from} – ${to}: ${bucket.count.toLocaleString()} ${noun}`
+  return `${from} – ${to}: ${formatNumber(bucket.count)} ${noun}`
 }
 
 /**

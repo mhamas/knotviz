@@ -24,6 +24,7 @@ import { DownloadSplitButton } from './DownloadSplitButton'
 import type { ExportFormat } from '../lib/exports/types'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useGraphStore } from '@/stores/useGraphStore'
+import { formatNumber } from '../lib/formatNumber'
 import {
   COLOR_TAB_COLORS, COLOR_TAB_COLORS_BG,
   COLOR_TAB_FILTERS, COLOR_TAB_FILTERS_BG,
@@ -214,7 +215,7 @@ export function LeftSidebar({
               <LabeledSlider
                 label="Repulsion"
                 value={repulsion}
-                formatValue={(v): string => v.toFixed(2)}
+                formatValue={(v): string => formatNumber(v, { decimals: 2 })}
                 help="A force between ALL pairs of nodes that pushes them apart, like magnets with the same pole. This is the main force that prevents nodes from overlapping and creates space in the layout. Unlike Link Spring (which only acts between connected nodes), Repulsion acts between every node — even nodes with no edges between them. Higher values spread the entire graph out; lower values let it collapse tighter. If you raise Repulsion without raising Link Spring, clusters will break apart. If you lower it too much, unconnected groups will overlap."
                 min={0}
                 max={300}
@@ -229,7 +230,7 @@ export function LeftSidebar({
               <LabeledSlider
                 label="Friction"
                 value={1 - friction}
-                formatValue={(v): string => v.toFixed(2)}
+                formatValue={(v): string => formatNumber(v, { decimals: 2 })}
                 help="Controls how quickly nodes lose their momentum and come to rest. Think of it like air resistance. High friction (close to 1) means nodes stop almost immediately after forces are applied — the layout converges fast but may look rigid. Low friction (close to 0) means nodes keep sliding for a long time — the layout is smoother and more organic but takes longer to settle. If the simulation never stabilizes, raise friction; if it feels too rigid, lower it."
                 min={0}
                 max={100}
@@ -244,7 +245,7 @@ export function LeftSidebar({
               <LabeledSlider
                 label="Link Spring"
                 value={linkSpring}
-                formatValue={(v): string => v.toFixed(2)}
+                formatValue={(v): string => formatNumber(v, { decimals: 2 })}
                 help="A spring force that acts ONLY between nodes connected by an edge, pulling them closer together — like a rubber band on each link. This is what makes clusters visible: densely connected groups of nodes get pulled into tight neighborhoods. Unlike Repulsion (which pushes ALL nodes apart), Link Spring only affects connected pairs. The interplay between these two forces defines the layout: Repulsion spreads everything out, Link Spring pulls connected nodes back in. Higher values make connected nodes snap tighter together; lower values let them drift apart even if connected."
                 min={0}
                 max={300}
@@ -343,8 +344,8 @@ export function LeftSidebar({
       <div className="mt-4">
         <SectionHeading>Graph Info</SectionHeading>
         <div className="mt-2 space-y-1">
-          <StatRow label="Nodes" value={matchingNodeCount === nodeCount ? nodeCount.toLocaleString() : `${matchingNodeCount.toLocaleString()} / ${nodeCount.toLocaleString()}`} />
-          <StatRow label="Edges" value={visibleEdgeCount === edgeCount ? edgeCount.toLocaleString() : `${visibleEdgeCount.toLocaleString()} / ${edgeCount.toLocaleString()}`} />
+          <StatRow label="Nodes" value={matchingNodeCount === nodeCount ? formatNumber(nodeCount) : `${formatNumber(matchingNodeCount)} / ${formatNumber(nodeCount)}`} />
+          <StatRow label="Edges" value={visibleEdgeCount === edgeCount ? formatNumber(edgeCount) : `${formatNumber(visibleEdgeCount)} / ${formatNumber(edgeCount)}`} />
         </div>
         {outgoingDegreeHistogram.length > 0 && (
           <div className="mt-3" data-testid="outgoing-degree-histogram">

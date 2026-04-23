@@ -28,6 +28,7 @@ import {
   parseStreamingNodeEdgeCSV,
 } from '../lib/streamingCsvGraphParser'
 import { parseStreamingJsonGraph } from '../lib/streamingJsonGraphParser'
+import { formatNumber } from '../lib/formatNumber'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
@@ -202,7 +203,7 @@ async function loadCsvEdgeListStreaming(file: File): Promise<ProcessResult> {
         const pct = Math.min(90, Math.round((bytesRead / totalBytes) * 90))
         post({
           type: 'progress',
-          stage: `Streaming edges… ${edgeCount.toLocaleString()}`,
+          stage: `Streaming edges… ${formatNumber(edgeCount)}`,
           percent: pct,
         })
       }
@@ -240,7 +241,7 @@ async function loadCsvPairStreaming(nodesFile: File, edgesFile: File): Promise<P
         const pct = Math.min(80, Math.round((bytesRead / totalBytes) * 80))
         post({
           type: 'progress',
-          stage: `Streaming nodes… ${nodeCount.toLocaleString()}`,
+          stage: `Streaming nodes… ${formatNumber(nodeCount)}`,
           percent: pct,
         })
       }
@@ -252,7 +253,7 @@ async function loadCsvPairStreaming(nodesFile: File, edgesFile: File): Promise<P
         const pct = Math.min(90, Math.round((bytesRead / totalBytes) * 90))
         post({
           type: 'progress',
-          stage: `Streaming edges… ${edgeCount.toLocaleString()}`,
+          stage: `Streaming edges… ${formatNumber(edgeCount)}`,
           percent: pct,
         })
       }
@@ -311,7 +312,7 @@ async function loadWithStreaming(file: File): Promise<ProcessResult> {
       nodeCount++
       if (nodeCount % 100_000 === 0) {
         const pct = Math.min(80, Math.round((bytesRead / totalBytes) * 80))
-        post({ type: 'progress', stage: `Streaming nodes… ${nodeCount.toLocaleString()}`, percent: pct })
+        post({ type: 'progress', stage: `Streaming nodes… ${formatNumber(nodeCount)}`, percent: pct })
       }
     },
     onEdge: (obj) => {
@@ -319,7 +320,7 @@ async function loadWithStreaming(file: File): Promise<ProcessResult> {
       edgeCount++
       if (edgeCount % 100_000 === 0) {
         const pct = Math.min(90, Math.round((bytesRead / totalBytes) * 90))
-        post({ type: 'progress', stage: `Streaming edges… ${edgeCount.toLocaleString()}`, percent: pct })
+        post({ type: 'progress', stage: `Streaming edges… ${formatNumber(edgeCount)}`, percent: pct })
       }
     },
     onNodePropertiesMetadata: (m) => {
@@ -397,7 +398,7 @@ async function processRawGraph(raw: unknown): Promise<ProcessResult> {
 
   for (let i = 0; i < rawNodes.length; i++) {
     if (i > 0 && i % PROGRESS_BATCH === 0) {
-      post({ type: 'progress', stage: `Processing nodes… ${i.toLocaleString()} / ${rawNodes.length.toLocaleString()}`, percent: 40 + Math.round((i / rawNodes.length) * 25) })
+      post({ type: 'progress', stage: `Processing nodes… ${formatNumber(i)} / ${formatNumber(rawNodes.length)}`, percent: 40 + Math.round((i / rawNodes.length) * 25) })
       await yieldWorker()
     }
     const node = rawNodes[i]
@@ -408,7 +409,7 @@ async function processRawGraph(raw: unknown): Promise<ProcessResult> {
 
   for (let i = 0; i < rawEdges.length; i++) {
     if (i > 0 && i % PROGRESS_BATCH === 0) {
-      post({ type: 'progress', stage: `Processing edges… ${i.toLocaleString()} / ${rawEdges.length.toLocaleString()}`, percent: 65 + Math.round((i / rawEdges.length) * 25) })
+      post({ type: 'progress', stage: `Processing edges… ${formatNumber(i)} / ${formatNumber(rawEdges.length)}`, percent: 65 + Math.round((i / rawEdges.length) * 25) })
       await yieldWorker()
     }
     const edge = rawEdges[i]

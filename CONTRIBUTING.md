@@ -186,6 +186,7 @@ Import via `import { SectionHeading, LabeledSlider, ... } from '@/components/sid
 3. **Style changes go in the component**, not at the call site. Use `className` prop only for layout concerns (`flex-1`, `w-1/2`, `mt-4`), never for colors, fonts, or spacing that are part of the design system.
 4. **shadcn/ui** (`src/graph/components/ui/`) provides primitives (Button, Slider, Checkbox, Popover, AlertDialog). `sidebar/` composes these into app-specific components. Use `ui/` directly only when `sidebar/` has no suitable wrapper.
 5. **Icons** — always use `lucide-react` (`import { Copy, Check, X, ... } from 'lucide-react'`). NEVER use inline SVGs, raw Unicode symbols, or hand-crafted icon markup. Browse available icons at https://lucide.dev/icons.
+6. **Numbers on screen** — every numeric value rendered to the UI (counts, stats, slider labels, tooltip values, progress strings, legend endpoints, error messages) MUST go through `formatNumber` from `src/graph/lib/formatNumber.ts`. Never call `.toLocaleString()`, `.toFixed()`, or `.toPrecision()` directly for display. `formatNumber(v)` preserves decimals as-is with comma grouping; pass `{ decimals: N }` where a fixed precision reads better (slider labels, stats means, percentages). The one exception is values bound to **editable inputs** (e.g. `NumberFilter`'s min/max textboxes): those stay in raw `parseFloat`-friendly form because the same string is echoed back into the input on focus.
 
 ---
 

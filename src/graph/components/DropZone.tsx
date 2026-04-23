@@ -289,7 +289,7 @@ export function DropZone({ onLoad, fileInputRef: externalFileInputRef, pendingFi
                 setIsSchemaOpen(true)
               }}
             >
-              View expected JSON schema
+              See accepted formats
             </button>
           </>
         )}

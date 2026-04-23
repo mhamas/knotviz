@@ -150,6 +150,78 @@ edges = [{ "source": s, "target": t } for s, t in connections]
 json.dump({ "version": "1", "nodes": nodes, "edges": edges }, open("graph.json", "w"))
 ```
 
+## Full JSON Schema
+
+Draft-07. Canonical copy lives at [`/docs/schema.json`](/docs/schema.json) — fetch it in a validator, a code generator, or an LLM tool call. The schema is versioned alongside the parser; the hosted copy is always in sync with the production build.
+
+```json title="graphSchema.json"
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Knotviz Graph",
+  "description": "A graph data file for the Knotviz visualizer. Contains versioned node and edge definitions with optional properties for visualization and analysis.",
+  "type": "object",
+  "required": ["version", "nodes", "edges"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "string", "const": "1", "description": "Schema version. Must be \"1\"." },
+    "nodes": {
+      "type": "array",
+      "description": "Array of node objects in the graph.",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "additionalProperties": false,
+        "properties": {
+          "id":    { "type": "string", "description": "Unique identifier for the node." },
+          "label": { "type": "string", "description": "Display name shown on the canvas. Falls back to id if omitted." },
+          "x":     { "type": "number", "description": "Initial X position. If omitted, a random position is assigned." },
+          "y":     { "type": "number", "description": "Initial Y position. If omitted, a random position is assigned." },
+          "properties": {
+            "type": "object",
+            "description": "Arbitrary key-value pairs for the node. Values can be number, string, boolean, or array of strings. ISO 8601 date strings (e.g. \"2024-01-15\") are auto-detected as dates.",
+            "additionalProperties": {
+              "oneOf": [
+                { "type": "number" },
+                { "type": "string" },
+                { "type": "boolean" },
+                { "type": "array", "items": { "type": "string" } }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "nodePropertiesMetadata": {
+      "type": "object",
+      "description": "Optional metadata for node properties. Maps property keys to objects with a description field.",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["description"],
+        "additionalProperties": false,
+        "properties": {
+          "description": { "type": "string", "description": "Human-readable description of this property." }
+        }
+      }
+    },
+    "edges": {
+      "type": "array",
+      "description": "Array of edge objects connecting nodes.",
+      "items": {
+        "type": "object",
+        "required": ["source", "target"],
+        "additionalProperties": false,
+        "properties": {
+          "source": { "type": "string", "description": "ID of the source node." },
+          "target": { "type": "string", "description": "ID of the target node." },
+          "label":  { "type": "string", "description": "Edge label or relationship type." },
+          "weight": { "type": "number", "description": "Edge weight used by the ForceAtlas2 layout simulation." }
+        }
+      }
+    }
+  }
+}
+```
+
 ## Gotchas
 
 - **`version` is a string, not a number.** Use `"1"`, not `1`.

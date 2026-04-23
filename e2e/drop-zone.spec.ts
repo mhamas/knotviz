@@ -54,58 +54,47 @@ test.describe('Drop Zone — File Loading', () => {
   })
 })
 
-test.describe('Drop Zone — Schema Dialog', () => {
+test.describe('Drop Zone — Formats Dialog', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/graph')
   })
 
-  test('schema link is visible inside drop zone', async ({ page }) => {
-    await expect(page.getByText('View expected JSON schema')).toBeVisible()
+  test('formats link is visible inside drop zone', async ({ page }) => {
+    await expect(page.getByText('See accepted formats')).toBeVisible()
   })
 
-  test('clicking schema link opens dialog with tabs', async ({ page }) => {
-    await page.getByText('View expected JSON schema').click()
-    await expect(page.getByRole('heading', { name: 'Graph JSON Schema' })).toBeVisible()
-    // All 3 tabs are present
-    await expect(page.getByRole('tab', { name: 'Explanation' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: 'JSON Schema' })).toBeVisible()
-    await expect(page.getByRole('tab', { name: 'Examples' })).toBeVisible()
+  test('clicking formats link opens a dialog listing all five formats', async ({ page }) => {
+    await page.getByText('See accepted formats').click()
+    await expect(page.getByRole('heading', { name: 'Accepted formats' })).toBeVisible()
+    // Each format is named in the dialog
+    const dialog = page.getByRole('dialog')
+    await expect(dialog.getByText('JSON', { exact: true })).toBeVisible()
+    await expect(dialog.getByText('CSV edge list', { exact: true })).toBeVisible()
+    await expect(dialog.getByText('CSV pair', { exact: true })).toBeVisible()
+    await expect(dialog.getByText('GraphML', { exact: true })).toBeVisible()
+    await expect(dialog.getByText('GEXF', { exact: true })).toBeVisible()
   })
 
-  test('explanation tab shows field tables with required fields', async ({ page }) => {
-    await page.getByText('View expected JSON schema').click()
-    // Explanation tab is active by default
-    await expect(page.getByText('Top-level fields')).toBeVisible()
-    await expect(page.getByText('Node fields')).toBeVisible()
-    await expect(page.getByText('Edge fields')).toBeVisible()
-    // Required fields present
-    await expect(page.getByRole('cell', { name: 'version', exact: true })).toBeVisible()
-    await expect(page.getByRole('cell', { name: 'id', exact: true })).toBeVisible()
-    await expect(page.getByRole('cell', { name: 'source', exact: true })).toBeVisible()
+  test('dialog links to the full docs reference', async ({ page }) => {
+    await page.getByText('See accepted formats').click()
+    const dialog = page.getByRole('dialog')
+    // The "full reference" footer link points at the docs input-formats page
+    const docsLink = dialog.getByRole('link', { name: /full reference|all formats/i })
+    await expect(docsLink).toHaveAttribute('href', /\/docs\/input-formats/)
   })
 
-  test('JSON Schema tab shows raw schema with copy button', async ({ page }) => {
-    await page.getByText('View expected JSON schema').click()
-    await page.getByRole('tab', { name: 'JSON Schema' }).click()
-    await expect(page.locator('pre')).toContainText('"$schema"')
-    await expect(page.locator('pre')).toContainText('json-schema.org')
-    await expect(page.getByRole('button', { name: 'Copy' })).toBeVisible()
+  test('each format row links to its docs page', async ({ page }) => {
+    await page.getByText('See accepted formats').click()
+    const dialog = page.getByRole('dialog')
+    // Five per-format "Docs" links, one per format
+    const perFormatLinks = dialog.getByRole('link', { name: 'Docs' })
+    await expect(perFormatLinks).toHaveCount(5)
   })
 
-  test('examples tab shows minimal and full examples', async ({ page }) => {
-    await page.getByText('View expected JSON schema').click()
-    await page.getByRole('tab', { name: 'Examples' }).click()
-    await expect(page.getByText('Minimal graph')).toBeVisible()
-    await expect(page.getByText('Full-featured graph')).toBeVisible()
-    // Both have copy buttons
-    const copyButtons = page.getByRole('button', { name: 'Copy' })
-    await expect(copyButtons).toHaveCount(2)
-  })
-
-  test('schema dialog can be closed', async ({ page }) => {
-    await page.getByText('View expected JSON schema').click()
-    await expect(page.getByRole('heading', { name: 'Graph JSON Schema' })).toBeVisible()
+  test('formats dialog can be closed', async ({ page }) => {
+    await page.getByText('See accepted formats').click()
+    await expect(page.getByRole('heading', { name: 'Accepted formats' })).toBeVisible()
     await page.keyboard.press('Escape')
-    await expect(page.getByRole('heading', { name: 'Graph JSON Schema' })).not.toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Accepted formats' })).not.toBeVisible()
   })
 })

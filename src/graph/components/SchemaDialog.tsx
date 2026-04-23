@@ -44,7 +44,17 @@ const FORMATS: FormatEntry[] = [
         "tags": ["founder", "alumna"]
       }
     },
-    { "id": "bob", "label": "Bob", "properties": { "age": 28, "role": "designer" } }
+    {
+      "id": "bob",
+      "label": "Bob",
+      "properties": {
+        "age": 28,
+        "role": "designer",
+        "active": true,
+        "joined": "2023-11-02",
+        "tags": ["newbie"]
+      }
+    }
   ],
   "edges": [
     { "source": "alice", "target": "bob", "label": "mentors", "weight": 0.8 }
@@ -69,8 +79,8 @@ alice,carol,0.3`,
     example: `# nodes.csv
 id,label,age:number,role,active:boolean,joined:date,tags
 alice,Alice,34,engineer,true,2021-03-15,founder|alumna
-bob,Bob,28,designer,true,2023-11-02,
-carol,Carol,41,engineer,false,2019-06-01,alumna
+bob,Bob,28,designer,true,2023-11-02,newbie
+carol,Carol,41,engineer,false,2019-06-01,alumna|mentor
 
 # edges.csv
 source,target,weight
@@ -96,6 +106,7 @@ bob,carol,1.2`,
     <node id="bob">
       <data key="age">28</data>
       <data key="role">designer</data>
+      <data key="joined">2023-11-02</data>
     </node>
     <edge source="alice" target="bob"><data key="weight">0.8</data></edge>
   </graph>
@@ -126,7 +137,9 @@ bob,carol,1.2`,
         <attvalues>
           <attvalue for="0" value="28"/>
           <attvalue for="1" value="designer"/>
+          <attvalue for="2" value="2023-11-02"/>
         </attvalues>
+        <viz:position x="180" y="60"/>
       </node>
     </nodes>
     <edges>

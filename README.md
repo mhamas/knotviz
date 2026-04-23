@@ -104,6 +104,10 @@ python3 scripts/generate_large_graph.py
 
 Generates 2M, 3M, 4M, and 5M node graphs in `graphs_for_manual_testing/`. Each node has 4 property types (number, string, boolean, date). Edge distribution: 50% one edge, 30% two, 20% three per node.
 
+## Project status
+
+Knotviz is a solo side project. Issues and PRs are triaged on a best-effort basis with no SLA — please be patient, and expect that some requests will be closed as out of scope. The name "Knotviz" and the logos in `/logos/` are not covered by the MIT license; see [TRADEMARKS.md](TRADEMARKS.md).
+
 ## License
 
 MIT — see [LICENSE](LICENSE).

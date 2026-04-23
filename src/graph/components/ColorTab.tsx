@@ -7,12 +7,16 @@ import {
   interpolateColors,
   isBuiltinPalette,
   getPaletteColors,
+  getPaletteKind,
 } from '@/lib/colorScales'
+import type { PaletteKind } from '@/types'
 import { SectionHeading } from '@/components/sidebar'
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectSeparator,
   SelectTrigger,
 } from '@/components/ui/select'
@@ -40,6 +44,31 @@ function resolveStops(state: ColorGradientState): string[] {
     stops = custom ? [...custom.colors, ...state.customColors] : getPaletteColors('Viridis', state.customColors)
   }
   return state.isReversed ? [...stops].reverse() : stops
+}
+
+/**
+ * Default palette to use when the user selects a property whose type
+ * doesn't match the current palette's kind.
+ *
+ * - Categorical data (`string` / `boolean`) wants a qualitative palette
+ *   so neighbouring categories are visually distinct.
+ * - Continuous data (`number` / `date`) wants a sequential/diverging
+ *   palette so magnitude is preserved.
+ *
+ * Custom palettes (non-built-in) are left alone — the user picked them
+ * deliberately, so we never clobber them here.
+ */
+export function alignPaletteToType(
+  currentPalette: string,
+  newType: PropertyType | undefined,
+): string {
+  if (newType === undefined) return currentPalette
+  if (!isBuiltinPalette(currentPalette)) return currentPalette
+  const isCategorical = newType === 'string' || newType === 'string[]' || newType === 'boolean'
+  const kind = getPaletteKind(currentPalette)
+  if (isCategorical && kind !== 'qualitative') return 'Tableau10'
+  if (!isCategorical && kind === 'qualitative') return 'Viridis'
+  return currentPalette
 }
 
 /**
@@ -75,9 +104,14 @@ export function ColorTab({
 
   const handlePropertyChange = (value: string | null): void => {
     if (value === null) return
+    const newPropertyKey = value === '__none__' ? null : value
+    const newType = newPropertyKey
+      ? propertyMetas.find((m) => m.key === newPropertyKey)?.type
+      : undefined
     onChange({
       ...state,
-      propertyKey: value === '__none__' ? null : value,
+      propertyKey: newPropertyKey,
+      palette: alignPaletteToType(state.palette, newType),
     })
   }
 
@@ -242,25 +276,36 @@ export function ColorTab({
           <Select value={state.palette} onValueChange={handlePaletteChange}>
             <SelectTrigger className="w-full" data-testid="color-palette-select">
               <span className="flex flex-1 items-center gap-2 text-left">
-                <GradientSwatch stops={currentStops} />
+                <PaletteSwatch name={paletteName(state)} stops={currentStops} />
                 {paletteName(state)}
               </span>
             </SelectTrigger>
             <SelectContent>
-              {PALETTE_NAMES.map((name) => {
-                const stops = getPaletteColors(name)
+              {(['sequential', 'diverging', 'qualitative'] as PaletteKind[]).map((kind, groupIndex) => {
+                const names = PALETTE_NAMES.filter((n) => getPaletteKind(n) === kind)
                 return (
-                  <SelectItem key={name} value={name}>
-                    <span className="flex items-center gap-2">
-                      <GradientSwatch stops={stops} />
-                      {name}
-                      {stops.length === 2 && (
-                        <span className="rounded bg-slate-100 px-1 py-0.5 text-[9px] font-medium leading-none text-slate-400">
-                          binary
-                        </span>
-                      )}
-                    </span>
-                  </SelectItem>
+                  <SelectGroup key={kind}>
+                    {groupIndex > 0 && <SelectSeparator />}
+                    <SelectLabel className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                      {KIND_LABEL[kind]}
+                    </SelectLabel>
+                    {names.map((name) => {
+                      const stops = getPaletteColors(name)
+                      return (
+                        <SelectItem key={name} value={name}>
+                          <span className="flex items-center gap-2">
+                            <PaletteSwatch name={name} stops={stops} />
+                            {name}
+                            {kind !== 'qualitative' && stops.length === 2 && (
+                              <span className="rounded bg-slate-100 px-1 py-0.5 text-[9px] font-medium leading-none text-slate-400">
+                                binary
+                              </span>
+                            )}
+                          </span>
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectGroup>
                 )
               })}
               {state.customPalettes.length > 0 && <SelectSeparator />}
@@ -380,6 +425,34 @@ function GradientSwatch({ stops }: { stops: string[] }): React.JSX.Element {
       style={{ background: bg }}
     />
   )
+}
+
+/** Discrete preview: each stop rendered as an equal-width chip. */
+function DiscreteSwatch({ stops }: { stops: string[] }): React.JSX.Element {
+  return (
+    <span className="inline-flex h-3 w-6 shrink-0 overflow-hidden rounded-sm">
+      {stops.map((c, i) => (
+        <span key={i} className="h-full flex-1" style={{ backgroundColor: c }} />
+      ))}
+    </span>
+  )
+}
+
+/**
+ * Picks the right preview style for a palette — discrete chips for a
+ * known qualitative palette, gradient for everything else.
+ */
+function PaletteSwatch({ name, stops }: { name: string; stops: string[] }): React.JSX.Element {
+  if (isBuiltinPalette(name) && getPaletteKind(name) === 'qualitative') {
+    return <DiscreteSwatch stops={stops} />
+  }
+  return <GradientSwatch stops={stops} />
+}
+
+const KIND_LABEL: Record<PaletteKind, string> = {
+  sequential: 'Sequential',
+  diverging: 'Diverging',
+  qualitative: 'Qualitative (categorical)',
 }
 
 interface LegendProps {

@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState, type KeyboardEvent } from 'react'
-import type { CustomPalette, PaletteName } from '@/types'
-import { PALETTE_NAMES, samplePalette, interpolatePalette } from '@/lib/colorScales'
+import type { CustomPalette, PaletteKind, PaletteName } from '@/types'
+import { PALETTE_NAMES, PALETTE_STOPS, getPaletteKind, samplePalette, interpolatePalette } from '@/lib/colorScales'
 import { formatNumber } from '@/lib/formatNumber'
 import {
   Dialog,
@@ -14,7 +14,10 @@ import { Button } from '@/components/ui/button'
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
+  SelectSeparator,
   SelectTrigger,
 } from '@/components/ui/select'
 
@@ -136,14 +139,25 @@ export function CreatePaletteModal({ isOpen, onClose, onSave }: Props): React.JS
                 </span>
               </SelectTrigger>
               <SelectContent>
-                {PALETTE_NAMES.map((p) => (
-                  <SelectItem key={p} value={p}>
-                    <span className="flex items-center gap-2">
-                      <SchemePreview palette={p} />
-                      {p}
-                    </span>
-                  </SelectItem>
-                ))}
+                {(['sequential', 'diverging', 'qualitative'] as PaletteKind[]).map((kind, groupIndex) => {
+                  const names = PALETTE_NAMES.filter((n) => getPaletteKind(n) === kind)
+                  return (
+                    <SelectGroup key={kind}>
+                      {groupIndex > 0 && <SelectSeparator />}
+                      <SelectLabel className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                        {KIND_LABEL[kind]}
+                      </SelectLabel>
+                      {names.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          <span className="flex items-center gap-2">
+                            <SchemePreview palette={p} />
+                            {p}
+                          </span>
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  )
+                })}
               </SelectContent>
             </Select>
           </div>
@@ -285,8 +299,19 @@ function PalettePreview({ colors }: { colors: string[] }): React.JSX.Element {
   )
 }
 
-/** Small gradient swatch for base scheme selector. */
+/** Small swatch for base scheme selector — gradient for sequential/diverging,
+ * discrete chips for qualitative. */
 function SchemePreview({ palette }: { palette: PaletteName }): React.JSX.Element {
+  if (getPaletteKind(palette) === 'qualitative') {
+    const chips = PALETTE_STOPS[palette].slice(0, 6)
+    return (
+      <span className="inline-flex h-3 w-6 overflow-hidden rounded-sm">
+        {chips.map((c, i) => (
+          <span key={i} className="h-full flex-1" style={{ backgroundColor: c }} />
+        ))}
+      </span>
+    )
+  }
   const stops = Array.from({ length: 5 }, (_, i) =>
     `${interpolatePalette(palette, i / 4)} ${i * 25}%`,
   ).join(', ')
@@ -296,4 +321,10 @@ function SchemePreview({ palette }: { palette: PaletteName }): React.JSX.Element
       style={{ background: `linear-gradient(to right, ${stops})` }}
     />
   )
+}
+
+const KIND_LABEL: Record<PaletteKind, string> = {
+  sequential: 'Sequential',
+  diverging: 'Diverging',
+  qualitative: 'Qualitative (categorical)',
 }

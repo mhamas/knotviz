@@ -215,6 +215,19 @@ export type PaletteName =
   | 'TealRose'
   | 'IndigoAmber'
   | 'Grays'
+  | 'Tableau10'
+  | 'Observable10'
+  | 'Set2'
+  | 'Dark2'
+  | 'Paired'
+
+/**
+ * How a palette is meant to be used:
+ * - `sequential`: single-hue gradient for ordered data (Blues, Viridis…)
+ * - `diverging`: two-hue gradient with a neutral midpoint (RdBu, Spectral…)
+ * - `qualitative`: fixed distinct colors for categorical data (Tableau10…)
+ */
+export type PaletteKind = 'sequential' | 'diverging' | 'qualitative'
 
 export interface CustomPalette {
   id: string

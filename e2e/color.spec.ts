@@ -139,6 +139,37 @@ test.describe('Color Tab', () => {
     await expect(page.getByRole('option', { name: 'Grays' })).toBeVisible()
   })
 
+  test('categorical property auto-picks a qualitative palette (Tableau10)', async ({ page }) => {
+    await switchToColorMode(page)
+    // Confirm default is Viridis (sequential) before selecting anything categorical.
+    await expect(page.getByTestId('color-palette-select')).toContainText('Viridis')
+    // `status` is a string property in the sample graph fixture.
+    await page.getByTestId('color-property-select').click()
+    await page.getByRole('option', { name: 'status' }).click()
+    await expect(page.getByTestId('color-palette-select')).toContainText('Tableau10')
+  })
+
+  test('switching back to a numeric property restores a sequential palette', async ({ page }) => {
+    await switchToColorMode(page)
+    await page.getByTestId('color-property-select').click()
+    await page.getByRole('option', { name: 'status' }).click()
+    await expect(page.getByTestId('color-palette-select')).toContainText('Tableau10')
+    await page.getByTestId('color-property-select').click()
+    await page.getByRole('option', { name: 'age' }).click()
+    await expect(page.getByTestId('color-palette-select')).toContainText('Viridis')
+  })
+
+  test('palette picker groups palettes by kind', async ({ page }) => {
+    await switchToColorMode(page)
+    await page.getByTestId('color-palette-select').click()
+    const content = page.getByRole('listbox')
+    await expect(content.getByText('Sequential', { exact: true })).toBeVisible()
+    await expect(content.getByText('Diverging', { exact: true })).toBeVisible()
+    await expect(content.getByText('Qualitative (categorical)', { exact: true })).toBeVisible()
+    await expect(content.getByRole('option', { name: 'Tableau10' })).toBeVisible()
+    await expect(content.getByRole('option', { name: 'Observable10' })).toBeVisible()
+  })
+
   test('create custom palette: count input lets user type an explicit value', async ({ page }) => {
     await switchToColorMode(page)
     await page.getByTestId('color-palette-select').click()

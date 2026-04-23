@@ -5,7 +5,9 @@ import {
   getPaletteColors,
   samplePalette,
   isBuiltinPalette,
+  getPaletteKind,
   PALETTE_NAMES,
+  PALETTE_STOPS,
 } from '@/lib/colorScales'
 
 describe('interpolatePalette', () => {
@@ -96,7 +98,7 @@ describe('getPaletteColors', () => {
 })
 
 describe('samplePalette', () => {
-  it('samples N evenly-spaced colors from a palette', () => {
+  it('samples N evenly-spaced colors from a sequential palette', () => {
     const colors = samplePalette('Viridis', 3)
     expect(colors).toHaveLength(3)
     expect(colors[0]).toBe('#440154') // t=0
@@ -115,6 +117,51 @@ describe('samplePalette', () => {
       expect(c).toMatch(/^#[0-9a-f]{6}$/)
     }
   })
+
+  it('takes the first N stops verbatim for qualitative palettes (no interpolation)', () => {
+    // Qualitative palettes are designed so *adjacent stops are the most
+    // distinct pair*. Interpolating between them produces a muddy blend
+    // that loses the whole point of a categorical palette.
+    const colors = samplePalette('Tableau10', 3)
+    expect(colors).toEqual(PALETTE_STOPS.Tableau10.slice(0, 3))
+  })
+
+  it('cycles qualitative stops when N exceeds palette length', () => {
+    const stops = PALETTE_STOPS.Set2
+    const colors = samplePalette('Set2', stops.length + 2)
+    expect(colors.slice(0, stops.length)).toEqual(stops)
+    expect(colors[stops.length]).toBe(stops[0])
+    expect(colors[stops.length + 1]).toBe(stops[1])
+  })
+})
+
+describe('getPaletteKind', () => {
+  it('classifies the classic sequential single-hue palettes', () => {
+    expect(getPaletteKind('Viridis')).toBe('sequential')
+    expect(getPaletteKind('Blues')).toBe('sequential')
+    expect(getPaletteKind('Plasma')).toBe('sequential')
+  })
+
+  it('classifies diverging palettes', () => {
+    expect(getPaletteKind('Spectral')).toBe('diverging')
+    expect(getPaletteKind('RdBu')).toBe('diverging')
+    expect(getPaletteKind('PiYG')).toBe('diverging')
+  })
+
+  it('classifies qualitative palettes', () => {
+    expect(getPaletteKind('Tableau10')).toBe('qualitative')
+    expect(getPaletteKind('Observable10')).toBe('qualitative')
+    expect(getPaletteKind('Set2')).toBe('qualitative')
+    expect(getPaletteKind('Dark2')).toBe('qualitative')
+    expect(getPaletteKind('Paired')).toBe('qualitative')
+  })
+
+  it('returns a kind for every built-in palette', () => {
+    for (const name of PALETTE_NAMES) {
+      const kind = getPaletteKind(name)
+      expect(['sequential', 'diverging', 'qualitative']).toContain(kind)
+    }
+  })
 })
 
 describe('isBuiltinPalette', () => {
@@ -131,7 +178,13 @@ describe('isBuiltinPalette', () => {
 })
 
 describe('PALETTE_NAMES', () => {
-  it('contains all 19 built-in palettes', () => {
-    expect(PALETTE_NAMES).toHaveLength(19)
+  it('contains all 24 built-in palettes (19 sequential/diverging + 5 qualitative)', () => {
+    expect(PALETTE_NAMES).toHaveLength(24)
+  })
+
+  it('includes every qualitative palette name', () => {
+    expect(PALETTE_NAMES).toEqual(expect.arrayContaining([
+      'Tableau10', 'Observable10', 'Set2', 'Dark2', 'Paired',
+    ]))
   })
 })

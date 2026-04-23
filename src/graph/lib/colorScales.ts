@@ -1,7 +1,8 @@
-import type { PaletteName } from '@/types'
+import type { PaletteKind, PaletteName } from '@/types'
 
-/** Built-in palette stop colors (low → high). */
+/** Built-in palette stop colors (low → high for sequential/diverging, distinct colors for qualitative). */
 export const PALETTE_STOPS: Record<PaletteName, string[]> = {
+  // ── Sequential ───────────────────────────────────────────────────────
   Viridis: ['#440154', '#3b528b', '#21908c', '#5dc963', '#fde725'],
   Plasma: ['#0d0887', '#6a00a8', '#b12a90', '#e16462', '#fca636', '#f0f921'],
   Magma: ['#000004', '#3b0f70', '#8c2981', '#de4968', '#fe9f6d', '#fcfdbf'],
@@ -13,6 +14,8 @@ export const PALETTE_STOPS: Record<PaletteName, string[]> = {
   Oranges: ['#fff5eb', '#fdd0a2', '#fd8d3c', '#d94801', '#7f2704'],
   Purples: ['#fcfbfd', '#dadaeb', '#9e9ac8', '#6a51a3', '#3f007d'],
   Rainbow: ['#6e40aa', '#1d91c0', '#39c96c', '#efbd2e', '#e4462b'],
+  Grays: ['#f8fafc', '#cbd5e1', '#94a3b8', '#64748b', '#334155', '#1e293b'],
+  // ── Diverging ────────────────────────────────────────────────────────
   Spectral: ['#9e0142', '#d53e4f', '#f46d43', '#fdae61', '#fee08b', '#e6f598', '#abdda4', '#66c2a5', '#3288bd', '#5e4fa2'],
   RdBu: ['#67001f', '#d6604d', '#f7f7f7', '#4393c3', '#053061'],
   RdYlGn: ['#a50026', '#d73027', '#f46d43', '#fdae61', '#fee08b', '#d9ef8b', '#a6d96a', '#66bd63', '#1a9850', '#006837'],
@@ -20,7 +23,45 @@ export const PALETTE_STOPS: Record<PaletteName, string[]> = {
   BlueOrange: ['#3b82f6', '#f97316'],
   TealRose: ['#14b8a6', '#f43f5e'],
   IndigoAmber: ['#6366f1', '#f59e0b'],
-  Grays: ['#f8fafc', '#cbd5e1', '#94a3b8', '#64748b', '#334155', '#1e293b'],
+  // ── Qualitative (fixed distinct colors — not gradients) ──────────────
+  Tableau10: ['#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949', '#af7aa1', '#ff9da7', '#9c755f', '#bab0ab'],
+  Observable10: ['#4269d0', '#efb118', '#ff725c', '#6cc5b0', '#3ca951', '#ff8ab7', '#a463f2', '#97bbf5', '#9c6b4e', '#9498a0'],
+  Set2: ['#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f', '#e5c494', '#b3b3b3'],
+  Dark2: ['#1b9e77', '#d95f02', '#7570b3', '#e7298a', '#66a61e', '#e6ab02', '#a6761d', '#666666'],
+  Paired: ['#a6cee3', '#1f78b4', '#b2df8a', '#33a02c', '#fb9a99', '#e31a1c', '#fdbf6f', '#ff7f00', '#cab2d6', '#6a3d9a', '#ffff99', '#b15928'],
+}
+
+/** Classification of each built-in palette by its intended use. */
+export const PALETTE_KIND: Record<PaletteName, PaletteKind> = {
+  Viridis: 'sequential',
+  Plasma: 'sequential',
+  Magma: 'sequential',
+  Inferno: 'sequential',
+  Turbo: 'sequential',
+  Blues: 'sequential',
+  Reds: 'sequential',
+  Greens: 'sequential',
+  Oranges: 'sequential',
+  Purples: 'sequential',
+  Rainbow: 'sequential',
+  Grays: 'sequential',
+  Spectral: 'diverging',
+  RdBu: 'diverging',
+  RdYlGn: 'diverging',
+  PiYG: 'diverging',
+  BlueOrange: 'diverging',
+  TealRose: 'diverging',
+  IndigoAmber: 'diverging',
+  Tableau10: 'qualitative',
+  Observable10: 'qualitative',
+  Set2: 'qualitative',
+  Dark2: 'qualitative',
+  Paired: 'qualitative',
+}
+
+/** Look up a palette's kind. */
+export function getPaletteKind(palette: PaletteName): PaletteKind {
+  return PALETTE_KIND[palette]
 }
 
 /** Ordered list of all built-in palette names for UI rendering. */
@@ -116,15 +157,30 @@ export function getPaletteColors(
 }
 
 /**
- * Sample `n` evenly-spaced colors from a built-in palette.
+ * Sample `n` colors from a built-in palette.
+ *
+ * - **Sequential / diverging** palettes are treated as continuous
+ *   gradients; `n` evenly-spaced colors are interpolated between the
+ *   stops, so the first and last always hit the palette's extremes.
+ * - **Qualitative** palettes are treated as fixed sets of distinct
+ *   colors; the first `n` stops are taken verbatim (no blending — blending
+ *   between, say, Tableau10's blue and orange would produce a muddy
+ *   brown that defeats the palette). When `n` exceeds the palette
+ *   length, the stops cycle from the start.
+ *
  * @param palette - Name of a built-in palette to sample from.
  * @param n - Number of colors to sample (min 2).
  * @returns Array of `n` hex color strings.
  * @example
- * samplePalette('Viridis', 3) // ['#440154', '#21908c', '#fde725']
+ * samplePalette('Viridis', 3)   // ['#440154', '#21908c', '#fde725']
+ * samplePalette('Tableau10', 3) // first 3 Tableau 10 stops
  */
 export function samplePalette(palette: PaletteName, n: number): string[] {
   const count = Math.max(2, n)
+  if (PALETTE_KIND[palette] === 'qualitative') {
+    const stops = PALETTE_STOPS[palette]
+    return Array.from({ length: count }, (_, i) => stops[i % stops.length])
+  }
   return Array.from({ length: count }, (_, i) =>
     interpolatePalette(palette, i / (count - 1)),
   )

@@ -213,7 +213,6 @@ Every field the parser accepts, as a JSON Schema (draft-07) document — drop it
         "properties": {
           "source": { "type": "string", "description": "ID of the source node." },
           "target": { "type": "string", "description": "ID of the target node." },
-          "label":  { "type": "string", "description": "Edge label or relationship type." },
           "weight": { "type": "number", "description": "Edge weight used by the force-directed layout simulation." }
         }
       }

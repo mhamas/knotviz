@@ -191,7 +191,7 @@ export function ColorTab({
       <div>
         <SectionHeading>Mode</SectionHeading>
         <div className="mt-1.5 flex gap-1" data-testid="visual-mode-selector">
-          {(['size', 'color'] as VisualMode[]).map((mode) => (
+          {(['color', 'size'] as VisualMode[]).map((mode) => (
             <button
               key={mode}
               type="button"

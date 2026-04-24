@@ -20,9 +20,9 @@ async function openAnalysisPanel(page: Page): Promise<void> {
   await expect(page.getByTestId('color-property-select')).toBeVisible()
 }
 
-/** Switch to color mode (default is size). */
-async function switchToColorMode(page: Page): Promise<void> {
-  await page.getByTestId('visual-mode-color').click()
+/** Switch to size mode (default is color). */
+async function switchToSizeMode(page: Page): Promise<void> {
+  await page.getByTestId('visual-mode-size').click()
 }
 
 test.describe('Color Tab', () => {
@@ -37,14 +37,12 @@ test.describe('Color Tab', () => {
   })
 
   test('selecting number property shows gradient legend in color mode', async ({ page }) => {
-    await switchToColorMode(page)
     await page.getByTestId('color-property-select').click()
     await page.getByRole('option', { name: 'age' }).click()
     await expect(page.getByTestId('color-legend-gradient')).toBeVisible()
   })
 
   test('selecting boolean property shows discrete legend', async ({ page }) => {
-    await switchToColorMode(page)
     await page.getByTestId('color-property-select').click()
     await page.getByRole('option', { name: 'active' }).click()
     await expect(page.getByTestId('color-legend-discrete')).toBeVisible()
@@ -53,7 +51,6 @@ test.describe('Color Tab', () => {
   })
 
   test('selecting string property shows discrete legend with values', async ({ page }) => {
-    await switchToColorMode(page)
     await page.getByTestId('color-property-select').click()
     await page.getByRole('option', { name: 'status' }).click()
     const legend = page.getByTestId('color-legend-discrete')
@@ -64,7 +61,6 @@ test.describe('Color Tab', () => {
   })
 
   test('setting property to None removes gradient', async ({ page }) => {
-    await switchToColorMode(page)
     // Select a property first
     await page.getByTestId('color-property-select').click()
     await page.getByRole('option', { name: 'age' }).click()
@@ -77,7 +73,6 @@ test.describe('Color Tab', () => {
   })
 
   test('changing palette updates legend', async ({ page }) => {
-    await switchToColorMode(page)
     await page.getByTestId('color-property-select').click()
     await page.getByRole('option', { name: 'age' }).click()
 
@@ -96,29 +91,33 @@ test.describe('Color Tab', () => {
     await expect(page.getByTestId('filter-match-count')).toBeVisible()
   })
 
-  test('default mode is size', async ({ page }) => {
-    const sizeButton = page.getByTestId('visual-mode-size')
-    await expect(sizeButton).toBeVisible()
-    // Size range controls should be visible (confirms size mode is active)
-    await expect(page.getByTestId('size-range-controls')).toBeVisible()
+  test('default mode is color', async ({ page }) => {
+    const colorButton = page.getByTestId('visual-mode-color')
+    await expect(colorButton).toBeVisible()
+    // Palette selector should be visible (confirms color mode is active)
+    await expect(page.getByTestId('color-palette-select')).toBeVisible()
   })
 
   test('size mode: selecting numeric property shows size legend', async ({ page }) => {
+    await switchToSizeMode(page)
     await page.getByTestId('color-property-select').click()
     await page.getByRole('option', { name: 'age' }).click()
     await expect(page.getByTestId('size-legend')).toBeVisible()
   })
 
   test('size mode: palette selector is hidden', async ({ page }) => {
+    await switchToSizeMode(page)
     await expect(page.getByTestId('color-palette-select')).not.toBeVisible()
   })
 
   test('size mode: editable min/max inputs reflect range values', async ({ page }) => {
+    await switchToSizeMode(page)
     await expect(page.getByTestId('size-range-min')).toBeVisible()
     await expect(page.getByTestId('size-range-max')).toBeVisible()
   })
 
   test('size mode: typing min value updates the range', async ({ page }) => {
+    await switchToSizeMode(page)
     const minInput = page.getByTestId('size-range-min')
     await minInput.click()
     await minInput.fill('3')
@@ -126,21 +125,19 @@ test.describe('Color Tab', () => {
     await expect(minInput).toHaveValue('3')
   })
 
-  test('switching from size to color shows palette selector', async ({ page }) => {
-    await expect(page.getByTestId('color-palette-select')).not.toBeVisible()
-    await switchToColorMode(page)
+  test('switching from color to size hides palette selector', async ({ page }) => {
     await expect(page.getByTestId('color-palette-select')).toBeVisible()
-    await expect(page.getByTestId('size-range-controls')).not.toBeVisible()
+    await switchToSizeMode(page)
+    await expect(page.getByTestId('color-palette-select')).not.toBeVisible()
+    await expect(page.getByTestId('size-range-controls')).toBeVisible()
   })
 
   test('Grays palette is available in color mode', async ({ page }) => {
-    await switchToColorMode(page)
     await page.getByTestId('color-palette-select').click()
     await expect(page.getByRole('option', { name: 'Grays' })).toBeVisible()
   })
 
   test('categorical property auto-picks a qualitative palette (Tableau10)', async ({ page }) => {
-    await switchToColorMode(page)
     // Confirm default is Viridis (sequential) before selecting anything categorical.
     await expect(page.getByTestId('color-palette-select')).toContainText('Viridis')
     // `status` is a string property in the sample graph fixture.
@@ -150,7 +147,6 @@ test.describe('Color Tab', () => {
   })
 
   test('switching back to a numeric property restores a sequential palette', async ({ page }) => {
-    await switchToColorMode(page)
     await page.getByTestId('color-property-select').click()
     await page.getByRole('option', { name: 'status' }).click()
     await expect(page.getByTestId('color-palette-select')).toContainText('Tableau10')
@@ -160,7 +156,6 @@ test.describe('Color Tab', () => {
   })
 
   test('palette picker groups palettes by kind', async ({ page }) => {
-    await switchToColorMode(page)
     await page.getByTestId('color-palette-select').click()
     const content = page.getByRole('listbox')
     await expect(content.getByText('Sequential', { exact: true })).toBeVisible()
@@ -171,7 +166,6 @@ test.describe('Color Tab', () => {
   })
 
   test('create custom palette: count input lets user type an explicit value', async ({ page }) => {
-    await switchToColorMode(page)
     await page.getByTestId('color-palette-select').click()
     await page.getByRole('option', { name: '+ Create custom palette' }).click()
     const modal = page.getByTestId('create-palette-modal')

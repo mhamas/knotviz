@@ -64,6 +64,34 @@ describe('formatNumber', () => {
     })
   })
 
+  describe('maxDecimals option', () => {
+    it('caps fractional digits without padding integers', () => {
+      expect(formatNumber(42, { maxDecimals: 6 })).toBe('42')
+      expect(formatNumber(1.5, { maxDecimals: 6 })).toBe('1.5')
+    })
+
+    it('rounds values with more precision than the cap', () => {
+      expect(formatNumber(0.123456789, { maxDecimals: 6 })).toBe('0.123457')
+      expect(formatNumber(1.9999995, { maxDecimals: 6 })).toBe('2')
+    })
+
+    it('cleans up floating-point noise', () => {
+      expect(formatNumber(0.1 + 0.2, { maxDecimals: 6 })).toBe('0.3')
+    })
+
+    it('preserves commas alongside the cap', () => {
+      expect(formatNumber(1234567.123456789, { maxDecimals: 6 })).toBe('1,234,567.123457')
+    })
+
+    it('clamps out-of-range maxDecimals values', () => {
+      expect(formatNumber(1.5, { maxDecimals: -1 })).toBe('2') // clamped to 0
+    })
+
+    it('decimals option takes precedence when both are set', () => {
+      expect(formatNumber(1.5, { decimals: 2, maxDecimals: 6 })).toBe('1.50')
+    })
+  })
+
   describe('extreme magnitudes — scientific notation fallback', () => {
     it('uses scientific for very large magnitudes (|x| >= 1e15)', () => {
       expect(formatNumber(1e15)).toBe('1.00e15')

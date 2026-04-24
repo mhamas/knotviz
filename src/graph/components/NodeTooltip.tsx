@@ -31,7 +31,12 @@ const PROP_NAME_MAX = 36
  */
 function formatValue(value: PropertyValue, propertyType: string): string {
   if (propertyType === 'number' && typeof value === 'number') {
-    return formatNumber(value)
+    // Adaptive precision: for |x|>=1 the integer part already carries
+    // most of the signal, so 2 decimals keeps the value readable and
+    // avoids overflowing the tooltip column. For |x|<1 we keep 6 so
+    // tiny values (ratios, probabilities) don't lose resolution.
+    const maxDecimals = Math.abs(value) >= 1 ? 2 : 6
+    return formatNumber(value, { maxDecimals })
   }
   if (propertyType === 'date' && typeof value === 'string') {
     return value

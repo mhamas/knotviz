@@ -19,18 +19,26 @@
  * @param options.decimals - If set, force this many decimal places
  *   (using toLocaleString's fraction-digit options). Negative values
  *   and zero are allowed; fractional decimals are clamped to 0–20.
+ * @param options.maxDecimals - If set, cap the fractional portion at
+ *   this many digits (rounded) without padding shorter values — so an
+ *   integer stays an integer. Ignored when `decimals` is also set.
  *
  * @example
  * formatNumber(1234567)          // '1,234,567'
  * formatNumber(1234567.89)       // '1,234,567.89'
  * formatNumber(0.1 + 0.2)        // '0.30000000000000004' (raw — caller pass decimals to round)
  * formatNumber(47.02, { decimals: 2 })  // '47.02'
+ * formatNumber(0.123456789, { maxDecimals: 6 })  // '0.123457'
+ * formatNumber(42, { maxDecimals: 6 })           // '42'
  * formatNumber(1e18)             // '1.00e+18'
  * formatNumber(1e-6)             // '1.00e-6'
  * formatNumber(0)                // '0'
  * formatNumber(NaN)              // 'NaN'
  */
-export function formatNumber(value: number, options: { decimals?: number } = {}): string {
+export function formatNumber(
+  value: number,
+  options: { decimals?: number; maxDecimals?: number } = {},
+): string {
   if (!Number.isFinite(value)) return String(value)
 
   // Extreme magnitudes — fall back to scientific so a huge value doesn't
@@ -47,6 +55,11 @@ export function formatNumber(value: number, options: { decimals?: number } = {})
       minimumFractionDigits: d,
       maximumFractionDigits: d,
     })
+  }
+
+  if (options.maxDecimals !== undefined) {
+    const d = clampDecimals(options.maxDecimals)
+    return value.toLocaleString('en-US', { maximumFractionDigits: d })
   }
 
   // Preserve the decimal portion exactly as JS renders it. toLocaleString

@@ -183,6 +183,42 @@ test('shows help popover when nodePropertiesMetadata has description', async () 
   expect(helpButtons.length).toBeGreaterThanOrEqual(1)
 })
 
+test('formats numbers with adaptive precision (2 decimals when |x|>=1, 6 otherwise)', async () => {
+  const numericColumns: PropertyColumns = {
+    big: [42.123456, undefined],
+    small: [0.123456789, undefined],
+    wide: [1234567.89, undefined],
+    tiny_integral: [0.5, undefined],
+  }
+  const numericMetas: PropertyMeta[] = [
+    { key: 'big', type: 'number' },
+    { key: 'small', type: 'number' },
+    { key: 'wide', type: 'number' },
+    { key: 'tiny_integral', type: 'number' },
+  ]
+  const screen = await render(
+    <NodeTooltip
+      nodeId="n1"
+      screenPosition={{ x: 100, y: 100 }}
+      nodeIndexMap={nodeIndexMap}
+      nodeLabels={nodeLabels}
+      propertyColumns={numericColumns}
+      propertyMetas={numericMetas}
+      nodePropertiesMetadata={undefined}
+      canvasBounds={canvasBounds}
+      analysisPropertyKey={null}
+      onClose={vi.fn()}
+    />,
+  )
+  // |x|>=1 → cap at 2 decimals (exact match via anchored regex)
+  await expect.element(screen.getByText(/^42\.12$/)).toBeVisible()
+  await expect.element(screen.getByText(/^1,234,567\.89$/)).toBeVisible()
+  // |x|<1 → keep 6-decimal cap for precision
+  await expect.element(screen.getByText(/^0\.123457$/)).toBeVisible()
+  // |x|<1 but already short — no padding
+  await expect.element(screen.getByText(/^0\.5$/)).toBeVisible()
+})
+
 test('shows No properties when no metas', async () => {
   const screen = await render(
     <NodeTooltip

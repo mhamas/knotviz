@@ -38,6 +38,38 @@ test('renders numeric stats with histogram', async () => {
   expect(bars.length).toBe(3)
 })
 
+test('numeric stats render coloured markers for mean + p25/p50/p75 and matching row dots', async () => {
+  const stats: PropertyStatsResult = {
+    type: 'numeric',
+    stats: numericStats,
+    histogram: [
+      { from: 1, to: 4, count: 2 },
+      { from: 4, to: 7, count: 2 },
+      { from: 7, to: 10, count: 1 },
+    ],
+  }
+  const screen = await render(<StatisticsPanel stats={stats} propertyKey="age" />)
+  // All four histogram markers are rendered.
+  expect(screen.container.querySelector('[data-testid="stat-marker-mean"]')).not.toBeNull()
+  expect(screen.container.querySelector('[data-testid="stat-marker-p25"]')).not.toBeNull()
+  expect(screen.container.querySelector('[data-testid="stat-marker-p50"]')).not.toBeNull()
+  expect(screen.container.querySelector('[data-testid="stat-marker-p75"]')).not.toBeNull()
+  // Each marked StatRow has a dot.
+  const dots = screen.container.querySelectorAll('[data-testid="stat-row-marker"]')
+  expect(dots.length).toBe(4)
+})
+
+test('no stat markers when histogram is empty', async () => {
+  const stats: PropertyStatsResult = {
+    type: 'numeric',
+    stats: numericStats,
+    histogram: [],
+  }
+  const screen = await render(<StatisticsPanel stats={stats} propertyKey="age" />)
+  expect(screen.container.querySelector('[data-testid="stat-marker-mean"]')).toBeNull()
+  expect(screen.container.querySelector('[data-testid="stat-marker-p25"]')).toBeNull()
+})
+
 test('renders total value (sum) row for numeric stats', async () => {
   const stats: PropertyStatsResult = {
     type: 'numeric',

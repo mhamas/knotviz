@@ -4,6 +4,7 @@ import { useDebounce } from '@/hooks/useDebounce'
 import { Slider } from '@/components/ui/slider'
 import { Histogram } from '@/components/Histogram'
 import { formatNumber } from '../../lib/formatNumber'
+import { valueToHistogramPercent } from '../../lib/histogramPercent'
 
 interface Props {
   state: NumberFilterState
@@ -19,28 +20,6 @@ function toLog(v: number): number {
 /** Convert a log-space slider position back to a real value. */
 function fromLog(s: number): number {
   return Math.pow(10, s) - 1
-}
-
-/**
- * Convert a value to its x-position (0–100) on the histogram. The histogram
- * renders buckets with equal visual width regardless of underlying scale,
- * so the position is `(bucketIndex + fractionWithinBucket) / bucketCount`.
- * Linear interpolation inside the bucket is visually faithful because each
- * bar's x-axis is rendered linearly by the DOM.
- */
-function valueToHistogramPercent(v: number, buckets: { from: number; to: number }[]): number {
-  if (buckets.length === 0) return 0
-  if (v <= buckets[0].from) return 0
-  if (v >= buckets[buckets.length - 1].to) return 100
-  for (let i = 0; i < buckets.length; i++) {
-    const b = buckets[i]
-    if (v >= b.from && v < b.to) {
-      const span = b.to - b.from
-      const inBucket = span === 0 ? 0 : (v - b.from) / span
-      return ((i + inBucket) / buckets.length) * 100
-    }
-  }
-  return 100
 }
 
 /**

@@ -2,18 +2,31 @@ import { useState } from 'react'
 import type { HistogramBucket, DateHistogramBucket } from '../types'
 import { formatNumber } from '../lib/formatNumber'
 
+/** A single vertical marker to overlay on the histogram. */
+export interface HistogramMarker {
+  /** Horizontal position as a percentage of histogram width (0–100). */
+  percent: number
+  /** CSS color value for the line (e.g. hex, rgb). */
+  color: string
+  /** Optional testid for targeting in tests. */
+  testId?: string
+}
+
 interface NumericProps {
   buckets: HistogramBucket[]
   /** Left position of the min marker as a percentage of histogram width (0–100). */
   selectionMinPercent?: number
   /** Left position of the max marker as a percentage of histogram width (0–100). */
   selectionMaxPercent?: number
+  /** Additional vertical markers (e.g. p25/p50/p75/mean in the stats panel). */
+  markers?: HistogramMarker[]
 }
 
 interface DateProps {
   buckets: DateHistogramBucket[]
   selectionMinPercent?: number
   selectionMaxPercent?: number
+  markers?: HistogramMarker[]
 }
 
 type Props = NumericProps | DateProps
@@ -45,7 +58,7 @@ function tooltipText(bucket: HistogramBucket | DateHistogramBucket): string {
  * @param props - Histogram buckets (numeric or date) and optional selection markers.
  * @returns Bar chart element, or null when there are no buckets.
  */
-export function Histogram({ buckets, selectionMinPercent, selectionMaxPercent }: Props): React.JSX.Element | null {
+export function Histogram({ buckets, selectionMinPercent, selectionMaxPercent, markers }: Props): React.JSX.Element | null {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   if (buckets.length === 0) return null
@@ -92,6 +105,14 @@ export function Histogram({ buckets, selectionMinPercent, selectionMaxPercent }:
             style={{ left: `${selectionMaxPercent}%` }}
           />
         )}
+        {markers?.map((m, i) => (
+          <div
+            key={i}
+            data-testid={m.testId ?? 'histogram-marker'}
+            className="pointer-events-none absolute top-0 h-full w-px -translate-x-1/2"
+            style={{ left: `${m.percent}%`, backgroundColor: m.color }}
+          />
+        ))}
       </div>
       {hoveredIndex !== null && (
         <div

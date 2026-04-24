@@ -209,27 +209,6 @@ export function ColorTab({
         </div>
       </div>
 
-      {/* Log scale toggle — color mode only */}
-      {state.visualMode === 'color' && state.propertyKey && (selectedType === 'number' || selectedType === 'date') && (
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            data-testid="color-log-toggle"
-            onClick={(): void => onChange({ ...state, isLogScale: !state.isLogScale })}
-            className={`rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
-              state.isLogScale
-                ? 'bg-slate-700 text-white'
-                : 'cursor-pointer text-slate-400 hover:bg-slate-100 hover:text-slate-600'
-            }`}
-          >
-            log
-          </button>
-          <span className="text-[11px] text-slate-400">
-            {state.isLogScale ? 'Logarithmic scale' : 'Linear scale'}
-          </span>
-        </div>
-      )}
-
       {/* Size range controls — dual-thumb slider + editable inputs */}
       {state.visualMode === 'size' && (
         <div data-testid="size-range-controls">
@@ -337,15 +316,28 @@ export function ColorTab({
             </SelectContent>
           </Select>
         </div>
-        <button
-          type="button"
-          className="mt-1.5 flex cursor-pointer items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700"
-          onClick={(): void => onChange({ ...state, isReversed: !state.isReversed })}
-          data-testid="reverse-palette-btn"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          Reverse colors
-        </button>
+        <div className="mt-1.5 flex items-center gap-3">
+          <button
+            type="button"
+            className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700"
+            onClick={(): void => onChange({ ...state, isReversed: !state.isReversed })}
+            data-testid="reverse-palette-btn"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            Reverse colors
+          </button>
+          {selectedType === 'number' && (
+            <button
+              type="button"
+              data-testid="color-log-toggle"
+              onClick={(): void => onChange({ ...state, isLogScale: !state.isLogScale })}
+              className="flex cursor-pointer items-center gap-1.5 text-xs text-slate-500 hover:text-slate-700"
+              aria-pressed={state.isLogScale}
+            >
+              {state.isLogScale ? 'Use linear scale' : 'Use log scale'}
+            </button>
+          )}
+        </div>
       </div>}
 
       {/* Legend */}

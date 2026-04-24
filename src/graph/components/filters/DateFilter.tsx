@@ -3,6 +3,7 @@ import type { DateFilterState } from '../../types'
 import { useDebounce } from '@/hooks/useDebounce'
 import { Slider } from '@/components/ui/slider'
 import { Histogram } from '@/components/Histogram'
+import { dateToHistogramPercent } from '../../lib/histogramPercent'
 
 interface Props {
   state: DateFilterState
@@ -18,30 +19,6 @@ function dateToDays(iso: string): number {
 /** Converts days since epoch back to an ISO date string (YYYY-MM-DD). */
 function daysToDate(days: number): string {
   return new Date(Math.round(days) * 86_400_000).toISOString().slice(0, 10)
-}
-
-/**
- * Convert a date to its x-position (0–100) on the date histogram. Mirrors
- * the numeric helper in NumberFilter — finds the bucket, then interpolates
- * linearly in epoch-ms space within that bucket.
- */
-function dateToHistogramPercent(iso: string, buckets: { from: string; to: string }[]): number {
-  if (buckets.length === 0) return 0
-  const target = new Date(iso).getTime()
-  const firstFrom = new Date(buckets[0].from).getTime()
-  const lastTo = new Date(buckets[buckets.length - 1].to).getTime()
-  if (target <= firstFrom) return 0
-  if (target >= lastTo) return 100
-  for (let i = 0; i < buckets.length; i++) {
-    const bFrom = new Date(buckets[i].from).getTime()
-    const bTo = new Date(buckets[i].to).getTime()
-    if (target >= bFrom && target < bTo) {
-      const span = bTo - bFrom
-      const inBucket = span === 0 ? 0 : (target - bFrom) / span
-      return ((i + inBucket) / buckets.length) * 100
-    }
-  }
-  return 100
 }
 
 /**

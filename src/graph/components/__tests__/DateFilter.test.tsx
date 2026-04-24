@@ -10,7 +10,7 @@ const baseState: DateFilterState = {
   before: '2024-12-31',
   domainMin: '2020-01-01',
   domainMax: '2024-12-31',
-  isLogScale: false,
+  scaleMode: 'linear',
   histogramBuckets: [
     { from: '2020-01-01', to: '2022-06-15', count: 3 },
     { from: '2022-06-15', to: '2024-12-31', count: 5 },
@@ -19,6 +19,10 @@ const baseState: DateFilterState = {
     { from: '2020-01-01', to: '2023-01-01', count: 2 },
     { from: '2023-01-01', to: '2024-12-31', count: 6 },
   ],
+  quantiles: Array.from({ length: 101 }, (_, i) => {
+    const t = new Date('2020-01-01').getTime() + (i / 100) * (new Date('2024-12-31').getTime() - new Date('2020-01-01').getTime())
+    return new Date(t).toISOString().slice(0, 10)
+  }),
 }
 
 test('renders date range labels', async () => {
@@ -48,8 +52,8 @@ test('histogram hidden by default, visible when isHistogramVisible is true', asy
   expect(container.querySelector('[data-testid="date-filter-histogram"]')).not.toBeNull()
 })
 
-test('switches to log-scale histogram when isLogScale is true', async () => {
-  const logState: DateFilterState = { ...baseState, isLogScale: true }
+test('switches to log-scale histogram when scaleMode is log', async () => {
+  const logState: DateFilterState = { ...baseState, scaleMode: 'log' }
   const { container } = await render(
     <DateFilter state={logState} onChange={vi.fn()} isHistogramVisible={true} />,
   )

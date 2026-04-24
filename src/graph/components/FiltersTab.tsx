@@ -23,10 +23,10 @@ export function FiltersTab({ propertyMetas, nodePropertiesMetadata, filterHandle
     filters,
     resetKey,
     setNumberFilter,
-    setNumberLogScale,
+    setNumberScaleMode,
     setStringFilter,
     setDateFilter,
-    setDateLogScale,
+    setDateScaleMode,
     setBooleanFilter,
     setFilterEnabled,
     setAllFiltersEnabled,
@@ -88,11 +88,11 @@ export function FiltersTab({ propertyMetas, nodePropertiesMetadata, filterHandle
                   ? (min, max): void => setNumberFilter(meta.key, min, max)
                   : undefined
               }
-              onLogScaleChange={
+              onScaleModeChange={
                 filterState.type === 'number'
-                  ? (isLogScale): void => setNumberLogScale(meta.key, isLogScale)
+                  ? (mode): void => setNumberScaleMode(meta.key, mode)
                   : filterState.type === 'date'
-                    ? (isLogScale): void => setDateLogScale(meta.key, isLogScale)
+                    ? (mode): void => setDateScaleMode(meta.key, mode)
                     : undefined
               }
               onBooleanChange={

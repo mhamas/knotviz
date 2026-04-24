@@ -22,6 +22,28 @@ function fromLog(s: number): number {
 }
 
 /**
+ * Inverse percentile lookup: given a value and the precomputed quantiles
+ * array (101 entries, q[i] = value at percentile i), return the interpolated
+ * percentile position (0–100). Clamps out-of-range values to the endpoints.
+ */
+function valueToPercentile(v: number, quantiles: Float64Array): number {
+  if (quantiles.length === 0) return 0
+  if (v <= quantiles[0]) return 0
+  if (v >= quantiles[100]) return 100
+  let lo = 0
+  let hi = 100
+  while (lo < hi - 1) {
+    const mid = (lo + hi) >>> 1
+    if (quantiles[mid] <= v) lo = mid
+    else hi = mid
+  }
+  const a = quantiles[lo]
+  const b = quantiles[hi]
+  if (a === b) return lo
+  return lo + (v - a) / (b - a)
+}
+
+/**
  * Raw value shown inside the input while the user is actively editing.
  * `parseFloat` must round-trip this string back to a number, so no
  * thousands separator here.
@@ -45,13 +67,31 @@ function displayValue(v: number): string {
 
 /**
  * Dual-handle range slider for filtering nodes by a numeric property.
- * Supports optional log scale, inline histogram, and editable min/max inputs.
+ * Supports three scale modes (linear / log / percentile), an optional
+ * inline histogram, and editable min/max inputs. In percentile mode the
+ * slider operates in [0, 100] space; a drag to [10, 90] keeps the middle
+ * 80% of nodes. A small `p{N}` tag above each input shows what
+ * percentile the current value sits at.
  *
- * @param props - Current filter state, change handler, and log scale handler.
+ * @param props - Current filter state, change handler, and histogram visibility.
  * @returns Number filter element.
  */
 export function NumberFilter({ state, onChange, isHistogramVisible }: Props): React.JSX.Element {
   const [localRange, setLocalRange] = useState<[number, number]>([state.min, state.max])
+  // Separate local state for the pct-mode slider position. Decoupled from
+  // `localRange` so tied quantiles (e.g. mostly-zero activity data where
+  // q[0..80] all equal 0) don't collapse the handle back to p0 on every
+  // re-render. The handle position is authoritative while in pct mode;
+  // `localRange` is derived from it via `quantiles[p]` lookups.
+  const [localPct, setLocalPct] = useState<[number, number]>(() => {
+    if (state.scaleMode !== 'percentile' || state.quantiles.length === 0) {
+      return [0, 100]
+    }
+    return [
+      valueToPercentile(state.min, state.quantiles),
+      valueToPercentile(state.max, state.quantiles),
+    ]
+  })
   const [editingMin, setEditingMin] = useState<string | null>(null)
   const [editingMax, setEditingMax] = useState<string | null>(null)
   const debouncedOnChange = useDebounce(onChange, 150)
@@ -61,22 +101,64 @@ export function NumberFilter({ state, onChange, isHistogramVisible }: Props): Re
   // React batches state updates, so blur fires before setEditingMin(null) takes effect.
   const isEscapingRef = useRef(false)
 
-  const { isLogScale, domainMin, domainMax } = state
+  const { scaleMode, domainMin, domainMax, quantiles } = state
+  const isLogScale = scaleMode === 'log'
+  const isPercentileScale = scaleMode === 'percentile'
 
-  // Slider bounds and step in the active scale space
-  const sliderMin = isLogScale ? toLog(domainMin) : domainMin
-  const sliderMax = isLogScale ? toLog(domainMax) : domainMax
-  const sliderStep = (sliderMax - sliderMin) / 200 || 0.01
-  const sliderValue: [number, number] = isLogScale
-    ? [toLog(localRange[0]), toLog(localRange[1])]
-    : localRange
+  // On scaleMode transition *into* pct, resync the slider position from
+  // the current range so the handles land where the last non-pct selection
+  // was. Uses React's "adjust state during render" pattern instead of
+  // useEffect — same effect, no cascading render penalty.
+  const [cachedScaleMode, setCachedScaleMode] = useState<typeof scaleMode>(scaleMode)
+  if (cachedScaleMode !== scaleMode) {
+    setCachedScaleMode(scaleMode)
+    if (scaleMode === 'percentile' && quantiles.length > 0) {
+      setLocalPct([
+        valueToPercentile(localRange[0], quantiles),
+        valueToPercentile(localRange[1], quantiles),
+      ])
+    }
+  }
+
+  // Slider bounds, step, and current value in the active scale space.
+  let sliderMin: number
+  let sliderMax: number
+  let sliderStep: number
+  let sliderValue: [number, number]
+
+  if (isPercentileScale) {
+    sliderMin = 0
+    sliderMax = 100
+    sliderStep = 1
+    sliderValue = localPct
+  } else if (isLogScale) {
+    sliderMin = toLog(domainMin)
+    sliderMax = toLog(domainMax)
+    sliderStep = (sliderMax - sliderMin) / 200 || 0.01
+    sliderValue = [toLog(localRange[0]), toLog(localRange[1])]
+  } else {
+    sliderMin = domainMin
+    sliderMax = domainMax
+    sliderStep = (sliderMax - sliderMin) / 200 || 0.01
+    sliderValue = localRange
+  }
 
   const handleSliderChange = useCallback(
     (value: number | readonly number[]): void => {
       const arr = Array.isArray(value) ? value : [value]
       let newMin = arr[0]
       let newMax = arr[1] ?? arr[0]
-      if (isLogScale) {
+      if (isPercentileScale) {
+        // Slider positions are integer percentiles 0..100. Store the
+        // exact slider position in `localPct` (authoritative — handles
+        // tied-quantile data gracefully) and derive the actual value for
+        // the committed range via an O(1) quantile lookup.
+        const pLo = Math.round(Math.min(Math.max(newMin, 0), 100))
+        const pHi = Math.round(Math.min(Math.max(newMax, 0), 100))
+        setLocalPct([pLo, pHi])
+        newMin = quantiles.length > 0 ? quantiles[pLo] : domainMin
+        newMax = quantiles.length > 0 ? quantiles[pHi] : domainMax
+      } else if (isLogScale) {
         newMin = fromLog(newMin)
         newMax = fromLog(newMax)
       }
@@ -84,7 +166,7 @@ export function NumberFilter({ state, onChange, isHistogramVisible }: Props): Re
       setLocalRange(newRange)
       debouncedOnChange(newRange[0], newRange[1])
     },
-    [isLogScale, debouncedOnChange],
+    [isPercentileScale, isLogScale, quantiles, domainMin, domainMax, debouncedOnChange],
   )
 
   const commitInput = useCallback(
@@ -113,6 +195,12 @@ export function NumberFilter({ state, onChange, isHistogramVisible }: Props): Re
 
   const histogramBuckets = isLogScale ? state.logHistogramBuckets : state.histogramBuckets
 
+  // Percentile tags shown above the inputs in pct mode. Read directly
+  // from `localPct` (authoritative slider position) rather than deriving
+  // from `localRange` — otherwise ties collapse both tags to p0.
+  const pctTagLow = isPercentileScale && quantiles.length > 0 ? `p${localPct[0]}` : null
+  const pctTagHigh = isPercentileScale && quantiles.length > 0 ? `p${localPct[1]}` : null
+
   return (
     <div className="space-y-1" data-testid="number-filter">
       {/* Slider */}
@@ -123,6 +211,14 @@ export function NumberFilter({ state, onChange, isHistogramVisible }: Props): Re
         value={sliderValue}
         onValueChange={handleSliderChange}
       />
+
+      {/* Percentile tags (pct mode only) */}
+      {isPercentileScale && (
+        <div className="flex justify-between text-[10px] font-medium text-slate-500" data-testid="number-filter-pct-tags">
+          <span data-testid="number-filter-pct-tag-min">{pctTagLow}</span>
+          <span data-testid="number-filter-pct-tag-max">{pctTagHigh}</span>
+        </div>
+      )}
 
       {/* Editable min/max inputs */}
       <div className="flex justify-between text-[11px] text-slate-500">

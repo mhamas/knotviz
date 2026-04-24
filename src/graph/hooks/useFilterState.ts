@@ -6,6 +6,7 @@ import type {
   FilterState,
   NumberFilterState,
   PropertyMeta,
+  ScaleMode,
   StringArrayFilterState,
   StringFilterState,
 } from '../types'
@@ -15,6 +16,7 @@ import {
   computeDateHistogram,
   computeDateLogHistogram,
 } from '../lib/computeHistogram'
+import { computeQuantiles, computeDateQuantiles } from '../lib/computeQuantiles'
 
 /** Columnar property values indexed by node index. */
 export type PropertyColumns = Record<string, (number | string | boolean | string[] | undefined)[]>
@@ -23,10 +25,10 @@ export interface FilterStateHandle {
   filters: FilterMap
   resetKey: number
   setNumberFilter: (key: string, min: number, max: number) => void
-  setNumberLogScale: (key: string, isLogScale: boolean) => void
+  setNumberScaleMode: (key: string, mode: ScaleMode) => void
   setStringFilter: (key: string, values: Set<string>) => void
   setDateFilter: (key: string, after: string, before: string) => void
-  setDateLogScale: (key: string, isLogScale: boolean) => void
+  setDateScaleMode: (key: string, mode: ScaleMode) => void
   setBooleanFilter: (key: string, selected: BooleanFilterState['selected']) => void
   setFilterEnabled: (key: string, isEnabled: boolean) => void
   setAllFiltersEnabled: (isEnabled: boolean) => void
@@ -62,6 +64,7 @@ function initializeFilters(
       }
       const histogramBuckets = computeHistogram(numericValues)
       const logHistogramBuckets = domainMin >= 0 ? computeLogHistogram(numericValues) : []
+      const quantiles = computeQuantiles(numericValues)
       filters.set(meta.key, {
         type: 'number',
         isEnabled: false,
@@ -69,9 +72,10 @@ function initializeFilters(
         max: domainMax,
         domainMin,
         domainMax,
-        isLogScale: false,
+        scaleMode: 'linear',
         histogramBuckets,
         logHistogramBuckets,
+        quantiles,
       } satisfies NumberFilterState)
     } else if (meta.type === 'boolean') {
       filters.set(meta.key, {
@@ -130,6 +134,7 @@ function initializeFilters(
       const histogramBuckets = computeDateHistogram(dateValues)
       const logHistogramBuckets =
         new Date(domainMin).getTime() >= 0 ? computeDateLogHistogram(dateValues) : []
+      const quantiles = computeDateQuantiles(dateValues)
       filters.set(meta.key, {
         type: 'date',
         isEnabled: false,
@@ -137,9 +142,10 @@ function initializeFilters(
         before: domainMax,
         domainMin,
         domainMax,
-        isLogScale: false,
+        scaleMode: 'linear',
         histogramBuckets,
         logHistogramBuckets,
+        quantiles,
       } satisfies DateFilterState)
     }
   }
@@ -184,9 +190,9 @@ export function useFilterState(
     [updateFilter],
   )
 
-  const setNumberLogScale = useCallback(
-    (key: string, isLogScale: boolean): void => {
-      updateFilter(key, (prev) => ({ ...prev, isLogScale }) as NumberFilterState)
+  const setNumberScaleMode = useCallback(
+    (key: string, mode: ScaleMode): void => {
+      updateFilter(key, (prev) => ({ ...prev, scaleMode: mode }) as NumberFilterState)
     },
     [updateFilter],
   )
@@ -211,9 +217,9 @@ export function useFilterState(
     [updateFilter],
   )
 
-  const setDateLogScale = useCallback(
-    (key: string, isLogScale: boolean): void => {
-      updateFilter(key, (prev) => ({ ...prev, isLogScale }) as DateFilterState)
+  const setDateScaleMode = useCallback(
+    (key: string, mode: ScaleMode): void => {
+      updateFilter(key, (prev) => ({ ...prev, scaleMode: mode }) as DateFilterState)
     },
     [updateFilter],
   )
@@ -264,10 +270,10 @@ export function useFilterState(
     filters,
     resetKey,
     setNumberFilter,
-    setNumberLogScale,
+    setNumberScaleMode,
     setStringFilter,
     setDateFilter,
-    setDateLogScale,
+    setDateScaleMode,
     setBooleanFilter,
     setFilterEnabled,
     setAllFiltersEnabled,

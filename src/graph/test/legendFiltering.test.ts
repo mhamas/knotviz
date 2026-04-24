@@ -103,7 +103,7 @@ describe('filterContinuousRange — number', () => {
   it('returns data min/max when filter is disabled', () => {
     const filter: NumberFilterState = {
       type: 'number', isEnabled: false, min: 50, max: 200, domainMin: 10, domainMax: 500,
-      isLogScale: false, histogramBuckets: [], logHistogramBuckets: [],
+      scaleMode: 'linear', histogramBuckets: [], logHistogramBuckets: [], quantiles: new Float64Array(0),
     }
     const result = filterContinuousRange(values, 'number', filter)
     expect(result.minLabel).toBe('10')
@@ -113,7 +113,7 @@ describe('filterContinuousRange — number', () => {
   it('clamps to filter range when filter is enabled', () => {
     const filter: NumberFilterState = {
       type: 'number', isEnabled: true, min: 50, max: 200, domainMin: 10, domainMax: 500,
-      isLogScale: false, histogramBuckets: [], logHistogramBuckets: [],
+      scaleMode: 'linear', histogramBuckets: [], logHistogramBuckets: [], quantiles: new Float64Array(0),
     }
     const result = filterContinuousRange(values, 'number', filter)
     expect(result.minLabel).toBe('50')
@@ -123,7 +123,7 @@ describe('filterContinuousRange — number', () => {
   it('does not expand beyond data range even if filter is wider', () => {
     const filter: NumberFilterState = {
       type: 'number', isEnabled: true, min: 0, max: 1000, domainMin: 0, domainMax: 1000,
-      isLogScale: false, histogramBuckets: [], logHistogramBuckets: [],
+      scaleMode: 'linear', histogramBuckets: [], logHistogramBuckets: [], quantiles: new Float64Array(0),
     }
     const result = filterContinuousRange(values, 'number', filter)
     expect(result.minLabel).toBe('10')
@@ -150,7 +150,7 @@ describe('filterContinuousRange — date', () => {
       type: 'date', isEnabled: true,
       after: '2021-01-01', before: '2022-06-01',
       domainMin: '2020-01-01', domainMax: '2022-12-31',
-      isLogScale: false, histogramBuckets: [], logHistogramBuckets: [],
+      scaleMode: 'linear', histogramBuckets: [], logHistogramBuckets: [], quantiles: [],
     }
     const result = filterContinuousRange(values, 'date', filter)
     expect(result.minLabel).toBe('2021-01-01')
@@ -162,7 +162,7 @@ describe('filterContinuousRange — date', () => {
       type: 'date', isEnabled: true,
       after: '2019-01-01', before: '2025-01-01',
       domainMin: '2019-01-01', domainMax: '2025-01-01',
-      isLogScale: false, histogramBuckets: [], logHistogramBuckets: [],
+      scaleMode: 'linear', histogramBuckets: [], logHistogramBuckets: [], quantiles: [],
     }
     const result = filterContinuousRange(values, 'date', filter)
     expect(result.minLabel).toBe('2020-01-01')

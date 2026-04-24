@@ -75,6 +75,16 @@ export interface PropertyMeta {
 
 // ─── Filter state ──────────────────────────────────────────────────────────
 
+/**
+ * Slider scaling mode for number and date filters.
+ * - `linear`     — slider position is proportional to the actual value.
+ * - `log`        — equal-width buckets in log space (spreads the low end
+ *                  of numeric ranges; spreads *recent* end of date ranges).
+ * - `percentile` — slider position is a percentile (0-100). A drag to
+ *                  [10, 90] keeps the middle 80% of nodes by value.
+ */
+export type ScaleMode = 'linear' | 'log' | 'percentile'
+
 export interface NumberFilterState {
   type: 'number'
   isEnabled: boolean
@@ -82,9 +92,11 @@ export interface NumberFilterState {
   max: number
   domainMin: number
   domainMax: number
-  isLogScale: boolean
+  scaleMode: ScaleMode
   histogramBuckets: HistogramBucket[]
   logHistogramBuckets: HistogramBucket[]
+  /** 101 entries: `quantiles[p]` = value at percentile p (0–100). Empty if no numeric values. */
+  quantiles: Float64Array
 }
 
 export interface StringFilterState {
@@ -108,9 +120,11 @@ export interface DateFilterState {
   before: string
   domainMin: string
   domainMax: string
-  isLogScale: boolean
+  scaleMode: ScaleMode
   histogramBuckets: DateHistogramBucket[]
   logHistogramBuckets: DateHistogramBucket[]
+  /** 101 entries: `quantiles[p]` = ISO date at percentile p (0–100). Empty if no date values. */
+  quantiles: string[]
 }
 
 export interface BooleanFilterState {

@@ -101,19 +101,16 @@ test.describe('Number filter features', () => {
     await page.getByLabel('Toggle Filters panel').click()
   })
 
-  test('number filter has log toggle and histogram toggle when enabled', async ({ page }) => {
+  test('number filter has histogram toggle and scale expander when enabled', async ({ page }) => {
     const agePanel = page.getByTestId('filter-panel-age')
-    // Enable filter (controls are pointer-events-none when disabled)
     await agePanel.getByRole('checkbox').click()
-    await expect(agePanel.getByTestId('number-filter-log-toggle')).toBeVisible()
     await expect(agePanel.getByTestId('number-filter-histogram-toggle')).toBeVisible()
-    // Histogram is hidden by default
+    await expect(agePanel.getByTestId('number-filter-scale-expander')).toBeVisible()
     await expect(agePanel.getByTestId('number-filter-histogram')).not.toBeVisible()
   })
 
   test('histogram can be toggled on and off', async ({ page }) => {
     const agePanel = page.getByTestId('filter-panel-age')
-    // Enable filter first (controls are dimmed/non-interactive when disabled)
     await agePanel.getByRole('checkbox').click()
     await expect(agePanel.getByTestId('number-filter-histogram')).not.toBeVisible()
     await agePanel.getByTestId('number-filter-histogram-toggle').click()
@@ -122,56 +119,71 @@ test.describe('Number filter features', () => {
     await expect(agePanel.getByTestId('number-filter-histogram')).not.toBeVisible()
   })
 
-  test('log toggle can be clicked and does not break filtering', async ({ page }) => {
+  test('scale expander reveals/hides lin/log/% row', async ({ page }) => {
     const agePanel = page.getByTestId('filter-panel-age')
-    // Enable filter first
+    await agePanel.getByRole('checkbox').click()
+    await expect(agePanel.getByTestId('number-filter-scale-row')).not.toBeVisible()
+    await agePanel.getByTestId('number-filter-scale-expander').click()
+    await expect(agePanel.getByTestId('number-filter-scale-row')).toBeVisible()
+    await expect(agePanel.getByTestId('number-filter-scale-mode-linear')).toBeVisible()
+    await expect(agePanel.getByTestId('number-filter-scale-mode-log')).toBeVisible()
+    await expect(agePanel.getByTestId('number-filter-scale-mode-percentile')).toBeVisible()
+    await agePanel.getByTestId('number-filter-scale-expander').click()
+    await expect(agePanel.getByTestId('number-filter-scale-row')).not.toBeVisible()
+  })
+
+  test('log mode can be activated and does not break filtering', async ({ page }) => {
+    const agePanel = page.getByTestId('filter-panel-age')
     await agePanel.getByRole('checkbox').click()
     await expect(page.getByTestId('filter-match-count')).toHaveText('5/5 nodes match')
-    // Toggle log scale
-    await agePanel.getByTestId('number-filter-log-toggle').click()
-    // Match count should remain 5/5 (full range still selected)
+    await agePanel.getByTestId('number-filter-scale-expander').click()
+    await agePanel.getByTestId('number-filter-scale-mode-log').click()
     await expect(page.getByTestId('filter-match-count')).toHaveText('5/5 nodes match')
+  })
+
+  test('percentile mode trims by p-range', async ({ page }) => {
+    const agePanel = page.getByTestId('filter-panel-age')
+    await agePanel.getByRole('checkbox').click()
+    await expect(page.getByTestId('filter-match-count')).toHaveText('5/5 nodes match')
+    await agePanel.getByTestId('number-filter-scale-expander').click()
+    await agePanel.getByTestId('number-filter-scale-mode-percentile').click()
+    // pct-tag indicators should appear under the slider
+    await expect(agePanel.getByTestId('number-filter-pct-tag-min')).toHaveText('p0')
+    await expect(agePanel.getByTestId('number-filter-pct-tag-max')).toHaveText('p100')
   })
 
   test('typing a value in min input and pressing Enter narrows the filter', async ({ page }) => {
     const agePanel = page.getByTestId('filter-panel-age')
-    // Enable the age filter
     await agePanel.getByRole('checkbox').click()
     await expect(page.getByTestId('filter-match-count')).toHaveText('5/5 nodes match')
-    // Type a min value that excludes the youngest node (age 27)
     const minInput = agePanel.getByTestId('number-filter-min')
     await minInput.click()
     await minInput.fill('30')
     await minInput.press('Enter')
-    // Wait for debounce + worker round trip
     await expect(page.getByTestId('filter-match-count')).toHaveText('3/5 nodes match', { timeout: 3000 })
   })
 
-  test('clear all resets number filter including log scale', async ({ page }) => {
+  test('clear all resets number filter including scale mode', async ({ page }) => {
     const agePanel = page.getByTestId('filter-panel-age')
-    // Enable filter first so we can interact with the log toggle
     await agePanel.getByRole('checkbox').click()
-    // Toggle log scale on
-    await agePanel.getByTestId('number-filter-log-toggle').click()
-    // Clear all
+    await agePanel.getByTestId('number-filter-scale-expander').click()
+    await agePanel.getByTestId('number-filter-scale-mode-log').click()
     await page.getByTestId('filter-clear-all').click()
-    // Log toggle should be back to inactive (no highlighted style)
-    const logToggle = agePanel.getByTestId('number-filter-log-toggle')
-    await expect(logToggle).toBeVisible()
+    // After clear-all, the lin mode should be active again (re-open the expander)
+    await agePanel.getByRole('checkbox').click()
+    await agePanel.getByTestId('number-filter-scale-expander').click()
+    await expect(agePanel.getByTestId('number-filter-scale-mode-linear')).toHaveAttribute('aria-pressed', 'true')
   })
 
-  test('log toggle + text input interop: typing value in log mode works correctly', async ({ page }) => {
+  test('log mode + text input interop: typing value in log mode works correctly', async ({ page }) => {
     const agePanel = page.getByTestId('filter-panel-age')
-    // Enable the filter
     await agePanel.getByRole('checkbox').click()
-    // Toggle to log scale
-    await agePanel.getByTestId('number-filter-log-toggle').click()
-    // Type a max value
+    await agePanel.getByTestId('number-filter-scale-expander').click()
+    await agePanel.getByTestId('number-filter-scale-mode-log').click()
     const maxInput = agePanel.getByTestId('number-filter-max')
     await maxInput.click()
     await maxInput.fill('35')
     await maxInput.press('Enter')
-    // Should narrow the results (ages 27, 28, 31, 34 ≤ 35 → 4 match)
     await expect(page.getByTestId('filter-match-count')).toHaveText('4/5 nodes match', { timeout: 3000 })
   })
 })

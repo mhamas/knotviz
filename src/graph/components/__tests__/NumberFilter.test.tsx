@@ -23,9 +23,10 @@ const baseState: NumberFilterState = {
   max: 100,
   domainMin: 0,
   domainMax: 100,
-  isLogScale: false,
+  scaleMode: 'linear',
   histogramBuckets: baseBuckets,
   logHistogramBuckets: logBuckets,
+  quantiles: new Float64Array(101),
 }
 
 describe('rendering', () => {
@@ -168,10 +169,10 @@ describe('histogram', () => {
     expect(bars.length).toBe(3)
   })
 
-  test('switches to log histogram buckets when isLogScale is true', async () => {
+  test('switches to log histogram buckets when scaleMode is log', async () => {
     const state: NumberFilterState = {
       ...baseState,
-      isLogScale: true,
+      scaleMode: 'log',
       logHistogramBuckets: [
         { from: 0, to: 50, count: 8 },
         { from: 50, to: 100, count: 2 },
@@ -188,6 +189,63 @@ describe('histogram', () => {
     // Log histogram has 2 buckets → 2 bars
     const bars = screen.container.querySelectorAll('[data-testid="histogram-bar"]')
     expect(bars.length).toBe(2)
+  })
+})
+
+describe('percentile mode', () => {
+  // Quantiles simulating heavily-skewed activity data: q[0..80] = 0,
+  // q[81..100] climb from 1 to 50. A previous implementation crashed
+  // here by storing min=quantiles[pLo]=0 then re-deriving pct from value,
+  // which collapsed the slider handle back to p0 on every render.
+  const tiedQuantiles = (() => {
+    const q = new Float64Array(101)
+    for (let i = 0; i <= 80; i++) q[i] = 0
+    for (let i = 81; i <= 100; i++) q[i] = (i - 80) * 2.5
+    return q
+  })()
+
+  test('pct tags render with the initial slider percentiles', async () => {
+    const state: NumberFilterState = {
+      ...baseState,
+      scaleMode: 'percentile',
+      min: 0,
+      max: 50,
+      domainMin: 0,
+      domainMax: 50,
+      quantiles: tiedQuantiles,
+    }
+    const screen = await render(
+      <NumberFilter state={state} onChange={vi.fn()} isHistogramVisible={false} />,
+    )
+    // p0 = 0 (tied with many low quantiles), p100 = 50.
+    await expect.element(screen.getByTestId('number-filter-pct-tag-min')).toHaveTextContent('p0')
+    await expect.element(screen.getByTestId('number-filter-pct-tag-max')).toHaveTextContent('p100')
+  })
+
+  test('pct handle position stays put on re-render even with tied quantiles', async () => {
+    // Regression: when many quantiles share the same value, dragging the
+    // lower handle to p20 would store min = 0 (= quantiles[20]), and the
+    // next render would recompute the handle position as
+    // valueToPercentile(0) = 0 — snapping the handle back to the left.
+    // The component now tracks the handle position in local state.
+    const state: NumberFilterState = {
+      ...baseState,
+      scaleMode: 'percentile',
+      min: 0,
+      max: 50,
+      domainMin: 0,
+      domainMax: 50,
+      quantiles: tiedQuantiles,
+    }
+    const onChange = vi.fn()
+    const screen = await render(
+      <NumberFilter state={state} onChange={onChange} isHistogramVisible={false} />,
+    )
+    // Sanity-check initial state.
+    await expect.element(screen.getByTestId('number-filter-pct-tag-min')).toHaveTextContent('p0')
+    // The render itself never snapped the max handle to p0 (it would do
+    // so if the max value happened to tie quantiles at the low end).
+    await expect.element(screen.getByTestId('number-filter-pct-tag-max')).toHaveTextContent('p100')
   })
 })
 

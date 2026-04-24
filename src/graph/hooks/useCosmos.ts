@@ -666,7 +666,11 @@ export function useCosmos(
         serializedFilters[key] = { ...f, selectedValues: Array.from(f.selectedValues) }
       } else if (f.type === 'number') {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { histogramBuckets, logHistogramBuckets, isLogScale, ...rest } = f
+        const { histogramBuckets, logHistogramBuckets, scaleMode, quantiles, ...rest } = f
+        serializedFilters[key] = rest
+      } else if (f.type === 'date') {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { histogramBuckets, logHistogramBuckets, scaleMode, quantiles, ...rest } = f
         serializedFilters[key] = rest
       } else {
         serializedFilters[key] = { ...f }

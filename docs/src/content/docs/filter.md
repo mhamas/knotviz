@@ -15,10 +15,20 @@ Knotviz gives each property type a dedicated control, because filtering a numeri
 
 | Property type | Control |
 |---|---|
-| `number` | Dual-handle range slider with min/max inputs. Log-scale toggle (appears only when min > 0). Histogram overlay shows distribution. |
+| `number` | Dual-handle range slider with min/max inputs. Histogram overlay + three scale modes (see below). |
 | `string` / `string[]` | Searchable multi-select with chip display. Select-all / clear-all / reset shortcuts. |
 | `boolean` | True / False radio. Disable the filter to include both. |
-| `date` | Dual-handle range slider with ISO-formatted endpoints. Histogram overlay, and a log-scale toggle that gives *recent* dates more resolution (inverted vs numeric log, which spreads the low end). Log requires all dates ≥ 1970-01-01. |
+| `date` | Dual-handle range slider with ISO-formatted endpoints. Histogram overlay + three scale modes (see below). |
+
+### Scale modes (number and date only)
+
+Number and date filter panels have a small chevron next to the histogram toggle. Click it to reveal a three-way segmented control: **lin · log · %**. The three modes are mutually exclusive and the selection persists while you drag; the slider's `min`/`max` selection is preserved across mode changes so toggling modes never loses your filter bounds.
+
+| Mode | Number filter | Date filter |
+|---|---|---|
+| `lin` (linear) | Slider position is proportional to value. Default. | Slider position is proportional to date. Default. |
+| `log`          | Log-scale slider + histogram; gives the **low** end more resolution. Requires `min ≥ 0`. | *Inverted* log: gives the **recent** end more resolution (matches typical clustering-toward-now). Requires dates ≥ 1970-01-01. |
+| `%` (percentile) | Slider runs from p0 to p100. A drag to `[10, 90]` keeps the middle 80% of nodes by value. Tiny `p{N}` tags above the inputs show what percentile each handle is at. | Same percentile semantics on the date distribution. |
 
 Each filter has its own enable checkbox at the top-left. **Disabling** keeps your configured values but stops the filter from participating in the match. Handy for A/B comparisons — flip one filter on and off to see its effect in isolation.
 
@@ -59,7 +69,8 @@ Stats update live with the filter set, so the distribution you see in the Statis
 ## Gotchas
 
 - Edges to hidden nodes disappear even if the edge itself has nothing filtered. Intentional; the alternative (orphan edges) looks broken.
-- Log-scale toggle only appears when the property's min value is in range — numbers must be ≥ 0, dates must be ≥ 1970-01-01. For numbers with zeros or negatives, or dates before the Unix epoch, stick with linear scale or pre-filter to the valid range.
-- Date log scale is *inverted* vs numeric — it spreads out **recent** dates rather than early ones. Reason: most real-world date properties (signups, events, commits) cluster toward "now", so fine-grained control belongs at the right end of the slider. If your data is the unusual shape — lots of old dates, few recent — the linear slider will actually give you better resolution.
+- `log` mode only unlocks when the property's min value is in range — numbers must be ≥ 0, dates must be ≥ 1970-01-01. Out-of-range data leaves the `log` button disabled (dimmed); stick with `lin` or pre-filter to the valid range.
+- Date `log` is *inverted* vs numeric — it spreads out **recent** dates rather than early ones. Reason: most real-world date properties (signups, events, commits) cluster toward "now", so fine-grained control belongs at the right end of the slider. If your data is the unusual shape — lots of old dates, few recent — `lin` will actually give you better resolution.
+- `%` mode works on the dataset's own distribution, not a global reference. If you enable a filter, narrow via other filters, then open a `%` slider, the percentiles still reflect the *original* dataset, not the currently-visible subset. (Precomputed once at load time to keep slider drags O(1).)
 - `string[]` filtering uses **any-match** semantics — a node with tags `[a, b, c]` passes a filter that selects `a` alone. For must-match-all-tags, add one filter per required tag.
 - The filter panel computes distinct values live from visible nodes, so disabling one filter may change the options available in another (the multi-select updates to reflect the now-visible set).

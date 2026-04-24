@@ -15,9 +15,10 @@ const numberState: NumberFilterState = {
   max: 100,
   domainMin: 0,
   domainMax: 100,
-  isLogScale: false,
+  scaleMode: 'linear',
   histogramBuckets: numBuckets,
   logHistogramBuckets: numBuckets,
+  quantiles: new Float64Array(101),
 }
 
 test('renders property name and type badge', async () => {
@@ -34,7 +35,7 @@ test('renders property name and type badge', async () => {
   await expect.element(screen.getByText('number')).toBeVisible()
 })
 
-test('number filter shows log and histogram toggles in header', async () => {
+test('number filter shows histogram toggle and scale expander in header', async () => {
   const meta: PropertyMeta = { key: 'score', type: 'number' }
   const screen = await render(
     <PropertyFilterPanel
@@ -42,27 +43,49 @@ test('number filter shows log and histogram toggles in header', async () => {
       filterState={numberState}
       onEnabledChange={vi.fn()}
       onNumberChange={vi.fn()}
-      onLogScaleChange={vi.fn()}
+      onScaleModeChange={vi.fn()}
     />,
   )
-  await expect.element(screen.getByTestId('number-filter-log-toggle')).toBeVisible()
   await expect.element(screen.getByTestId('number-filter-histogram-toggle')).toBeVisible()
+  await expect.element(screen.getByTestId('number-filter-scale-expander')).toBeVisible()
 })
 
-test('log toggle calls onLogScaleChange', async () => {
+test('scale row hidden by default; expander click reveals lin/log/% buttons', async () => {
   const meta: PropertyMeta = { key: 'score', type: 'number' }
-  const onLogScaleChange = vi.fn()
   const screen = await render(
     <PropertyFilterPanel
       meta={meta}
       filterState={numberState}
       onEnabledChange={vi.fn()}
       onNumberChange={vi.fn()}
-      onLogScaleChange={onLogScaleChange}
+      onScaleModeChange={vi.fn()}
     />,
   )
-  await screen.getByTestId('number-filter-log-toggle').click()
-  expect(onLogScaleChange).toHaveBeenCalledWith(true)
+  // Hidden initially
+  expect(screen.container.querySelector('[data-testid="number-filter-scale-row"]')).toBeNull()
+  // Click expander → scale row appears
+  await screen.getByTestId('number-filter-scale-expander').click()
+  expect(screen.container.querySelector('[data-testid="number-filter-scale-row"]')).not.toBeNull()
+  await expect.element(screen.getByTestId('number-filter-scale-mode-linear')).toBeVisible()
+  await expect.element(screen.getByTestId('number-filter-scale-mode-log')).toBeVisible()
+  await expect.element(screen.getByTestId('number-filter-scale-mode-percentile')).toBeVisible()
+})
+
+test('clicking a mode button calls onScaleModeChange with that mode', async () => {
+  const meta: PropertyMeta = { key: 'score', type: 'number' }
+  const onScaleModeChange = vi.fn()
+  const screen = await render(
+    <PropertyFilterPanel
+      meta={meta}
+      filterState={numberState}
+      onEnabledChange={vi.fn()}
+      onNumberChange={vi.fn()}
+      onScaleModeChange={onScaleModeChange}
+    />,
+  )
+  await screen.getByTestId('number-filter-scale-expander').click()
+  await screen.getByTestId('number-filter-scale-mode-percentile').click()
+  expect(onScaleModeChange).toHaveBeenCalledWith('percentile')
 })
 
 test('histogram toggle shows histogram below slider', async () => {
@@ -75,13 +98,12 @@ test('histogram toggle shows histogram below slider', async () => {
       onNumberChange={vi.fn()}
     />,
   )
-  // Hidden by default
   expect(screen.container.querySelector('[data-testid="number-filter-histogram"]')).toBeNull()
   await screen.getByTestId('number-filter-histogram-toggle').click()
   expect(screen.container.querySelector('[data-testid="number-filter-histogram"]')).not.toBeNull()
 })
 
-test('log toggle disabled when domain has negative values', async () => {
+test('log mode button disabled when domain has negative values', async () => {
   const meta: PropertyMeta = { key: 'score', type: 'number' }
   const state: NumberFilterState = { ...numberState, domainMin: -10, logHistogramBuckets: [] }
   const screen = await render(
@@ -90,13 +112,30 @@ test('log toggle disabled when domain has negative values', async () => {
       filterState={state}
       onEnabledChange={vi.fn()}
       onNumberChange={vi.fn()}
-      onLogScaleChange={vi.fn()}
+      onScaleModeChange={vi.fn()}
     />,
   )
-  await expect.element(screen.getByTestId('number-filter-log-toggle')).toBeDisabled()
+  await screen.getByTestId('number-filter-scale-expander').click()
+  await expect.element(screen.getByTestId('number-filter-scale-mode-log')).toBeDisabled()
 })
 
-test('boolean filter does not show log or histogram toggles', async () => {
+test('percentile mode button disabled when no quantiles are available', async () => {
+  const meta: PropertyMeta = { key: 'score', type: 'number' }
+  const state: NumberFilterState = { ...numberState, quantiles: new Float64Array(0) }
+  const screen = await render(
+    <PropertyFilterPanel
+      meta={meta}
+      filterState={state}
+      onEnabledChange={vi.fn()}
+      onNumberChange={vi.fn()}
+      onScaleModeChange={vi.fn()}
+    />,
+  )
+  await screen.getByTestId('number-filter-scale-expander').click()
+  await expect.element(screen.getByTestId('number-filter-scale-mode-percentile')).toBeDisabled()
+})
+
+test('boolean filter does not show histogram toggle or scale expander', async () => {
   const meta: PropertyMeta = { key: 'active', type: 'boolean' }
   const screen = await render(
     <PropertyFilterPanel
@@ -106,7 +145,7 @@ test('boolean filter does not show log or histogram toggles', async () => {
       onBooleanChange={vi.fn()}
     />,
   )
-  expect(screen.container.querySelector('[data-testid="number-filter-log-toggle"]')).toBeNull()
+  expect(screen.container.querySelector('[data-testid="number-filter-scale-expander"]')).toBeNull()
   expect(screen.container.querySelector('[data-testid="number-filter-histogram-toggle"]')).toBeNull()
 })
 

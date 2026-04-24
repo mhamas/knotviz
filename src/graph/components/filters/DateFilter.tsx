@@ -21,18 +21,42 @@ function daysToDate(days: number): string {
 }
 
 /**
+ * Inverse percentile lookup for dates. Given an ISO date and the
+ * precomputed quantiles array (101 ISO strings), return the interpolated
+ * percentile position (0–100). Clamps out-of-range dates to the endpoints.
+ */
+function dateToPercentile(iso: string, quantiles: string[]): number {
+  if (quantiles.length === 0) return 0
+  const target = new Date(iso).getTime()
+  const first = new Date(quantiles[0]).getTime()
+  const last = new Date(quantiles[100]).getTime()
+  if (target <= first) return 0
+  if (target >= last) return 100
+  let lo = 0
+  let hi = 100
+  while (lo < hi - 1) {
+    const mid = (lo + hi) >>> 1
+    if (new Date(quantiles[mid]).getTime() <= target) lo = mid
+    else hi = mid
+  }
+  const a = new Date(quantiles[lo]).getTime()
+  const b = new Date(quantiles[hi]).getTime()
+  if (a === b) return lo
+  return lo + (target - a) / (b - a)
+}
+
+/**
  * Dual-handle range slider for filtering nodes by a date property.
  * Dates are mapped to integer day offsets for the slider, then
- * converted back to ISO strings on change. Supports optional log
- * scale and an inline histogram. Debounces by 150 ms.
+ * converted back to ISO strings on change. Supports three scale modes:
+ * - `linear`     — slider step = 1 day.
+ * - `log`        — inverted vs numeric log: gives *recent* dates more
+ *                  resolution, matching typical clustering-toward-now shapes.
+ * - `percentile` — slider in [0, 100]; a drag to [10, 90] keeps nodes
+ *                  whose dates fall between p10 and p90 of the dataset.
  *
- * Log scale for dates is *inverted* relative to numeric log scale:
- * instead of spreading out low values, it spreads out **recent** dates.
- * Typical date properties (signups, events, commits) cluster toward
- * "now", so users want fine-grained control at the right end of the
- * slider. Formula: map each date to days-since-domain-max, take log,
- * then flip. Near the right end of the slider, one step ≈ one day;
- * near the left end, one step ≈ many months.
+ * In pct mode, a small `p{N}` tag above each label shows the percentile
+ * the handle is currently at.
  *
  * @param props - Current filter state, change handler, and histogram visibility.
  * @returns Date filter slider element.
@@ -40,18 +64,44 @@ function daysToDate(days: number): string {
 export function DateFilter({ state, onChange, isHistogramVisible }: Props): React.JSX.Element {
   const domainMinDays = dateToDays(state.domainMin)
   const domainMaxDays = dateToDays(state.domainMax)
-  const { isLogScale } = state
+  const { scaleMode, quantiles } = state
+  const isLogScale = scaleMode === 'log'
+  const isPercentileScale = scaleMode === 'percentile'
 
   const [localRange, setLocalRange] = useState<[number, number]>([
     dateToDays(state.after),
     dateToDays(state.before),
   ])
+  // Separate local state for the pct-mode slider position. See the
+  // equivalent comment in NumberFilter — tied quantiles (e.g. many dates
+  // on the same day) would otherwise collapse the handle back to p0.
+  const [localPct, setLocalPct] = useState<[number, number]>(() => {
+    if (state.scaleMode !== 'percentile' || state.quantiles.length === 0) {
+      return [0, 100]
+    }
+    return [
+      dateToPercentile(state.after, state.quantiles),
+      dateToPercentile(state.before, state.quantiles),
+    ]
+  })
   const debouncedOnChange = useDebounce(onChange, 150)
 
-  // Inverted log: map days-since-max to log space, then subtract from
-  // logMax so position 0 = domainMin and position logMax = domainMax.
-  // logMax is the total log-space width; single-day datasets collapse
-  // to 0 and we fall back to a nonzero slider step below.
+  // Resync the pct handles whenever we *enter* pct mode from another
+  // scale. Uses React's "adjust state during render" pattern (same
+  // effect as useEffect but without the cascading render penalty).
+  const [cachedScaleMode, setCachedScaleMode] = useState<typeof scaleMode>(scaleMode)
+  if (cachedScaleMode !== scaleMode) {
+    setCachedScaleMode(scaleMode)
+    if (scaleMode === 'percentile' && quantiles.length > 0) {
+      setLocalPct([
+        dateToPercentile(daysToDate(localRange[0]), quantiles),
+        dateToPercentile(daysToDate(localRange[1]), quantiles),
+      ])
+    }
+  }
+
+  // Inverted log transform: day at position 0 is domainMin, position
+  // logMax is domainMax. One slider step ≈ 1 day at the recent end.
   const domainSpanDays = domainMaxDays - domainMinDays
   const logMax = isLogScale ? Math.log10(domainSpanDays + 1) : 0
   const toLog = (daysAbs: number): number =>
@@ -59,17 +109,43 @@ export function DateFilter({ state, onChange, isHistogramVisible }: Props): Reac
   const fromLog = (s: number): number =>
     domainMaxDays - Math.pow(10, logMax - s) + 1
 
-  const sliderMin = isLogScale ? 0 : domainMinDays
-  const sliderMax = isLogScale ? logMax : domainMaxDays
-  const sliderStep = isLogScale ? (sliderMax - sliderMin) / 200 || 0.01 : 1
-  const sliderValue: [number, number] = isLogScale
-    ? [toLog(localRange[0]), toLog(localRange[1])]
-    : localRange
+  let sliderMin: number
+  let sliderMax: number
+  let sliderStep: number
+  let sliderValue: [number, number]
+
+  if (isPercentileScale) {
+    sliderMin = 0
+    sliderMax = 100
+    sliderStep = 1
+    sliderValue = localPct
+  } else if (isLogScale) {
+    sliderMin = 0
+    sliderMax = logMax
+    sliderStep = (sliderMax - sliderMin) / 200 || 0.01
+    sliderValue = [toLog(localRange[0]), toLog(localRange[1])]
+  } else {
+    sliderMin = domainMinDays
+    sliderMax = domainMaxDays
+    sliderStep = 1
+    sliderValue = localRange
+  }
 
   const handleChange = (value: number | readonly number[]): void => {
     const arr = Array.isArray(value) ? value : [value]
     let newMin = arr[0]
     let newMax = arr[1] ?? arr[0]
+    if (isPercentileScale) {
+      const pLo = Math.round(Math.min(Math.max(newMin, 0), 100))
+      const pHi = Math.round(Math.min(Math.max(newMax, 0), 100))
+      setLocalPct([pLo, pHi])
+      const loIso = quantiles.length > 0 ? quantiles[pLo] : state.domainMin
+      const hiIso = quantiles.length > 0 ? quantiles[pHi] : state.domainMax
+      const newRange: [number, number] = [dateToDays(loIso), dateToDays(hiIso)]
+      setLocalRange(newRange)
+      debouncedOnChange(loIso, hiIso)
+      return
+    }
     if (isLogScale) {
       newMin = fromLog(newMin)
       newMax = fromLog(newMax)
@@ -81,6 +157,9 @@ export function DateFilter({ state, onChange, isHistogramVisible }: Props): Reac
 
   const histogramBuckets = isLogScale ? state.logHistogramBuckets : state.histogramBuckets
 
+  const pctTagLow = isPercentileScale && quantiles.length > 0 ? `p${localPct[0]}` : null
+  const pctTagHigh = isPercentileScale && quantiles.length > 0 ? `p${localPct[1]}` : null
+
   return (
     <div className="space-y-1.5" data-testid="date-filter">
       <Slider
@@ -90,6 +169,12 @@ export function DateFilter({ state, onChange, isHistogramVisible }: Props): Reac
         value={sliderValue}
         onValueChange={handleChange}
       />
+      {isPercentileScale && (
+        <div className="flex justify-between text-[10px] font-medium text-slate-500" data-testid="date-filter-pct-tags">
+          <span data-testid="date-filter-pct-tag-min">{pctTagLow}</span>
+          <span data-testid="date-filter-pct-tag-max">{pctTagHigh}</span>
+        </div>
+      )}
       <div className="flex justify-between text-[11px] text-slate-500">
         <span data-testid="date-filter-min">{daysToDate(localRange[0])}</span>
         <span data-testid="date-filter-max">{daysToDate(localRange[1])}</span>

@@ -4,10 +4,16 @@ import { formatNumber } from '../lib/formatNumber'
 
 interface NumericProps {
   buckets: HistogramBucket[]
+  /** Left position of the min marker as a percentage of histogram width (0–100). */
+  selectionMinPercent?: number
+  /** Left position of the max marker as a percentage of histogram width (0–100). */
+  selectionMaxPercent?: number
 }
 
 interface DateProps {
   buckets: DateHistogramBucket[]
+  selectionMinPercent?: number
+  selectionMaxPercent?: number
 }
 
 type Props = NumericProps | DateProps
@@ -29,10 +35,17 @@ function tooltipText(bucket: HistogramBucket | DateHistogramBucket): string {
  * Horizontal bar chart visualising histogram bucket distribution.
  * Each bar has a hover tooltip showing its range and count.
  *
- * @param props - Histogram buckets (numeric or date).
+ * Optional `selectionMinPercent` / `selectionMaxPercent` draw two thin
+ * red vertical markers at the given positions (0–100, as % of the
+ * histogram's width). Markers are rendered over the bars and the caller
+ * is expected to omit them when the current slider selection matches
+ * the full domain (i.e. the filter hasn't been narrowed yet) so the
+ * histogram isn't decorated with redundant edge-hugging lines.
+ *
+ * @param props - Histogram buckets (numeric or date) and optional selection markers.
  * @returns Bar chart element, or null when there are no buckets.
  */
-export function Histogram({ buckets }: Props): React.JSX.Element | null {
+export function Histogram({ buckets, selectionMinPercent, selectionMaxPercent }: Props): React.JSX.Element | null {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   if (buckets.length === 0) return null
@@ -44,7 +57,7 @@ export function Histogram({ buckets }: Props): React.JSX.Element | null {
 
   return (
     <div className="mt-2" data-testid="histogram">
-      <div className="flex h-24 items-end gap-px">
+      <div className="relative flex h-24 items-end gap-px">
         {buckets.map((bucket, i) => {
           const heightPct = maxCount === 0 ? 0 : (bucket.count / maxCount) * 100
           const tip = tooltipText(bucket)
@@ -65,6 +78,20 @@ export function Histogram({ buckets }: Props): React.JSX.Element | null {
             </div>
           )
         })}
+        {selectionMinPercent !== undefined && (
+          <div
+            data-testid="histogram-selection-min"
+            className="pointer-events-none absolute top-0 h-full w-px -translate-x-1/2 bg-red-500"
+            style={{ left: `${selectionMinPercent}%` }}
+          />
+        )}
+        {selectionMaxPercent !== undefined && (
+          <div
+            data-testid="histogram-selection-max"
+            className="pointer-events-none absolute top-0 h-full w-px -translate-x-1/2 bg-red-500"
+            style={{ left: `${selectionMaxPercent}%` }}
+          />
+        )}
       </div>
       {hoveredIndex !== null && (
         <div

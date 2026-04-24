@@ -22,6 +22,28 @@ function fromLog(s: number): number {
 }
 
 /**
+ * Convert a value to its x-position (0–100) on the histogram. The histogram
+ * renders buckets with equal visual width regardless of underlying scale,
+ * so the position is `(bucketIndex + fractionWithinBucket) / bucketCount`.
+ * Linear interpolation inside the bucket is visually faithful because each
+ * bar's x-axis is rendered linearly by the DOM.
+ */
+function valueToHistogramPercent(v: number, buckets: { from: number; to: number }[]): number {
+  if (buckets.length === 0) return 0
+  if (v <= buckets[0].from) return 0
+  if (v >= buckets[buckets.length - 1].to) return 100
+  for (let i = 0; i < buckets.length; i++) {
+    const b = buckets[i]
+    if (v >= b.from && v < b.to) {
+      const span = b.to - b.from
+      const inBucket = span === 0 ? 0 : (v - b.from) / span
+      return ((i + inBucket) / buckets.length) * 100
+    }
+  }
+  return 100
+}
+
+/**
  * Inverse percentile lookup: given a value and the precomputed quantiles
  * array (101 entries, q[i] = value at percentile i), return the interpolated
  * percentile position (0–100). Clamps out-of-range values to the endpoints.
@@ -198,8 +220,12 @@ export function NumberFilter({ state, onChange, isHistogramVisible }: Props): Re
   // Percentile tags shown above the inputs in pct mode. Read directly
   // from `localPct` (authoritative slider position) rather than deriving
   // from `localRange` — otherwise ties collapse both tags to p0.
-  const pctTagLow = isPercentileScale && quantiles.length > 0 ? `p${localPct[0]}` : null
-  const pctTagHigh = isPercentileScale && quantiles.length > 0 ? `p${localPct[1]}` : null
+  // Rounded for display: `localPct` is a float right after a log/linear→%
+  // mode switch (because `valueToPercentile` interpolates), but the
+  // slider itself only emits integer percentiles, so a whole-number tag
+  // keeps the label consistent with what the user sees on the track.
+  const pctTagLow = isPercentileScale && quantiles.length > 0 ? `p${Math.round(localPct[0])}` : null
+  const pctTagHigh = isPercentileScale && quantiles.length > 0 ? `p${Math.round(localPct[1])}` : null
 
   return (
     <div className="space-y-1" data-testid="number-filter">
@@ -285,7 +311,11 @@ export function NumberFilter({ state, onChange, isHistogramVisible }: Props): Re
       {/* Histogram (below slider) */}
       {isHistogramVisible && histogramBuckets.length > 0 && (
         <div data-testid="number-filter-histogram">
-          <Histogram buckets={histogramBuckets} />
+          <Histogram
+            buckets={histogramBuckets}
+            selectionMinPercent={valueToHistogramPercent(localRange[0], histogramBuckets)}
+            selectionMaxPercent={valueToHistogramPercent(localRange[1], histogramBuckets)}
+          />
         </div>
       )}
     </div>

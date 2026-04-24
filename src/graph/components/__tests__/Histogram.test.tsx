@@ -120,6 +120,43 @@ test('all-zero buckets render with 0% height', async () => {
   }
 })
 
+test('no selection markers by default', async () => {
+  const buckets: HistogramBucket[] = [
+    { from: 0, to: 10, count: 5 },
+    { from: 10, to: 20, count: 3 },
+  ]
+  const screen = await render(<Histogram buckets={buckets} />)
+  expect(screen.container.querySelector('[data-testid="histogram-selection-min"]')).toBeNull()
+  expect(screen.container.querySelector('[data-testid="histogram-selection-max"]')).toBeNull()
+})
+
+test('renders min/max selection markers at the provided percentages', async () => {
+  const buckets: HistogramBucket[] = [
+    { from: 0, to: 10, count: 5 },
+    { from: 10, to: 20, count: 3 },
+  ]
+  const screen = await render(
+    <Histogram buckets={buckets} selectionMinPercent={25} selectionMaxPercent={75} />,
+  )
+  const minMarker = screen.container.querySelector('[data-testid="histogram-selection-min"]') as HTMLElement
+  const maxMarker = screen.container.querySelector('[data-testid="histogram-selection-max"]') as HTMLElement
+  expect(minMarker).not.toBeNull()
+  expect(maxMarker).not.toBeNull()
+  expect(minMarker.style.left).toBe('25%')
+  expect(maxMarker.style.left).toBe('75%')
+})
+
+test('omits the min marker when only max is provided (and vice versa)', async () => {
+  const buckets: HistogramBucket[] = [
+    { from: 0, to: 10, count: 5 },
+  ]
+  const screen = await render(
+    <Histogram buckets={buckets} selectionMaxPercent={90} />,
+  )
+  expect(screen.container.querySelector('[data-testid="histogram-selection-min"]')).toBeNull()
+  expect(screen.container.querySelector('[data-testid="histogram-selection-max"]')).not.toBeNull()
+})
+
 test('tooltip formats large numbers with locale separators', async () => {
   const buckets: HistogramBucket[] = [
     { from: 1000000, to: 2000000, count: 1500000 },

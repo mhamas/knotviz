@@ -21,6 +21,30 @@ function daysToDate(days: number): string {
 }
 
 /**
+ * Convert a date to its x-position (0–100) on the date histogram. Mirrors
+ * the numeric helper in NumberFilter — finds the bucket, then interpolates
+ * linearly in epoch-ms space within that bucket.
+ */
+function dateToHistogramPercent(iso: string, buckets: { from: string; to: string }[]): number {
+  if (buckets.length === 0) return 0
+  const target = new Date(iso).getTime()
+  const firstFrom = new Date(buckets[0].from).getTime()
+  const lastTo = new Date(buckets[buckets.length - 1].to).getTime()
+  if (target <= firstFrom) return 0
+  if (target >= lastTo) return 100
+  for (let i = 0; i < buckets.length; i++) {
+    const bFrom = new Date(buckets[i].from).getTime()
+    const bTo = new Date(buckets[i].to).getTime()
+    if (target >= bFrom && target < bTo) {
+      const span = bTo - bFrom
+      const inBucket = span === 0 ? 0 : (target - bFrom) / span
+      return ((i + inBucket) / buckets.length) * 100
+    }
+  }
+  return 100
+}
+
+/**
  * Inverse percentile lookup for dates. Given an ISO date and the
  * precomputed quantiles array (101 ISO strings), return the interpolated
  * percentile position (0–100). Clamps out-of-range dates to the endpoints.
@@ -157,8 +181,11 @@ export function DateFilter({ state, onChange, isHistogramVisible }: Props): Reac
 
   const histogramBuckets = isLogScale ? state.logHistogramBuckets : state.histogramBuckets
 
-  const pctTagLow = isPercentileScale && quantiles.length > 0 ? `p${localPct[0]}` : null
-  const pctTagHigh = isPercentileScale && quantiles.length > 0 ? `p${localPct[1]}` : null
+  // Round for display: on scale-mode transitions, `localPct` is a float
+  // (valueToPercentile interpolates) but the slider step is 1, so a
+  // whole-number tag keeps the label consistent with the visible track.
+  const pctTagLow = isPercentileScale && quantiles.length > 0 ? `p${Math.round(localPct[0])}` : null
+  const pctTagHigh = isPercentileScale && quantiles.length > 0 ? `p${Math.round(localPct[1])}` : null
 
   return (
     <div className="space-y-1.5" data-testid="date-filter">
@@ -181,7 +208,11 @@ export function DateFilter({ state, onChange, isHistogramVisible }: Props): Reac
       </div>
       {isHistogramVisible && histogramBuckets.length > 0 && (
         <div data-testid="date-filter-histogram">
-          <Histogram buckets={histogramBuckets} />
+          <Histogram
+            buckets={histogramBuckets}
+            selectionMinPercent={dateToHistogramPercent(daysToDate(localRange[0]), histogramBuckets)}
+            selectionMaxPercent={dateToHistogramPercent(daysToDate(localRange[1]), histogramBuckets)}
+          />
         </div>
       )}
     </div>

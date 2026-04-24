@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { computeHistogram, computeLogHistogram, computeDateHistogram } from '../lib/computeHistogram'
+import { computeHistogram, computeLogHistogram, computeDateHistogram, computeDateLogHistogram } from '../lib/computeHistogram'
 
 describe('computeHistogram', () => {
   it('returns empty array for empty input', () => {
@@ -228,5 +228,70 @@ describe('computeDateHistogram', () => {
     expect(buckets[0].to).toMatch(datePattern)
     const totalCount = buckets.reduce((sum, b) => sum + b.count, 0)
     expect(totalCount).toBe(3)
+  })
+})
+
+describe('computeDateLogHistogram', () => {
+  it('returns empty array for empty input', () => {
+    expect(computeDateLogHistogram([])).toEqual([])
+  })
+
+  it('produces buckets with YYYY-MM-DD boundaries', () => {
+    const buckets = computeDateLogHistogram(['1971-01-01', '1990-01-01', '2020-01-01', '2024-01-01'])
+    expect(buckets.length).toBeGreaterThan(0)
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/
+    for (const b of buckets) {
+      expect(b.from).toMatch(datePattern)
+      expect(b.to).toMatch(datePattern)
+    }
+  })
+
+  it('every value falls into exactly one bucket', () => {
+    const values = ['1975-01-01', '1990-06-15', '2000-12-31', '2010-05-05', '2023-09-20']
+    const buckets = computeDateLogHistogram(values)
+    const totalCount = buckets.reduce((sum, b) => sum + b.count, 0)
+    expect(totalCount).toBe(values.length)
+  })
+
+  it('returns empty array when any value is before 1970 (negative epoch-ms)', () => {
+    const buckets = computeDateLogHistogram(['1960-01-01', '2020-01-01'])
+    expect(buckets).toEqual([])
+  })
+
+  it('bucket boundaries are monotonically non-decreasing', () => {
+    const buckets = computeDateLogHistogram(['1975-01-01', '1985-01-01', '2000-01-01', '2020-01-01'])
+    for (let i = 1; i < buckets.length; i++) {
+      expect(buckets[i].from >= buckets[i - 1].from).toBe(true)
+      expect(buckets[i].to >= buckets[i - 1].to).toBe(true)
+    }
+  })
+
+  it('gives recent dates tighter bucket widths than older ones', () => {
+    // Date log scale is inverted vs numeric: the *right* end of the range
+    // (recent dates) gets more resolution, because typical date data
+    // clusters toward "now". Buckets are sorted chronologically, so the
+    // last bucket (newest) should be the narrowest and the first bucket
+    // (oldest) should be the widest.
+    const values = ['2020-01-01', '2021-01-01', '2022-01-01', '2023-01-01', '2024-01-01']
+    const buckets = computeDateLogHistogram(values)
+    const firstWidth = new Date(buckets[0].to).getTime() - new Date(buckets[0].from).getTime()
+    const lastWidth =
+      new Date(buckets[buckets.length - 1].to).getTime() -
+      new Date(buckets[buckets.length - 1].from).getTime()
+    expect(firstWidth / lastWidth).toBeGreaterThan(5)
+  })
+
+  it('first/last bucket boundaries round-trip within one day of the domain', () => {
+    const values = ['1975-01-01', '1985-01-01', '2000-01-01', '2020-01-01']
+    const buckets = computeDateLogHistogram(values)
+    // Floating-point round-trip through log10(ms+1) → 10^s - 1 loses
+    // sub-second precision, which can slide the displayed ISO day by ±1.
+    const firstFrom = new Date(buckets[0].from).getTime()
+    const lastTo = new Date(buckets[buckets.length - 1].to).getTime()
+    const domainMin = new Date('1975-01-01').getTime()
+    const domainMax = new Date('2020-01-01').getTime()
+    const DAY_MS = 86_400_000
+    expect(Math.abs(firstFrom - domainMin)).toBeLessThanOrEqual(DAY_MS)
+    expect(Math.abs(lastTo - domainMax)).toBeLessThanOrEqual(DAY_MS)
   })
 })

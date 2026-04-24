@@ -18,7 +18,7 @@ Knotviz gives each property type a dedicated control, because filtering a numeri
 | `number` | Dual-handle range slider with min/max inputs. Log-scale toggle (appears only when min > 0). Histogram overlay shows distribution. |
 | `string` / `string[]` | Searchable multi-select with chip display. Select-all / clear-all / reset shortcuts. |
 | `boolean` | True / False radio. Disable the filter to include both. |
-| `date` | Dual-handle range slider with ISO-formatted endpoints. Same histogram overlay as numbers. |
+| `date` | Dual-handle range slider with ISO-formatted endpoints. Histogram overlay, and a log-scale toggle that gives *recent* dates more resolution (inverted vs numeric log, which spreads the low end). Log requires all dates ≥ 1970-01-01. |
 
 Each filter has its own enable checkbox at the top-left. **Disabling** keeps your configured values but stops the filter from participating in the match. Handy for A/B comparisons — flip one filter on and off to see its effect in isolation.
 
@@ -59,6 +59,7 @@ Stats update live with the filter set, so the distribution you see in the Statis
 ## Gotchas
 
 - Edges to hidden nodes disappear even if the edge itself has nothing filtered. Intentional; the alternative (orphan edges) looks broken.
-- Log-scale toggle only appears when the property's min value is above zero — logs only work on positive numbers. If you have zeros or negatives, stick with linear scale or pre-filter to strictly positive values.
+- Log-scale toggle only appears when the property's min value is in range — numbers must be ≥ 0, dates must be ≥ 1970-01-01. For numbers with zeros or negatives, or dates before the Unix epoch, stick with linear scale or pre-filter to the valid range.
+- Date log scale is *inverted* vs numeric — it spreads out **recent** dates rather than early ones. Reason: most real-world date properties (signups, events, commits) cluster toward "now", so fine-grained control belongs at the right end of the slider. If your data is the unusual shape — lots of old dates, few recent — the linear slider will actually give you better resolution.
 - `string[]` filtering uses **any-match** semantics — a node with tags `[a, b, c]` passes a filter that selects `a` alone. For must-match-all-tags, add one filter per required tag.
 - The filter panel computes distinct values live from visible nodes, so disabling one filter may change the options available in another (the multi-select updates to reflect the now-visible set).

@@ -9,7 +9,12 @@ import type {
   StringArrayFilterState,
   StringFilterState,
 } from '../types'
-import { computeHistogram, computeLogHistogram } from '../lib/computeHistogram'
+import {
+  computeHistogram,
+  computeLogHistogram,
+  computeDateHistogram,
+  computeDateLogHistogram,
+} from '../lib/computeHistogram'
 
 /** Columnar property values indexed by node index. */
 export type PropertyColumns = Record<string, (number | string | boolean | string[] | undefined)[]>
@@ -21,6 +26,7 @@ export interface FilterStateHandle {
   setNumberLogScale: (key: string, isLogScale: boolean) => void
   setStringFilter: (key: string, values: Set<string>) => void
   setDateFilter: (key: string, after: string, before: string) => void
+  setDateLogScale: (key: string, isLogScale: boolean) => void
   setBooleanFilter: (key: string, selected: BooleanFilterState['selected']) => void
   setFilterEnabled: (key: string, isEnabled: boolean) => void
   setAllFiltersEnabled: (isEnabled: boolean) => void
@@ -111,14 +117,19 @@ function initializeFilters(
       let domainMin = '1970-01-01'
       let domainMax = '1970-01-01'
       let isFirst = true
+      const dateValues: string[] = []
       if (col) {
         for (let i = 0; i < col.length; i++) {
           const v = col[i]
           if (typeof v !== 'string') continue
+          dateValues.push(v)
           if (isFirst) { domainMin = v; domainMax = v; isFirst = false }
           else { if (v < domainMin) domainMin = v; if (v > domainMax) domainMax = v }
         }
       }
+      const histogramBuckets = computeDateHistogram(dateValues)
+      const logHistogramBuckets =
+        new Date(domainMin).getTime() >= 0 ? computeDateLogHistogram(dateValues) : []
       filters.set(meta.key, {
         type: 'date',
         isEnabled: false,
@@ -126,6 +137,9 @@ function initializeFilters(
         before: domainMax,
         domainMin,
         domainMax,
+        isLogScale: false,
+        histogramBuckets,
+        logHistogramBuckets,
       } satisfies DateFilterState)
     }
   }
@@ -197,6 +211,13 @@ export function useFilterState(
     [updateFilter],
   )
 
+  const setDateLogScale = useCallback(
+    (key: string, isLogScale: boolean): void => {
+      updateFilter(key, (prev) => ({ ...prev, isLogScale }) as DateFilterState)
+    },
+    [updateFilter],
+  )
+
   const setBooleanFilter = useCallback(
     (key: string, selected: BooleanFilterState['selected']): void => {
       updateFilter(
@@ -246,6 +267,7 @@ export function useFilterState(
     setNumberLogScale,
     setStringFilter,
     setDateFilter,
+    setDateLogScale,
     setBooleanFilter,
     setFilterEnabled,
     setAllFiltersEnabled,

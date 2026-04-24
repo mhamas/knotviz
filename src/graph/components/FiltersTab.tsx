@@ -26,6 +26,7 @@ export function FiltersTab({ propertyMetas, nodePropertiesMetadata, filterHandle
     setNumberLogScale,
     setStringFilter,
     setDateFilter,
+    setDateLogScale,
     setBooleanFilter,
     setFilterEnabled,
     setAllFiltersEnabled,
@@ -90,7 +91,9 @@ export function FiltersTab({ propertyMetas, nodePropertiesMetadata, filterHandle
               onLogScaleChange={
                 filterState.type === 'number'
                   ? (isLogScale): void => setNumberLogScale(meta.key, isLogScale)
-                  : undefined
+                  : filterState.type === 'date'
+                    ? (isLogScale): void => setDateLogScale(meta.key, isLogScale)
+                    : undefined
               }
               onBooleanChange={
                 filterState.type === 'boolean'

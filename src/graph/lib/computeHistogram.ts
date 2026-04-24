@@ -121,3 +121,53 @@ export function computeDateHistogram(values: string[]): DateHistogramBucket[] {
     count: b.count,
   }))
 }
+
+/**
+ * Log-scale histogram over a date array (ISO 8601 strings).
+ *
+ * Unlike numeric log scale — which gives the *low* end of the range more
+ * resolution (appropriate for power-law distributions where small values
+ * are dense) — date log scale is *inverted* to give the *high* end
+ * (recent dates) more resolution. This matches the shape of typical
+ * date-valued properties: user signups, commits, events, and activity
+ * logs cluster toward "now" with a long tail going back. So the user
+ * wants to filter finely among recent dates, not among ancient ones.
+ *
+ * Implementation: transform each date to "days since the most-recent
+ * date" (non-negative), take log buckets, then flip back to absolute
+ * dates. The tightest bucket is nearest `domainMax`; buckets widen
+ * exponentially as you go back in time. Output is sorted chronologically
+ * (first bucket = oldest, last bucket = most recent).
+ *
+ * Returns `[]` if any value is before 1970 (negative epoch-ms) — log is
+ * undefined for negative values, and we match the absolute-value check
+ * in `computeLogHistogram`.
+ *
+ * @param values - Array of ISO 8601 date strings. All must be ≥ 1970-01-01.
+ * @returns Array of histogram buckets with YYYY-MM-DD from/to, equal-width
+ *   in log₁₀(msMax − ms + 1) space, sorted chronologically.
+ */
+export function computeDateLogHistogram(values: string[]): DateHistogramBucket[] {
+  if (values.length === 0) return []
+  const ms: number[] = []
+  for (const v of values) {
+    const t = new Date(v).getTime()
+    if (t < 0) return []
+    ms.push(t)
+  }
+  let msMax = ms[0]
+  for (const t of ms) if (t > msMax) msMax = t
+  // Days-from-max: 0 at the most-recent date, growing as we go back.
+  const msFromMax = ms.map((t) => msMax - t)
+  const logBuckets = computeLogHistogram(msFromMax)
+  // logBuckets are sorted ascending in msFromMax space (most-recent first
+  // in time). Convert back to absolute dates and reverse, so the output
+  // reads left-to-right as oldest → most recent.
+  const abs = logBuckets.map((b) => ({
+    from: new Date(msMax - b.to).toISOString().slice(0, 10),
+    to: new Date(msMax - b.from).toISOString().slice(0, 10),
+    count: b.count,
+  }))
+  abs.reverse()
+  return abs
+}

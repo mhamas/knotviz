@@ -150,6 +150,7 @@ describe('filterContinuousRange — date', () => {
       type: 'date', isEnabled: true,
       after: '2021-01-01', before: '2022-06-01',
       domainMin: '2020-01-01', domainMax: '2022-12-31',
+      isLogScale: false, histogramBuckets: [], logHistogramBuckets: [],
     }
     const result = filterContinuousRange(values, 'date', filter)
     expect(result.minLabel).toBe('2021-01-01')
@@ -161,6 +162,7 @@ describe('filterContinuousRange — date', () => {
       type: 'date', isEnabled: true,
       after: '2019-01-01', before: '2025-01-01',
       domainMin: '2019-01-01', domainMax: '2025-01-01',
+      isLogScale: false, histogramBuckets: [], logHistogramBuckets: [],
     }
     const result = filterContinuousRange(values, 'date', filter)
     expect(result.minLabel).toBe('2020-01-01')

@@ -108,6 +108,9 @@ export interface DateFilterState {
   before: string
   domainMin: string
   domainMax: string
+  isLogScale: boolean
+  histogramBuckets: DateHistogramBucket[]
+  logHistogramBuckets: DateHistogramBucket[]
 }
 
 export interface BooleanFilterState {

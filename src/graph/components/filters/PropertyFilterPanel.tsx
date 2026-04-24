@@ -48,9 +48,18 @@ export function PropertyFilterPanel({
   const [isHistogramVisible, setIsHistogramVisible] = useState(false)
 
   const isNumber = filterState.type === 'number'
+  const isDate = filterState.type === 'date'
   const numberState = isNumber ? (filterState as NumberFilterState) : null
-  const isLogScale = numberState?.isLogScale ?? false
-  const isLogAvailable = numberState ? numberState.domainMin >= 0 && numberState.logHistogramBuckets.length > 0 : false
+  const dateState = isDate ? (filterState as DateFilterState) : null
+  const hasHistogramControls = isNumber || isDate
+  const isLogScale = numberState?.isLogScale ?? dateState?.isLogScale ?? false
+  const isLogAvailable = numberState
+    ? numberState.domainMin >= 0 && numberState.logHistogramBuckets.length > 0
+    : dateState
+    ? dateState.logHistogramBuckets.length > 0
+    : false
+  const logToggleTestId = isNumber ? 'number-filter-log-toggle' : 'date-filter-log-toggle'
+  const histogramToggleTestId = isNumber ? 'number-filter-histogram-toggle' : 'date-filter-histogram-toggle'
 
   return (
     <div data-testid={`filter-panel-${meta.key}`} className="border-b border-slate-100 pb-2">
@@ -69,12 +78,12 @@ export function PropertyFilterPanel({
           {description && <HelpPopover>{description}</HelpPopover>}
         </span>
 
-        {/* Number filter toolbar icons — next to the type badge */}
-        {isNumber && (
+        {/* Number/date filter toolbar icons — next to the type badge */}
+        {hasHistogramControls && (
           <div className="flex shrink-0 items-center gap-0.5">
             <button
               type="button"
-              data-testid="number-filter-log-toggle"
+              data-testid={logToggleTestId}
               disabled={!isLogAvailable}
               onClick={(): void => onLogScaleChange?.(!isLogScale)}
               className={`rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors ${
@@ -82,13 +91,13 @@ export function PropertyFilterPanel({
                   ? 'bg-slate-700 text-white'
                   : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600'
               } ${!isLogAvailable ? 'cursor-not-allowed opacity-30' : 'cursor-pointer'}`}
-              title={isLogAvailable ? (isLogScale ? 'Switch to linear scale' : 'Switch to log scale') : 'Log scale unavailable (negative values)'}
+              title={isLogAvailable ? (isLogScale ? 'Switch to linear scale' : 'Switch to log scale') : 'Log scale unavailable (out-of-range values)'}
             >
               log
             </button>
             <button
               type="button"
-              data-testid="number-filter-histogram-toggle"
+              data-testid={histogramToggleTestId}
               onClick={(): void => setIsHistogramVisible((v) => !v)}
               className={`rounded p-0.5 transition-colors ${
                 isHistogramVisible
@@ -138,6 +147,7 @@ export function PropertyFilterPanel({
           <DateFilter
             state={filterState as DateFilterState}
             onChange={onDateChange}
+            isHistogramVisible={isHistogramVisible}
           />
         )}
       </div>

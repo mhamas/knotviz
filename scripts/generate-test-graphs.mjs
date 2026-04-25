@@ -88,7 +88,8 @@ const humanSize = (n) => {
 
 // ─── Deterministic pseudo-random helpers ──────────────────────────────────
 
-const LABELS = ['Alice', 'Bob', 'Carol', 'Dave', 'Eve', 'Frank', 'Grace', 'Heidi']
+const FIRST_NAMES = ['alice', 'bob', 'carol', 'dave', 'eve', 'frank', 'grace', 'heidi']
+const labelFor = (i) => `${FIRST_NAMES[i % FIRST_NAMES.length]}${i}`
 const TAG_POOL = ['engineer', 'designer', 'founder', 'alumnus', 'board', 'advisor']
 const COMMUNITY_NAMES = [
   'Tech', 'Finance', 'Arts', 'Sports', 'Science', 'Music', 'Gaming',
@@ -261,7 +262,7 @@ async function genJson(size, invalid) {
       const community = communityLabel(nodeToCommunity[i])
       const obj = {
         id: `n${i}`,
-        label: LABELS[i % LABELS.length],
+        label: labelFor(i),
         properties: {
           community,
           age: p.age,
@@ -346,7 +347,7 @@ async function genCsvPair(size, invalid, variant = 'csv') {
     await nw.write(
       [
         `n${i}`,
-        LABELS[i % LABELS.length],
+        labelFor(i),
         community,
         p.age,
         p.active,
@@ -395,7 +396,7 @@ async function genGraphML(size, invalid) {
     const p = nodeProps(rng, i)
     const community = communityLabel(nodeToCommunity[i])
     await w.write(
-      `<node id="n${i}"><data key="lbl">${LABELS[i % LABELS.length]}</data><data key="com">${community}</data><data key="age">${p.age}</data><data key="act">${p.active}</data><data key="jnd">${p.joined}</data></node>\n`,
+      `<node id="n${i}"><data key="lbl">${labelFor(i)}</data><data key="com">${community}</data><data key="age">${p.age}</data><data key="act">${p.active}</data><data key="jnd">${p.joined}</data></node>\n`,
     )
   }
 
@@ -438,7 +439,7 @@ async function genGexf(size, invalid) {
     const p = nodeProps(rng, i)
     const community = communityLabel(nodeToCommunity[i])
     await w.write(
-      `<node id="n${i}" label="${LABELS[i % LABELS.length]}"><attvalues><attvalue for="0" value="${community}"/><attvalue for="1" value="${p.age}"/><attvalue for="2" value="${p.active}"/><attvalue for="3" value="${p.joined}"/></attvalues></node>\n`,
+      `<node id="n${i}" label="${labelFor(i)}"><attvalues><attvalue for="0" value="${community}"/><attvalue for="1" value="${p.age}"/><attvalue for="2" value="${p.active}"/><attvalue for="3" value="${p.joined}"/></attvalues></node>\n`,
     )
   }
   await w.write('</nodes>\n')

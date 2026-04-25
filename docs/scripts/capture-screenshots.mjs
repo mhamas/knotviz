@@ -19,10 +19,20 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const OUT_DIR = join(__dirname, '..', 'src', 'assets', 'quickstart')
 mkdirSync(OUT_DIR, { recursive: true })
 
-const APP_URL = 'http://localhost:5173/graph?example=json/1k'
+const PORT = process.env.PORT || '5173'
+const STEP = process.env.STEP ? Number(process.env.STEP) : null // 1..4, stop after this step
+const APP_URL = `http://localhost:${PORT}/graph?example=json/1k`
 const VIEWPORT = { width: 1440, height: 900 }
 const NODE_SIZE = 7
 const SIM_SETTLE_MS = 8_000
+
+const stopIf = async (step) => {
+  if (STEP === step) {
+    await browser.close()
+    console.log(`Stopped after step ${step}.`)
+    process.exit(0)
+  }
+}
 
 const browser = await chromium.launch({
   args: ['--use-gl=angle', '--use-angle=swiftshader'],
@@ -46,6 +56,7 @@ await page.waitForTimeout(500)
 const laidOutPath = join(OUT_DIR, 'laid-out.png')
 await page.screenshot({ path: laidOutPath })
 console.log(`✓ ${laidOutPath}`)
+await stopIf(1)
 
 console.log('Opening Analysis panel and colouring by community…')
 await page.getByTestId('left-toggle-analysis').click()
@@ -58,6 +69,7 @@ await page.waitForTimeout(1_000)
 const colouredPath = join(OUT_DIR, 'coloured-community.png')
 await page.screenshot({ path: colouredPath })
 console.log(`✓ ${colouredPath}`)
+await stopIf(2)
 
 console.log('Switching to Size mode by age…')
 await page.getByTestId('color-property-select').click()
@@ -78,6 +90,7 @@ await page.waitForTimeout(1_000)
 const sizedPath = join(OUT_DIR, 'sized-by-age.png')
 await page.screenshot({ path: sizedPath })
 console.log(`✓ ${sizedPath}`)
+await stopIf(3)
 
 // Revert to community-colour so the `filtered` screenshot shows the filter
 // applied on top of the colour encoding the previous section established.

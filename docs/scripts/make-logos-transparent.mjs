@@ -5,8 +5,8 @@
  * produce versions where that background is made transparent, so the logo
  * blends cleanly into any page background.
  *
- * Reads: public/{icon,logo}-{light,dark}.png (the originals provided by the user)
- * Writes: public/{icon,logo}-{light,dark}.png (overwritten, transparent bg)
+ * Reads: public/{icon,logo}-{light,dark}.webp (the originals provided by the user)
+ * Writes: public/{icon,logo}-{light,dark}.webp (overwritten, transparent bg)
  *
  * Uses the top-left pixel's colour as the "background" and makes every pixel
  * within `tolerance` match transparent.
@@ -20,10 +20,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const publicDir = path.resolve(__dirname, '..', 'public')
 
 const files = [
-  'icon-light.png',
-  'icon-dark.png',
-  'logo-light.png',
-  'logo-dark.png',
+  'icon-light.webp',
+  'icon-dark.webp',
+  'logo-light.webp',
+  'logo-dark.webp',
 ]
 
 const TOLERANCE = 18 // per-channel max distance to still count as bg
@@ -111,7 +111,7 @@ async function makeTransparent(filename) {
 
   await sharp(data, { raw: { width, height, channels: 4 } })
     .extract({ left, top, width: cropW, height: cropH })
-    .png()
+    .webp({ quality: 90 })
     .toFile(filePath + '.tmp')
 
   const fs = await import('node:fs/promises')

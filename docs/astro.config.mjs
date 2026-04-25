@@ -15,8 +15,8 @@ export default defineConfig({
       favicon: '/favicon.ico',
       tableOfContents: false,
       logo: {
-        light: './public/logo-light.png',
-        dark: './public/logo-dark.png',
+        light: './public/logo-light.webp',
+        dark: './public/logo-dark.webp',
         replacesTitle: true,
       },
       social: [

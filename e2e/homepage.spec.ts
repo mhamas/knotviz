@@ -11,9 +11,11 @@ test.describe('Homepage', () => {
     await expect(description).toHaveAttribute('content', /million nodes/)
   })
 
-  test('renders hero section with logo and CTA', async ({ page }) => {
-    await expect(page.locator('img[alt*="Knotviz"]').first()).toBeVisible()
-    const cta = page.locator('a[href="/graph"]').first()
+  test('renders hero section with H1 and CTA', async ({ page }) => {
+    // Scope to the hero <section> so the new sticky <nav> doesn't intercept matches.
+    const hero = page.locator('section').first()
+    await expect(hero.getByRole('heading', { level: 1 })).toBeVisible()
+    const cta = hero.locator('a[href="/graph"]').first()
     await expect(cta).toBeVisible()
     await expect(cta).toContainText(/Start exploring/i)
   })

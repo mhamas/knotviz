@@ -33,6 +33,7 @@ export default defineConfig({
       customCss: ['./src/styles/custom.css'],
       components: {
         Header: './src/components/Header.astro',
+        SiteTitle: './src/components/SiteTitle.astro',
         SocialIcons: './src/components/SocialIcons.astro',
         PageTitle: './src/components/PageTitle.astro',
         Footer: './src/components/Footer.astro',

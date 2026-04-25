@@ -306,14 +306,12 @@
   color: var(--sl-color-text);
 }
 
-/* "Open Knotviz" CTA button in the top-right of the site header,
+/* "Launch app" CTA button in the top-right of the site header,
  * placed ahead of the GitHub/social-icons list via the SocialIcons override.
- * Note: force visibility on mobile — Starlight's default hides the social-icons
- * container at narrow widths, and the CTA is our primary conversion. */
+ * Matches the homepage nav button — same shape, same accent, no arrow. */
 .header-cta {
   display: inline-flex !important;
   align-items: center;
-  gap: 0.35rem;
   padding: 0.4rem 0.9rem;
   background: var(--sl-color-accent);
   color: white !important;
@@ -321,7 +319,7 @@
   font-weight: 600;
   text-decoration: none;
   border-radius: 6px;
-  margin-right: 0.5rem;
+  margin-left: 0.5rem;
   transition: background 0.15s ease, transform 0.15s ease;
   white-space: nowrap;
 }
@@ -330,21 +328,10 @@
   background: var(--sl-color-accent-high);
   transform: translateY(-1px);
 }
-.header-cta-arrow {
-  display: inline-block;
-  transition: transform 0.15s ease;
-}
-.header-cta:hover .header-cta-arrow {
-  transform: translateX(2px);
-}
 
-/* Mobile: collapse the CTA label but keep the button visible — icon-only variant
- * so the primary "Open Knotviz" action doesn't disappear below 50rem.
- * Starlight hides the whole .right-group container below md; we force it visible
- * and tighten the inner items. */
+/* Mobile: Starlight hides the whole .right-group at narrow widths. Force it
+ * visible so search, theme toggle, GitHub, and the CTA all stay reachable. */
 @media (max-width: 50rem) {
-  /* Make the right-group container visible and put just the CTA in it —
-   * hide GitHub + theme-toggle to stay uncluttered on narrow screens. */
   .right-group {
     display: flex !important;
     align-items: center;
@@ -353,27 +340,9 @@
   .right-group .social-icons {
     display: flex !important;
   }
-  .right-group .social-icons > a:not(.header-cta) {
-    display: none !important;
-  }
-  starlight-theme-select {
-    display: none !important;
-  }
   .header-cta {
-    padding: 0.4rem 0.55rem;
-    font-size: 0;
-    gap: 0;
-    margin-right: 0;
-  }
-  .header-cta::before {
-    content: '↗';
-    font-size: 0.9rem;
-    line-height: 1;
-    color: white;
-    font-weight: 700;
-  }
-  .header-cta-arrow {
-    display: none;
+    padding: 0.4rem 0.7rem;
+    margin-left: 0;
   }
 }
 

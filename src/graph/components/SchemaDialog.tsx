@@ -7,11 +7,7 @@ import {
 } from '@/components/ui/dialog'
 import { CopyableCode } from '@/components/sidebar'
 import { ExternalLink } from 'lucide-react'
-
-// Docs live under /docs in production (same origin) and on :4321 in dev
-// (separate Astro server). Prefix accordingly so every "Docs" link resolves.
-const DOCS_ORIGIN = import.meta.env.DEV ? 'http://localhost:4321' : ''
-const docsUrl = (path: string): string => `${DOCS_ORIGIN}${path}`
+import { docsUrl } from '../lib/docsUrl'
 
 interface FormatEntry {
   name: string

@@ -20,6 +20,11 @@ const isDev = import.meta.env.DEV
         document.querySelectorAll('a[href]').forEach((a) => {
           const href = a.getAttribute('href')
           if (!href) return
+          // Brand mark / footer mark: exact "/" → homepage on the app origin.
+          if (href === '/') {
+            a.setAttribute('href', APP_ORIGIN + '/')
+            return
+          }
           if (APP_PATHS.some((p) => href === p || href.startsWith(p + '/') || href.startsWith(p + '?'))) {
             a.setAttribute('href', APP_ORIGIN + href)
           }

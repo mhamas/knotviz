@@ -1,0 +1,26 @@
+{
+  "version": "1",
+  "nodes": [
+    {
+      "id": "<script>window.__xssId=1</script>",
+      "label": "<script>window.__xssLabel=1</script>",
+      "properties": {
+        "<script>window.__xssPropKey=1</script>": "<script>window.__xssPropVal=1</script>",
+        "img_payload": "<img src=x onerror=window.__xssImg=1>",
+        "html_payload": "<b><i>not bold</i></b>"
+      }
+    },
+    {
+      "id": "innocent",
+      "label": "Innocent Node",
+      "properties": {
+        "<script>window.__xssPropKey=1</script>": "plain text",
+        "img_payload": "plain text",
+        "html_payload": "plain text"
+      }
+    }
+  ],
+  "edges": [
+    { "source": "<script>window.__xssId=1</script>", "target": "innocent" }
+  ]
+}

@@ -424,7 +424,7 @@ export function LeftSidebar({
           aria-label="Knotviz home"
           className="opacity-60 transition-opacity hover:opacity-100"
         >
-          <img src="/logo.png" alt="Knotviz" className="h-auto w-20" />
+          <img src="/logo.webp" alt="Knotviz" className="h-auto w-20" />
         </a>
         <div className="flex items-center gap-3">
           <a

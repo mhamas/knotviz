@@ -22,7 +22,7 @@ test.describe('Homepage — Lighthouse regression guards', () => {
 
   test('logo images carry width and height attributes (axe: unsized-images)', async ({ page }) => {
     await page.goto('/')
-    const logos = page.locator('img[src="/logo.png"]')
+    const logos = page.locator('img[src="/logo.webp"]')
     const count = await logos.count()
     expect(count).toBeGreaterThan(0)
     for (let i = 0; i < count; i++) {

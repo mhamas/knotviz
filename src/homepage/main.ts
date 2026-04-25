@@ -1,3 +1,4 @@
+import '@fontsource-variable/geist'
 import '../styles/globals.css'
 
 // Reveal body after Tailwind CSS is loaded (prevents FOUC)

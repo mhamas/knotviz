@@ -1,6 +1,13 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "@fontsource-variable/geist";
+
+/*
+ * Geist Variable font is imported from the JS entry points
+ * (src/homepage/main.ts and src/graph/main.tsx). When @import-ed via CSS,
+ * Tailwind v4's PostCSS plugin inlines the rules but doesn't rewrite the
+ * relative url() references to the woff2 files, so they 404 in production.
+ * Importing from JS lets Vite's asset resolver follow the urls correctly.
+ */
 
 @custom-variant dark (&:is(.dark *));
 

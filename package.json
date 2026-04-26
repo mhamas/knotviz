@@ -31,6 +31,7 @@
     "prebuild": "npm run sync-schema",
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:site": "node scripts/build-site.mjs",
     "preview": "vite preview",
     "test": "vitest run --passWithNoTests --project unit --project component",
     "test:unit": "vitest run --passWithNoTests --project unit",

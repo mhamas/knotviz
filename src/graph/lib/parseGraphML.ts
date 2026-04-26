@@ -13,6 +13,13 @@ interface RawElement {
   [key: string]: unknown
 }
 
+// `parseTagValue` and `parseAttributeValue` are deliberately false: the parser
+// must treat every value as a string and let our typed-key resolution decide
+// what to coerce. Auto-coercion (the default) would silently turn the string
+// "01" into the number 1, mangle ids that look numeric, and open a confusion
+// surface where attacker-supplied content changes type between parse and use.
+// fast-xml-parser does not resolve external entities — billion-laughs and
+// XXE-style attacks are out of scope here.
 const XML_PARSER_OPTIONS = {
   ignoreAttributes: false,
   attributeNamePrefix: '@_',

@@ -3,6 +3,28 @@
   "private": false,
   "version": "0.0.0",
   "type": "module",
+  "description": "Browser-based graph visualization for million-node networks. Drag in JSON, CSV, GraphML, or GEXF and explore — everything runs client-side on a GPU force layout.",
+  "license": "MIT",
+  "author": "Matej Hamas",
+  "homepage": "https://knotviz.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mhamas/knotviz.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mhamas/knotviz/issues"
+  },
+  "keywords": [
+    "graph",
+    "visualization",
+    "network",
+    "webgl",
+    "gpu",
+    "force-layout",
+    "graphml",
+    "gexf",
+    "cosmos"
+  ],
   "scripts": {
     "sync-schema": "cp src/graph/lib/graphSchema.json public/graphSchema.json",
     "predev": "npm run sync-schema",

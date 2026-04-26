@@ -29,11 +29,10 @@ import {
 } from '../lib/streamingCsvGraphParser'
 import { parseStreamingJsonGraph } from '../lib/streamingJsonGraphParser'
 import { formatNumber } from '../lib/formatNumber'
+import { postResult as post } from './postResult'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const post = self.postMessage as any
 const yieldWorker = (): Promise<void> => new Promise((r) => setTimeout(r, 0))
 
 /** Threshold above which streaming parser is used instead of JSON.parse. */

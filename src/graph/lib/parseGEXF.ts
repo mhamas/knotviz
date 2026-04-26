@@ -13,6 +13,11 @@ interface RawElement {
   [key: string]: unknown
 }
 
+// See parseGraphML for the full rationale: `parseTagValue: false` and
+// `parseAttributeValue: false` are deliberate. Every value stays a string
+// until our typed-attribute resolution decides to coerce it. Don't let the
+// parser auto-coerce — it changes type between parse and use, and id-shaped
+// strings get mangled. fast-xml-parser does not resolve external entities.
 const XML_PARSER_OPTIONS = {
   ignoreAttributes: false,
   attributeNamePrefix: '@_',

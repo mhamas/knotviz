@@ -71,7 +71,14 @@ export default defineConfig({
           include: ['src/graph/test/**/*.test.{ts,tsx}'],
           // Large-file tests are opt-in via `test:large-graphs`, not part of the default suite.
           exclude: ['node_modules/**', 'src/graph/test/large-files/**'],
-          coverage: { provider: 'v8', reporter: ['text', 'lcov'] },
+          coverage: {
+            provider: 'v8',
+            reporter: ['text', 'lcov'],
+            // Floor is current coverage minus a 5pp buffer so day-to-day
+            // refactors don't trip CI, but a real regression does. Run
+            // `npm run test:coverage` to see the live numbers.
+            thresholds: { lines: 78, statements: 76, functions: 70, branches: 70 },
+          },
         },
       },
       {

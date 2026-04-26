@@ -11,6 +11,7 @@ import { computeFilteredStats } from '../lib/computeStats'
 import { matchQuery } from '../lib/matchQuery'
 import { applyDimming, computeLinkColors } from '../lib/applyHighlight'
 import { collectSamples } from '../lib/collectSamples'
+import { postResult } from './postResult'
 
 /** Base point size before pointSizeScale is applied by the GPU shader. */
 const BASE_POINT_SIZE = 4
@@ -238,6 +239,5 @@ function computeAppearance(input: UpdateMessage, requestId: number): void {
   const msg = { pointColors, pointSizes, linkColors, matchingCount, highlightedCount, highlightedSamples, stats, visibleNodes, requestId }
   const transfer: ArrayBufferLike[] = [pointColors.buffer, pointSizes.buffer, linkColors.buffer]
   if (visibleNodes) transfer.push(visibleNodes.buffer)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(self.postMessage as any)(msg, transfer)
+  postResult(msg, transfer)
 }

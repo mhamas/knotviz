@@ -50,6 +50,7 @@ interface InitMessage {
 interface UpdateLinksMessage {
   type: 'updateLinks'
   linkIndices: Float32Array
+  requestId: number
 }
 
 interface StatsConfig {
@@ -67,6 +68,7 @@ interface UpdateMessage {
   edgeRgba: [number, number, number, number]
   /** Substring search; empty string = no highlight mode. */
   searchQuery: string
+  requestId: number
 }
 
 // Cache last update params so we can recompute when links change
@@ -93,18 +95,20 @@ self.onmessage = (e: MessageEvent<InitMessage | UpdateLinksMessage | UpdateMessa
 
   if (input.type === 'updateLinks') {
     storedLinkIndices = input.linkIndices
-    // Recompute appearance with new links if we have cached params
+    // Recompute appearance with new links if we have cached params. Reply
+    // carries the updateLinks requestId, not the cached one, so the main
+    // thread accepts it as the latest.
     if (lastUpdateParams) {
-      computeAppearance(lastUpdateParams)
+      computeAppearance(lastUpdateParams, input.requestId)
     }
     return
   }
 
   lastUpdateParams = input
-  computeAppearance(input)
+  computeAppearance(input, input.requestId)
 }
 
-function computeAppearance(input: UpdateMessage): void {
+function computeAppearance(input: UpdateMessage, requestId: number): void {
   const { nodeCount, filters, gradientConfig, statsConfig, defaultRgba, edgeRgba, searchQuery } = input
   const linkIndices = storedLinkIndices
 
@@ -231,7 +235,7 @@ function computeAppearance(input: UpdateMessage): void {
   // a non-null mask routes labels through the stride-sampling fallback that
   // doesn't cull off-screen samples gracefully on zoom).
   const visibleNodes = hasActiveFilters ? visible : null
-  const msg = { pointColors, pointSizes, linkColors, matchingCount, highlightedCount, highlightedSamples, stats, visibleNodes }
+  const msg = { pointColors, pointSizes, linkColors, matchingCount, highlightedCount, highlightedSamples, stats, visibleNodes, requestId }
   const transfer: ArrayBufferLike[] = [pointColors.buffer, pointSizes.buffer, linkColors.buffer]
   if (visibleNodes) transfer.push(visibleNodes.buffer)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

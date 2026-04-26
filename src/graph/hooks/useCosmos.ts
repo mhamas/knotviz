@@ -571,7 +571,11 @@ export function useCosmos(
       cosmos.render(0)
     }
     // Update worker with new link set
-    workerRef.current?.postMessage({ type: 'updateLinks', linkIndices: filteredLinkIndices })
+    workerRef.current?.postMessage({
+      type: 'updateLinks',
+      linkIndices: filteredLinkIndices,
+      requestId: ++latestRequestIdRef.current,
+    })
   }, [filteredLinkIndices])
 
   // ── Sync display settings ──
@@ -603,11 +607,17 @@ export function useCosmos(
 
   // ── Appearance worker: send columns once, then lightweight updates ──
   const workerRef = useRef<Worker | null>(null)
+  // Monotonic id stamped on every outbound update / updateLinks. Replies whose
+  // id is older than this counter are stale (rapid filter/search input queues
+  // intermediate computes whose results are about to be overwritten by the
+  // next reply) — dropping them avoids redundant GPU renders and brief flashes
+  // of stale colors on the canvas.
+  const latestRequestIdRef = useRef(0)
   useEffect(() => {
     const worker = new AppearanceWorker()
     workerRef.current = worker
     worker.onmessage = (e: MessageEvent): void => {
-      const { pointColors, pointSizes, linkColors, matchingCount: mc, highlightedCount: hc, highlightedSamples: hs, stats: s, visibleNodes: vn } = e.data as {
+      const { pointColors, pointSizes, linkColors, matchingCount: mc, highlightedCount: hc, highlightedSamples: hs, stats: s, visibleNodes: vn, requestId } = e.data as {
         pointColors: Float32Array
         pointSizes: Float32Array
         linkColors: Float32Array
@@ -616,7 +626,9 @@ export function useCosmos(
         highlightedSamples: Array<{ id: string; label: string }>
         stats: PropertyStatsResult | null
         visibleNodes: Uint8Array | null
+        requestId: number
       }
+      if (requestId !== latestRequestIdRef.current) return
       const c = cosmosRef.current
       if (!c) return
       c.setPointColors(pointColors)
@@ -716,6 +728,7 @@ export function useCosmos(
       defaultRgba: hexToRgba(COLOR_DEFAULT),
       edgeRgba: hexToRgba(COLOR_EDGE_DEFAULT),
       searchQuery,
+      requestId: ++latestRequestIdRef.current,
     })
   }, [data, filters, gradientState, propertyTypeMap, searchQuery])
 

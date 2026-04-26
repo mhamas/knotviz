@@ -104,7 +104,7 @@ Individual commands:
 - `npm run test` — Vitest unit + component tests (all projects)
 - `npm run test:unit` — Vitest unit tests only (`src/graph/test/`)
 - `npm run test:component` — Vitest Browser Mode component tests (`src/graph/components/__tests__/`)
-- `npm run test:e2e` — Playwright E2E tests (`e2e/`, Chromium + Firefox)
+- `npm run test:e2e` — Playwright E2E tests (`e2e/`, Chromium only)
 - `npm run test:e2e:ui` — Playwright interactive UI runner
 - `npm run build` — Full production build
 

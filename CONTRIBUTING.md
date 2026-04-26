@@ -69,7 +69,7 @@ knotviz/
 │   │   └── test/               # Vitest unit tests for lib/
 │   └── shared/                 # Code shared between apps (future use)
 ├── public/                     # Static assets
-├── scripts/                    # Utility scripts (graph generation, CSV conversion)
+├── scripts/                    # Test-graph generation + large-file test runner
 └── [config files at repo root]
 ```
 

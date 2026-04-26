@@ -99,10 +99,13 @@ See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for the contributor-facing architectu
 ## Generating Test Graphs
 
 ```bash
-python3 scripts/generate_large_graph.py
+node scripts/generate-test-graphs.mjs                   # all formats, default size ladder
+node scripts/generate-test-graphs.mjs --format=json     # one format
+node scripts/generate-test-graphs.mjs --sizes=1000000   # override size
+node scripts/generate-test-graphs.mjs --include-invalid # add malformed variants
 ```
 
-Generates 2M, 3M, 4M, and 5M node graphs in `graphs_for_manual_testing/`. Each node has 4 property types (number, string, boolean, date). Edge distribution: 50% one edge, 30% two, 20% three per node.
+Writes synthetic graphs in every supported format (JSON, CSV edge-list, CSV pair, GraphML, GEXF) to `graphs_for_manual_testing_various_formats/` (gitignored). The default size ladder per format climbs to the empirical comfortable ceiling — what loads reliably in a real Chrome tab. Use these for manual testing of file-size limits and parser edge cases.
 
 ## Credits
 

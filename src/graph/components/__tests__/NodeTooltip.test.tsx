@@ -219,6 +219,39 @@ test('formats numbers with adaptive precision (2 decimals when |x|>=1, 6 otherwi
   await expect.element(screen.getByText(/^0\.5$/)).toBeVisible()
 })
 
+test('shows Failed indicator when clipboard write rejects', async () => {
+  const originalWriteText = navigator.clipboard.writeText
+  Object.defineProperty(navigator.clipboard, 'writeText', {
+    value: () => Promise.reject(new Error('clipboard blocked')),
+    configurable: true,
+    writable: true,
+  })
+  try {
+    const screen = await render(
+      <NodeTooltip
+        nodeId="n1"
+        screenPosition={{ x: 100, y: 100 }}
+        nodeIndexMap={nodeIndexMap}
+        nodeLabels={nodeLabels}
+        propertyColumns={propertyColumns}
+        propertyMetas={metas}
+        nodePropertiesMetadata={undefined}
+        canvasBounds={canvasBounds}
+        analysisPropertyKey={null}
+        onClose={vi.fn()}
+      />,
+    )
+    await screen.getByRole('button', { name: 'Copy node ID' }).click()
+    await expect.element(screen.getByText('Failed')).toBeVisible()
+  } finally {
+    Object.defineProperty(navigator.clipboard, 'writeText', {
+      value: originalWriteText,
+      configurable: true,
+      writable: true,
+    })
+  }
+})
+
 test('shows No properties when no metas', async () => {
   const screen = await render(
     <NodeTooltip

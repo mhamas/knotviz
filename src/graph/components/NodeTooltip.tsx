@@ -70,8 +70,8 @@ export function NodeTooltip({
 }: Props): React.JSX.Element {
   const tooltipRef = useRef<HTMLDivElement>(null)
   const [tooltipHeight, setTooltipHeight] = useState(200)
-  const [isCopied, setIsCopied] = useState(false)
-  const [isLabelCopied, setIsLabelCopied] = useState(false)
+  const [idCopyState, setIdCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
+  const [labelCopyState, setLabelCopyState] = useState<'idle' | 'copied' | 'failed'>('idle')
 
   // Measure tooltip height after initial render
   useEffect(() => {
@@ -147,10 +147,23 @@ export function NodeTooltip({
 
   const handleCopyId = (): void => {
     navigator.clipboard.writeText(nodeId).then(() => {
-      setIsCopied(true)
-      setTimeout(() => setIsCopied(false), 1500)
+      setIdCopyState('copied')
+      setTimeout(() => setIdCopyState('idle'), 1500)
     }).catch(() => {
-      // Clipboard API may fail in insecure contexts — fail silently
+      // Insecure context, sandboxed iframe, or denied permission. Surface
+      // it so the user knows the click didn't silently no-op.
+      setIdCopyState('failed')
+      setTimeout(() => setIdCopyState('idle'), 1500)
+    })
+  }
+
+  const handleCopyLabel = (): void => {
+    navigator.clipboard.writeText(label).then(() => {
+      setLabelCopyState('copied')
+      setTimeout(() => setLabelCopyState('idle'), 1500)
+    }).catch(() => {
+      setLabelCopyState('failed')
+      setTimeout(() => setLabelCopyState('idle'), 1500)
     })
   }
 
@@ -182,15 +195,12 @@ export function NodeTooltip({
             aria-label="Copy label"
             title="Copy label"
             className="inline-flex shrink-0 cursor-pointer rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-            onClick={(): void => {
-              navigator.clipboard.writeText(label).then(() => {
-                setIsLabelCopied(true)
-                setTimeout(() => setIsLabelCopied(false), 1500)
-              }).catch(() => {})
-            }}
+            onClick={handleCopyLabel}
           >
-            {isLabelCopied ? (
+            {labelCopyState === 'copied' ? (
               <Check className="h-3 w-3 text-green-600" />
+            ) : labelCopyState === 'failed' ? (
+              <X className="h-3 w-3 text-red-600" />
             ) : (
               <Copy className="h-3 w-3" />
             )}
@@ -204,10 +214,15 @@ export function NodeTooltip({
             className="inline-flex shrink-0 cursor-pointer rounded p-0.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
             onClick={handleCopyId}
           >
-            {isCopied ? (
+            {idCopyState === 'copied' ? (
               <span className="flex items-center gap-0.5 text-[10px] text-green-600">
                 <Check className="h-3 w-3" />
                 Copied
+              </span>
+            ) : idCopyState === 'failed' ? (
+              <span className="flex items-center gap-0.5 text-[10px] text-red-600">
+                <X className="h-3 w-3" />
+                Failed
               </span>
             ) : (
               <Copy className="h-3 w-3" />

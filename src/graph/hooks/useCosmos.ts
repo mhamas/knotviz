@@ -525,7 +525,11 @@ export function useCosmos(
       cosmosRef.current = null
       setIsSimulationRunning(false)
     }
-    // Only re-create when data identity changes
+    // Re-running this effect tears down and rebuilds Cosmos, which is multi-
+    // hundred-millisecond work for a 1M-node graph. We only want that on a
+    // genuinely new graph (`data` identity changes), not when callers like
+    // store reads cause unrelated values in scope to change identity. Adding
+    // them to the deps array would cause spurious re-inits.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data])
 
@@ -677,10 +681,14 @@ export function useCosmos(
       if (f.type === 'string' || f.type === 'string[]') {
         serializedFilters[key] = { ...f, selectedValues: Array.from(f.selectedValues) }
       } else if (f.type === 'number') {
+        // Strip UI-only fields the worker doesn't need (and that would inflate
+        // every postMessage). The destructured names are intentionally unused —
+        // the spread to `rest` is the whole point.
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { histogramBuckets, logHistogramBuckets, scaleMode, quantiles, ...rest } = f
         serializedFilters[key] = rest
       } else if (f.type === 'date') {
+        // Same UI-field strip as the number branch above.
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { histogramBuckets, logHistogramBuckets, scaleMode, quantiles, ...rest } = f
         serializedFilters[key] = rest

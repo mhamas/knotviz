@@ -27,5 +27,9 @@ export function useCosmosLabelSync(
     // them with filter-awareness.
     container.innerHTML = ''
     updateLabelsRef.current?.()
-  }, [isNodeLabelsVisible, data]) // eslint-disable-line react-hooks/exhaustive-deps
+    // `data` is intentionally a dep even though its value is unused inside —
+    // a new graph load needs to rebuild the label DOM from scratch (old DOM
+    // pointed at stale node ids). `updateLabelsRef` is a ref and stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNodeLabelsVisible, data])
 }
